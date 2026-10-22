@@ -30,7 +30,7 @@ class ConfigManager {
           start_time: '23:00',
           end_time: '08:00'
         },
-        content_view_height: 520
+        content_view_height: 540
       },
       sources: {
         jin10: {

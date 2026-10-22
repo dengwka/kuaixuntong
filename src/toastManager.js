@@ -243,8 +243,8 @@ class ToastManager {
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
     const width = this.toastWidth;
-    const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 520;
-    const maxHeight = Math.min(Math.max(520, userMaxHeight), workArea.height - 30);
+    const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 540;
+    const maxHeight = Math.min(Math.max(540, userMaxHeight), workArea.height - 30);
     const targetHeight = Math.min(Math.max(160, Math.ceil(height)), maxHeight);
 
     const isMac = process.platform === 'darwin';
@@ -254,6 +254,9 @@ class ToastManager {
     const y = isMac ? (workArea.y + marginY) : Math.max(workArea.y + 10, workArea.y + workArea.height - targetHeight - marginY);
 
     this.currentToastWin.setBounds({ x, y, width, height: targetHeight });
+    try {
+      this.currentToastWin.webContents.send('toast-bounds-applied', { targetHeight, maxHeight });
+    } catch (e) {}
     this.currentToastWin.showInactive();
     this.currentToastWin.show();
     this.currentToastWin.setAlwaysOnTop(true, 'screen-saver');

@@ -15,6 +15,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei UI", "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
       padding: 4px;
+      box-sizing: border-box;
     }
     .toast-card {
       background: #FAFBFD;
@@ -26,6 +27,8 @@
       flex-direction: column;
       transition: border-color 0.15s ease, background-color 0.15s ease;
       cursor: default;
+      box-sizing: border-box;
+      width: 100%;
     }
     .toast-card:hover {
       border-color: #CBD5E1;
@@ -58,6 +61,7 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid #E2E8F0;
+      flex-shrink: 0;
     }
     .header-left {
       display: flex;
@@ -236,7 +240,8 @@
     /* Content */
     .content-container {
       padding: 11px 16px 8px 16px;
-      max-height: 420px;
+      flex: 1 1 auto;
+      min-height: 50px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -343,6 +348,9 @@
       display: flex;
       flex-direction: column;
       gap: 5px;
+      flex-shrink: 0;
+      max-height: 190px;
+      overflow-y: auto;
     }
     .ai-tag-badge {
       display: inline-block;
@@ -415,6 +423,7 @@
       border-top: 1px solid #F1F5F9;
       min-height: 32px;
       gap: 12px;
+      flex-shrink: 0;
     }
     .crypto-prices {
       font-size: 11.5px;
@@ -501,12 +510,15 @@
     /* Progress bar */
     .progress-track {
       background: #E2E8F0;
-      height: 3px;
+      height: 3.5px;
       width: 100%;
       overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
     }
     .progress-fill {
-      background: #3B82F6;
+      background: linear-gradient(90deg, #3B82F6, #2563EB);
       height: 100%;
       width: 100%;
       transition: width 0.05s linear;
@@ -700,16 +712,52 @@
       return htmlArr.join(' ');
     }
 
+    function adjustLayoutToWindow() {
+      const c = document.getElementById('cardContainer') || card;
+      if (!c) return;
+      const bodyStyle = window.getComputedStyle(document.body);
+      const padTop = parseFloat(bodyStyle.paddingTop) || 4;
+      const padBottom = parseFloat(bodyStyle.paddingBottom) || 4;
+      const comp = window.getComputedStyle(c);
+      const mb = parseFloat(comp.marginBottom) || 0;
+      const mt = parseFloat(comp.marginTop) || 0;
+
+      // 窗口内卡片可用的最大高度，严格留出padding、margin和抗锯齿缓冲
+      const availH = window.innerHeight - padTop - padBottom - mt - mb - 2;
+      if (availH > 100) {
+        c.style.maxHeight = `${Math.floor(availH)}px`;
+      }
+    }
+
+    window.addEventListener('resize', adjustLayoutToWindow);
+    ipcRenderer.on('toast-bounds-applied', () => adjustLayoutToWindow());
+
     function notifyReady() {
       const doSend = () => {
         const c = document.getElementById('cardContainer') || card;
-        const h = c ? Math.ceil(c.getBoundingClientRect().height) : 260;
-        const exactH = Math.max(160, h + 8);
+        if (!c) return;
+
+        // 1. 临时解除maxHeight限制以精准测量内容自然撑开的高度
+        c.style.maxHeight = 'none';
+
+        const rect = c.getBoundingClientRect();
+        const comp = window.getComputedStyle(c);
+        const mb = parseFloat(comp.marginBottom) || 0;
+        const mt = parseFloat(comp.marginTop) || 0;
+
+        const bodyStyle = window.getComputedStyle(document.body);
+        const padTop = parseFloat(bodyStyle.paddingTop) || 4;
+        const padBottom = parseFloat(bodyStyle.paddingBottom) || 4;
+
+        // 真实所需总高度：卡片自然高度 + 外边距(如is-stacked的margin-bottom) + body上下内边距 + 4px抗锯齿与DPI缩放安全冗余
+        const totalNeededH = Math.ceil(rect.height + mb + mt + padTop + padBottom + 4);
+        const exactH = Math.max(160, totalNeededH);
+
         ipcRenderer.send('toast-ready-to-display', { height: exactH });
       };
       // 立即触发与微延迟二次测量，彻底解决 requestAnimationFrame 在隐藏窗口被 Chromium 挂起的问题
       doSend();
-      setTimeout(doSend, 25);
+      setTimeout(doSend, 30);
     }
 
     function isMouseInside() {
@@ -736,7 +784,8 @@
         markRead();
       }
 
-      durationMs = (config.system && config.system.toast_duration_sec || 15) * 1000;
+      const durSec = (config && config.system && Number(config.system.toast_duration_sec)) || 10;
+      durationMs = Math.max(3, durSec) * 1000;
       remainingMs = durationMs;
 
       // 进度条初始重置为满格 100%
@@ -1123,7 +1172,10 @@
         if (!isMouseInside()) {
           remainingMs -= step;
           const ratio = Math.max(0, remainingMs / durationMs);
-          document.getElementById('progressFill').style.width = `${ratio * 100}%`;
+          const pFill = document.getElementById('progressFill');
+          if (pFill) {
+            pFill.style.width = `${ratio * 100}%`;
+          }
 
           if (remainingMs <= 0) {
             clearInterval(countdownInterval);
