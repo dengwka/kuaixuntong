@@ -14,6 +14,8 @@ const FinancialAIEngine = require('./financialAi');
 const ToastManager = require('./toastManager');
 const trayManager = require('./trayManager');
 const updateManager = require('./updater');
+const Translator = require('./translator');
+const XFetcher = require('./fetcherX');
 
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
@@ -31,6 +33,8 @@ let jin10Fetcher = null;
 let topicFetcher = null;
 let xueqiuFetcher = null;
 let maimaiFetcher = null;
+let xFetcher = null;
+let translator = null;
 let strategyEngine = null;
 let financialAi = null;
 let pollTimer = null;
@@ -77,7 +81,8 @@ function openSettingsWindow(targetTab = null) {
         config: configManager.config,
         stats: historyManager.getStorageStats(),
         targetTab: targetTab || null,
-        updateInfo: updateManager.lastCheckResult || null
+        updateInfo: updateManager.lastCheckResult || null,
+        appVersion: app.getVersion()
       });
       win.show();
       win.focus();
@@ -133,7 +138,8 @@ async function pollCycle() {
     const topicItems = await topicFetcher.fetch();
     const xueqiuItems = await xueqiuFetcher.fetch();
     const maimaiItems = await maimaiFetcher.fetch();
-    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems];
+    const xItems = (xFetcher ? await xFetcher.fetch() : []);
+    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems];
 
     let newCount = 0;
     for (const item of allItems) {
@@ -146,10 +152,14 @@ async function pollCycle() {
         const evalUid = historyManager.getItemUniqueId(evalItem);
         if (historyManager.isPushed(evalUid)) continue;
 
-        try {
-          evalItem.ai_analysis = await financialAi.analyze(evalItem);
-        } catch (e) {
-          logger.error('[FinancialAI] 解读异常:', e);
+        if (evalItem.source_key === 'x_twitter') {
+          // X 监控推文已由 XFetcher 根据博主独立的 ai_analysis_enabled 配置完成研判，保留原有结果
+        } else {
+          try {
+            evalItem.ai_analysis = await financialAi.analyze(evalItem);
+          } catch (e) {
+            logger.error('[FinancialAI] 解读异常:', e);
+          }
         }
 
         historyManager.recordPushed(evalItem, evalItem.sync_delay_sec);
@@ -160,7 +170,7 @@ async function pollCycle() {
     }
 
     if (pollCount % 6 === 1 || newCount > 0) {
-      logger.info(`[POLL_HEARTBEAT] 轮询心跳正常 (第 ${pollCount} 次) - 金十: ${flashItems.length}条, 专栏: ${topicItems.length}条, 雪球: ${xueqiuItems.length}条, 脉脉: ${maimaiItems.length}条, 新增推送: ${newCount}条`);
+      logger.info(`[POLL_HEARTBEAT] 轮询心跳正常 (第 ${pollCount} 次) - 金十: ${flashItems.length}条, 专栏: ${topicItems.length}条, 雪球: ${xueqiuItems.length}条, 脉脉: ${maimaiItems.length}条, 𝕏: ${xItems.length}条, 新增推送: ${newCount}条`);
     }
   } catch (e) {
     logger.error('[Worker] 轮询异常:', e);
@@ -200,6 +210,8 @@ app.whenReady().then(() => {
   // 3. 初始化核心抓取与分析引擎
   strategyEngine = new StrategyEngine(configManager);
   financialAi = new FinancialAIEngine(configManager);
+  translator = new Translator(configManager, financialAi);
+  xFetcher = new XFetcher(configManager, translator, financialAi);
   jin10Fetcher = new Jin10Fetcher(configManager);
   topicFetcher = new Jin10TopicFetcher(configManager);
   xueqiuFetcher = new XueqiuFetcher(configManager);
@@ -309,6 +321,132 @@ app.whenReady().then(() => {
 
   ipcMain.handle('test-ai-key', async (event, { provider, key }) => {
     return await financialAi.testApiKey(provider, key);
+  });
+
+  // 𝕏 (Twitter) 监控模块 IPC 处理器
+  ipcMain.handle('x:lookup-account', async (event, handle) => {
+    if (!xFetcher) return { success: false, msg: 'X 服务未初始化' };
+    return await xFetcher.lookupAccount(handle);
+  });
+
+  ipcMain.handle('x:get-accounts-status', async () => {
+    const cfg = configManager.config;
+    const accounts = (cfg.sources && cfg.sources.x_twitter && cfg.sources.x_twitter.accounts) || [];
+    return accounts.map(acc => {
+      const cooling = xFetcher ? xFetcher.getAccountCoolingStatus(acc.screen_name) : { isCooling: false, remainingSec: 0 };
+      return {
+        ...acc,
+        isCooling: cooling.isCooling,
+        coolingRemainingSec: cooling.remainingSec
+      };
+    });
+  });
+
+  ipcMain.handle('x:clear-cooling', async (event, screenName) => {
+    if (xFetcher) {
+      xFetcher.clearAccountCooling(screenName);
+    }
+    return { success: true };
+  });
+
+  ipcMain.handle('x:save-accounts', async (event, accounts) => {
+    const cfg = configManager.config;
+    if (!cfg.sources) cfg.sources = {};
+    if (!cfg.sources.x_twitter) cfg.sources.x_twitter = {};
+    cfg.sources.x_twitter.accounts = accounts;
+    configManager.saveConfig(cfg);
+    return { success: true };
+  });
+
+  ipcMain.on('open-external-url', (event, url) => {
+    if (url) {
+      try {
+        const { shell } = require('electron');
+        shell.openExternal(url);
+      } catch (e) {
+        logger.error('[Main] 打开外部链接异常:', e);
+      }
+    }
+  });
+
+  ipcMain.on('toast-open-image', (event, picUrl) => {
+    if (picUrl) {
+      try {
+        const { shell } = require('electron');
+        shell.openExternal(picUrl);
+      } catch (e) {
+        logger.error('[Main] 打开图片异常:', e);
+      }
+    }
+  });
+
+  ipcMain.handle('x:trigger-test-tweet', async (event, account) => {
+    let latestInfo = null;
+    if (xFetcher) {
+      try {
+        latestInfo = await xFetcher.fetchLatestTweetForAccount(account);
+      } catch (e) {
+        logger.warn('[XFetcher] 获取博主最新推文失败:', e.message);
+      }
+    }
+
+    const rawText = (latestInfo?.text || account?.latest_tweet || `关注 @${account?.screen_name || 'elonmusk'} 实时动态更新。`).trim();
+    const authorName = latestInfo?.author_name || account?.name || '博主';
+    const authorHandle = latestInfo?.author_handle || account?.screen_name || 'user';
+    const authorAvatar = latestInfo?.author_avatar || account?.avatar || '';
+    const pics = latestInfo?.pics || [];
+
+    // 检测语言并翻译
+    const isChinese = translator ? translator.isMostlyChinese(rawText) : false;
+    let translatedText = rawText;
+    let isTranslated = false;
+
+    if (!isChinese && translator) {
+      try {
+        const transRes = await translator.translate(rawText);
+        if (transRes && transRes.isTranslated) {
+          translatedText = transRes.translatedText;
+          isTranslated = true;
+        }
+      } catch (errT) {
+        logger.warn('[Translator] 测试推文翻译失败，回退原文:', errT.message);
+      }
+    }
+
+    let aiAnalysis = null;
+    if (account?.ai_analysis_enabled && financialAi) {
+      try {
+        const textForAi = translatedText || rawText;
+        aiAnalysis = await financialAi.analyze(textForAi);
+      } catch (errAi) {
+        logger.warn('[FinancialAI] 测试推文观点分析失败:', errAi.message);
+      }
+    }
+
+    const testTweet = {
+      id: `x_test_${Date.now()}`,
+      is_test: true,
+      source: '𝕏 监控',
+      source_key: 'x_twitter',
+      source_name: `𝕏 ${authorName}`,
+      author_name: authorName,
+      author_handle: authorHandle,
+      author_avatar: authorAvatar,
+      time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      pub_time: new Date().toLocaleString('zh-CN', { hour12: false }),
+      title: `𝕏 ${authorName} (@${authorHandle})`,
+      content: translatedText,
+      original_text: isTranslated ? rawText : null,
+      is_translated: isTranslated,
+      pics: pics,
+      pic: pics.length > 0 ? pics[0] : null,
+      url: latestInfo?.url || `https://x.com/${authorHandle}`,
+      important: true,
+      score: 85,
+      ai_analysis: aiAnalysis
+    };
+    toastManager.showToast(testTweet);
+    return { success: true };
   });
 
   // 检查版本更新 IPC

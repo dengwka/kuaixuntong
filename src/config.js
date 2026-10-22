@@ -70,6 +70,67 @@ class ConfigManager {
           weight: 75,
           keyword_filter_enabled: false,
           keywords: ['裁员', '年终奖', '倒闭', '降薪', '涉案', '调查', '高管变动', '离职', '破产']
+        },
+        x_twitter: {
+          name: '𝕏 (Twitter) 监控',
+          enabled: false,
+          poll_interval_sec: 30,
+          weight: 85,
+          accounts: [
+            {
+              id: 'realdonaldtrump',
+              screen_name: 'realDonaldTrump',
+              name: 'Donald J. Trump',
+              avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUphPerform_200x200.jpg',
+              enabled: true,
+              include_replies: false,
+              ai_analysis_enabled: true,
+              last_seen_id: ''
+            },
+            {
+              id: 'whitehouse',
+              screen_name: 'WhiteHouse',
+              name: 'The White House',
+              avatar: 'https://pbs.twimg.com/profile_images/1349887752674394112/Zz3t0xW1_200x200.jpg',
+              enabled: true,
+              include_replies: false,
+              ai_analysis_enabled: true,
+              last_seen_id: ''
+            },
+            {
+              id: 'elonmusk',
+              screen_name: 'elonmusk',
+              name: 'Elon Musk',
+              avatar: 'https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg',
+              enabled: true,
+              include_replies: false,
+              ai_analysis_enabled: false,
+              last_seen_id: ''
+            },
+            {
+              id: 'star_okx',
+              screen_name: 'star_okx',
+              name: 'Star_OKX',
+              avatar: 'https://pbs.twimg.com/profile_images/1627290215189741572/7WVhFT9Q_200x200.jpg',
+              enabled: true,
+              include_replies: false,
+              ai_analysis_enabled: true,
+              last_seen_id: ''
+            },
+            {
+              id: 'luckybibiw1p',
+              screen_name: 'luckybibiw1p',
+              name: '超级幸运星~',
+              avatar: 'https://pbs.twimg.com/profile_images/2053788604552577024/Oas5X1Hb_200x200.jpg',
+              enabled: true,
+              include_replies: false,
+              ai_analysis_enabled: false,
+              last_seen_id: ''
+            }
+          ],
+          cookie: '',
+          auto_translate: true,
+          proxy: ''
         }
       },
       rules: {
@@ -135,7 +196,8 @@ class ConfigManager {
             jin10: { ...defaults.sources.jin10, ...((parsed.sources && parsed.sources.jin10) || {}) },
             jin10_topic: { ...defaults.sources.jin10_topic, ...((parsed.sources && parsed.sources.jin10_topic) || {}) },
             xueqiu: { ...defaults.sources.xueqiu, ...((parsed.sources && parsed.sources.xueqiu) || {}) },
-            maimai: { ...defaults.sources.maimai, ...((parsed.sources && parsed.sources.maimai) || {}) }
+            maimai: { ...defaults.sources.maimai, ...((parsed.sources && parsed.sources.maimai) || {}) },
+            x_twitter: { ...defaults.sources.x_twitter, ...((parsed.sources && parsed.sources.x_twitter) || {}) }
           },
           rules: { ...defaults.rules, ...(parsed.rules || {}) },
           ai_analysis: { ...defaults.ai_analysis, ...(parsed.ai_analysis || {}) },
@@ -163,7 +225,8 @@ class ConfigManager {
         jin10: { ...((cur.sources && cur.sources.jin10) || {}), ...((newConfig.sources && newConfig.sources.jin10) || {}) },
         jin10_topic: { ...((cur.sources && cur.sources.jin10_topic) || {}), ...((newConfig.sources && newConfig.sources.jin10_topic) || {}) },
         xueqiu: { ...((cur.sources && cur.sources.xueqiu) || {}), ...((newConfig.sources && newConfig.sources.xueqiu) || {}) },
-        maimai: { ...((cur.sources && cur.sources.maimai) || {}), ...((newConfig.sources && newConfig.sources.maimai) || {}) }
+        maimai: { ...((cur.sources && cur.sources.maimai) || {}), ...((newConfig.sources && newConfig.sources.maimai) || {}) },
+        x_twitter: { ...((cur.sources && cur.sources.x_twitter) || {}), ...((newConfig.sources && newConfig.sources.x_twitter) || {}) }
       },
       rules: { ...(cur.rules || {}), ...(newConfig.rules || {}) },
       ai_analysis: { ...(cur.ai_analysis || {}), ...(newConfig.ai_analysis || {}) },

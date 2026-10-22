@@ -82,6 +82,8 @@ class StrategyEngine {
       score = 75;
     } else if (alertData.source_key === 'maimai') {
       score = 75;
+    } else if (alertData.source_key === 'x_twitter') {
+      score = 85;
     }
 
     if (alertData.important || isMinStarEcon) score += 20;

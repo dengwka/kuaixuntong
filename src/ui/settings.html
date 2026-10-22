@@ -252,6 +252,65 @@
     }
 
     /* 底部保存与测试按钮 */
+        /* X (Twitter) 模块样式 */
+    .x-account-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      transition: all 0.15s ease;
+    }
+    .x-account-card:hover {
+      border-color: #CBD5E1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .x-account-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #E2E8F0;
+      flex-shrink: 0;
+    }
+    .x-status-pill {
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .x-status-active {
+      background: #DCFCE7;
+      color: #166534;
+    }
+    .x-status-cooling {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    /* 快捷推荐折叠与按钮 */
+    .preset-chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      overflow: hidden;
+      transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .preset-chips-container.collapsed {
+      max-height: 58px;
+    }
+    .preset-chips-container.expanded {
+      max-height: 260px;
+    }
+    .preset-chip-btn {
+      height: 26px;
+      line-height: 16px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
     .footer {
       background: #FFFFFF;
       border-top: 1px solid #E2E8F0;
@@ -317,7 +376,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.0.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.1.0 · 运行中</span>
     </div>
   </div>
 
@@ -342,7 +401,7 @@
     <div class="tab-pane active" id="pane-sources">
       <div class="card" style="border-left: 3px solid #0284C7;">
         <div class="card-title">
-          <span>📡 聚合数据源设置 (金十 / 雪球 / 脉脉)</span>
+          <span>📡 聚合数据源设置 (金十 / 雪球 / Twitter / 脉脉)</span>
         </div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
           多通道聚合监听，支持官方重点快讯过滤、宏观星级指标并集推送与各通道独立关键词拦截。
@@ -450,6 +509,125 @@
             </div>
           </div>
         </div>
+
+        <!-- E. 𝕏 (Twitter) 实时订阅监控 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-top: 10px; margin-bottom: 14px;">
+          <div class="form-row" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="srcXTwitter" />
+              <b style="color: #0F172A; font-size: 13px;">𝕏 开启Twitter订阅</b>
+            </label>
+            <span class="status-badge" style="background:#F1F5F9; color:#0F172A; font-size:11px;">免登录 Syndication 协议</span>
+          </div>
+
+          <div id="xTwitterOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+            <!-- 热门推荐标签 -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="color: #64748B; font-size: 11px;">🔥 快捷精选推荐（点击自动填入验证）：</div>
+                <button type="button" id="btnTogglePresetChips" onclick="togglePresetChips()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #2563EB; font-size: 11px; font-weight: 600; cursor: pointer; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">
+                  <span id="presetChipsToggleText">展开更多</span>
+                  <span id="presetChipsToggleIcon" style="font-size: 9px;">▼</span>
+                </button>
+              </div>
+              <div class="preset-chips-container collapsed" id="xPresetChips">
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('realDonaldTrump')">Donald J. Trump (特朗普)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('WhiteHouse')">White House (美国白宫)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('PressSec')">PressSec (白宫新闻办公室)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('elonmusk')">Elon Musk (马斯克)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('sama')">Sam Altman (OpenAI)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('star_okx')">Star_OKX (徐明星)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('luckybibiw1p')">超级幸运星 (luckybibiw1p)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('cz_binance')">CZ (币安创始人)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('FederalReserve')">Federal Reserve (美联储)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('vitalikbuterin')">Vitalik Buterin (V神)</button>
+              </div>
+            </div>
+
+            <!-- 添加新订阅输入框 -->
+            <div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="position: relative; flex: 1;">
+                  <span style="position: absolute; left: 8px; top: 7px; color: #94A3B8; font-weight: 700; pointer-events: none; user-select: none;">@</span>
+                  <input type="text" id="xInputHandle" style="width: 100%; padding-left: 24px; padding-right: 8px; height: 32px; font-size: 12.5px; border: 1px solid #CBD5E1; border-radius: 6px; user-select: text !important; -webkit-user-select: text !important; pointer-events: auto !important;" placeholder="输入 X 用户名 (如 realDonaldTrump 或 WhiteHouse)" autocomplete="off" spellcheck="false" />
+                </div>
+                <button type="button" class="btn btn-primary" id="btnLookupX" style="height: 32px; padding: 0 14px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                  <span id="lookupXSpinner" style="display:none;">⏳</span>
+                  <span>🔍 验证博主</span>
+                </button>
+              </div>
+              <div id="xLookupNotice" style="display: none; margin-top: 6px; font-size: 11.5px; padding: 5px 10px; border-radius: 6px;"></div>
+            </div>
+
+            <!-- 验证成功的预览卡片 -->
+            <div id="xPreviewCard" style="display: none; background: #FFFFFF; border: 1px solid #38BDF8; border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 8px rgba(56,189,248,0.15);">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <img id="xPreviewAvatar" src="" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #E2E8F0;" />
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-weight: 700; color: #0F172A; font-size: 13px;" id="xPreviewName">--</span>
+                      <span id="xPreviewSubBadge" style="display: none; font-size: 10.5px; background: #DCFCE7; color: #166534; font-weight: 600; padding: 1px 6px; border-radius: 4px;">✓ 已订阅</span>
+                    </div>
+                    <div style="color: #64748B; font-size: 11.5px;" id="xPreviewHandle">@--</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm" id="btnConfirmAddX" style="padding: 5px 16px; background: #0EA5E9; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='#0284C7'" onmouseout="this.style.background='#0EA5E9'">订阅</button>
+              </div>
+              <div id="xPreviewTweet" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #E2E8F0; font-size: 11.5px; color: #475569; font-style: italic;">
+                最新推文预览加载中...
+              </div>
+              <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+                <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 11.5px;" title="开启后，该博主发布的推文将通过大模型或金十金融规则进行观点总结与利好利空分析">
+                  <input type="checkbox" id="xPreviewAiEnabled" />
+                  <span style="color: #0284C7; font-weight: 600;">🧠 开启该博主推文的 AI 观点与利多利空研判 (金十/大模型分析)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 已订阅账号列表 -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 600; color: #334155;">📋 已订阅监听账号列表 (<span id="xSubscribedCount">0</span> 个)：</span>
+                <span style="color: #94A3B8; font-size: 11px;">平滑交错轮询 · 毫秒级抗频控抖动</span>
+              </div>
+              <div id="xAccountsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                <!-- 动态渲染各博主卡片 -->
+              </div>
+            </div>
+
+            <!-- 高级风控与网络选项 (可折叠) -->
+            <div style="border-top: 1px dashed #E2E8F0; padding-top: 8px; margin-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="xAdvToggleHeader">
+                <span style="font-size: 11.5px; font-weight: 600; color: #64748B;">⚙️ 高级配置 (轮询频次 / 自动翻译 / 网络代理 / 私有Cookie)</span>
+                <span id="xAdvChevron" style="color: #94A3B8; font-size: 11px;">▼ 展开</span>
+              </div>
+              <div id="xAdvancedBody" style="display: none; margin-top: 8px; flex-direction: column; gap: 8px; background: #FFFFFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <label class="checkbox-row" style="font-size: 12px;">
+                    <input type="checkbox" id="xAutoTranslate" checked />
+                    <span style="font-weight: 600;">外文推文自动翻译为中文 (优先大模型语义翻译，兜底轻量机翻)</span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">单账号轮询基准间隔:</span>
+                  <input type="number" id="xPollInterval" min="15" max="300" style="width: 70px; padding: 3px 6px; font-size: 12px;" value="30" />
+                  <span class="tip-text">秒 (建议 30 秒，系统自动注入 ±15% 随机抖动防风控)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">网络代理 (可选):</span>
+                  <input type="text" id="xCustomProxy" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空自动走系统代理或默认 http://127.0.0.1:7892" />
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">私有 Cookie (auth_token，可选):</span>
+                  <input type="password" id="xPrivateCookie" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空默认免登录走官方 Syndication 管道，填入解锁原生高额度" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
 
         <!-- D. 脉脉职言 / 商业爆料 -->
         <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px;">
@@ -743,12 +921,15 @@
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
           <div>
-            <div style="font-size: 13.5px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
-              <span>当前运行版本：<b style="color: #2563EB;" id="updateCurrentVer">v1.0.0</b></span>
+            <div style="font-size: 13px; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-block; width: 95px; color: #475569; font-weight: 600;">当前运行版本:</span>
+              <b style="color: #2563EB; font-size: 13.5px;" id="updateCurrentVer">v1.1.0</b>
               <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🟢 最新版</span>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;" id="updateLatestInfo">
-              线上最新版本：<b id="updateLatestVer">--</b> <span id="updatePubTime" style="margin-left: 8px; color: #94A3B8;"></span>
+            <div style="font-size: 12.5px; color: #64748B; margin-top: 6px; display: flex; align-items: center; gap: 8px;" id="updateLatestInfo">
+              <span style="display: inline-block; width: 95px; color: #64748B;">线上最新版本:</span>
+              <b style="color: #0F172A;" id="updateLatestVer">--</b>
+              <span id="updatePubTime" style="color: #94A3B8; font-size: 11.5px;"></span>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -858,6 +1039,216 @@
     const DEFAULT_JIN10_KWS = ['降息', '加息', '非农', 'CPI', '美联储', '央行', '利率', '战争', '制裁', '突发'];
     const DEFAULT_TOPIC_KWS = ['美联储', '宏观决议', '地缘政治', '降息', '加息', '冲突', '战略', '关税'];
     const DEFAULT_XUEQIU_KWS = ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破'];
+        let xSubscribedAccounts = [];
+    let xPendingAccount = null;
+
+    window.quickFillX = function(handle) {
+      const input = document.getElementById('xInputHandle');
+      if (input) {
+        input.value = handle;
+        const btn = document.getElementById('btnLookupX');
+        if (btn) btn.click();
+      }
+    };
+
+    window.togglePresetChips = function() {
+      const container = document.getElementById('xPresetChips');
+      const textEl = document.getElementById('presetChipsToggleText');
+      const iconEl = document.getElementById('presetChipsToggleIcon');
+      if (!container) return;
+      const isNowExpanded = container.classList.toggle('expanded');
+      container.classList.toggle('collapsed', !isNowExpanded);
+      if (isNowExpanded) {
+        if (textEl) textEl.textContent = '收起推荐';
+        if (iconEl) iconEl.textContent = '▲';
+      } else {
+        if (textEl) textEl.textContent = '展开更多';
+        if (iconEl) iconEl.textContent = '▼';
+      }
+    };
+
+    window.toggleXReplies = function(index, checked) {
+      if (xSubscribedAccounts[index]) {
+        xSubscribedAccounts[index].include_replies = !!checked;
+        saveAndSyncXAccounts();
+      }
+    };
+
+    window.toggleXAiAnalysis = function(index, checked) {
+      if (xSubscribedAccounts[index]) {
+        xSubscribedAccounts[index].ai_analysis_enabled = !!checked;
+        saveAndSyncXAccounts();
+        renderXAccountsList();
+        showNotice(checked ? `🧠 已为 @${xSubscribedAccounts[index].screen_name} 开启 AI 观点与利多利空研判` : `已关闭 @${xSubscribedAccounts[index].screen_name} 的 AI 研判`);
+      }
+    };
+
+    window.deleteXAccount = function(index) {
+      const acc = xSubscribedAccounts[index];
+      if (acc) {
+        xSubscribedAccounts.splice(index, 1);
+        saveAndSyncXAccounts();
+        renderXAccountsList();
+        updatePreviewCardState();
+        showNotice('🗑️ 已取消订阅 @' + acc.screen_name);
+      }
+    };
+
+    window.testXTweet = async function(index) {
+      const acc = xSubscribedAccounts[index];
+      if (acc) {
+        showNotice('正在拉取 @' + acc.screen_name + ' 最新推文并弹窗...');
+        await ipcRenderer.invoke('x:trigger-test-tweet', acc);
+      }
+    };
+
+    async function saveAndSyncXAccounts() {
+      await ipcRenderer.invoke('x:save-accounts', xSubscribedAccounts);
+    }
+
+    function updatePreviewCardState() {
+      if (!xPendingAccount) return;
+      const btn = document.getElementById('btnConfirmAddX');
+      const badge = document.getElementById('xPreviewSubBadge');
+      if (!btn) return;
+
+      const subIndex = xSubscribedAccounts.findIndex(a => a.screen_name.toLowerCase() === xPendingAccount.screen_name.toLowerCase());
+      const isSubbed = subIndex !== -1;
+
+      if (badge) {
+        badge.style.display = isSubbed ? 'inline-block' : 'none';
+      }
+
+      if (isSubbed) {
+        btn.textContent = '取消订阅';
+        btn.style.background = '#FEE2E2';
+        btn.style.color = '#DC2626';
+        btn.style.border = '1px solid #FECACA';
+        btn.onmouseover = () => { btn.style.background = '#FCA5A5'; btn.style.color = '#991B1B'; };
+        btn.onmouseout = () => { btn.style.background = '#FEE2E2'; btn.style.color = '#DC2626'; };
+        const previewAiEl = document.getElementById('xPreviewAiEnabled');
+        if (previewAiEl && xSubscribedAccounts[subIndex]) {
+          previewAiEl.checked = !!xSubscribedAccounts[subIndex].ai_analysis_enabled;
+        }
+      } else {
+        btn.textContent = '订阅';
+        btn.style.background = '#0EA5E9';
+        btn.style.color = '#FFFFFF';
+        btn.style.border = 'none';
+        btn.onmouseover = () => { btn.style.background = '#0284C7'; };
+        btn.onmouseout = () => { btn.style.background = '#0EA5E9'; };
+      }
+    }
+
+    async function renderXAccountsList() {
+      const listEl = document.getElementById('xAccountsList');
+      const countEl = document.getElementById('xSubscribedCount');
+      if (!listEl) return;
+
+      countEl.textContent = String(xSubscribedAccounts.length);
+      if (xSubscribedAccounts.length === 0) {
+        listEl.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 12px; text-align: center; background: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 6px;">暂未添加任何 X 订阅账号，请在上方输入用户名验证添加</div>';
+        return;
+      }
+
+      // 获取当前冷却健康状态
+      let statusList = [];
+      try {
+        statusList = await ipcRenderer.invoke('x:get-accounts-status') || [];
+      } catch (e) {}
+      const statusMap = new Map();
+      statusList.forEach(s => statusMap.set(s.screen_name.toLowerCase(), s));
+
+      let html = '';
+      xSubscribedAccounts.forEach((acc, idx) => {
+        const sn = acc.screen_name;
+        const liveStatus = statusMap.get(sn.toLowerCase()) || {};
+        const isCooling = liveStatus.isCooling;
+        const remainSec = liveStatus.coolingRemainingSec || 0;
+        const statusBadge = isCooling
+          ? `<span class="x-status-pill x-status-cooling" id="cooling_badge_${escapeHtml(sn)}" title="X平台接口对公开请求临时降速保护，系统正在精确退避，倒计时结束后将自动恢复实时监听，不影响其他博主。点击可立即清除冷却重试" onclick="clearCooling('${escapeHtml(sn)}')" style="cursor: pointer;">⏳ 频控冷却中 (<span id="cooling_sec_${escapeHtml(sn)}">${remainSec}</span>s) <span style="text-decoration: underline; font-size: 10px; margin-left: 2px;">⚡点此重试</span></span>`
+          : `<span class="x-status-pill x-status-active" id="cooling_badge_${escapeHtml(sn)}">🟢 正常监听中</span>`;
+
+        const isChecked = acc.enabled !== false ? 'checked' : '';
+        const isRepliesChecked = acc.include_replies ? 'checked' : '';
+        const isAiChecked = acc.ai_analysis_enabled ? 'checked' : '';
+        const avatarUrl = acc.avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+
+        html += `
+          <div class="x-account-card">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+              <img class="x-account-avatar" src="${avatarUrl}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'32\\' height=\\'32\\' fill=\\'%23E2E8F0\\'/></svg>'" />
+              <div style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <b style="color: #0F172A; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.name || acc.screen_name)}</b>
+                  <span style="color: #64748B; font-size: 11px;">@${escapeHtml(acc.screen_name)}</span>
+                  ${statusBadge}
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 11px; color: #475569; flex-wrap: wrap;">
+                  <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" onchange="toggleXReplies(${idx}, this.checked)" ${isRepliesChecked} />
+                    <span>含回复</span>
+                  </label>
+                  <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="开启后，该博主发布的内容将接入 AI 观点分析与利多利空研判">
+                    <input type="checkbox" onchange="toggleXAiAnalysis(${idx}, this.checked)" ${isAiChecked} />
+                    <span style="color: ${acc.ai_analysis_enabled ? '#0284C7' : '#64748B'}; font-weight: ${acc.ai_analysis_enabled ? '700' : 'normal'};">🧠 AI观点与利多利空</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="testXTweet(${idx})" title="发送该博主推文测试弹窗" style="font-size: 11px; padding: 3px 8px;">🧪 测试</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="deleteXAccount(${idx})" title="取消订阅该博主" style="color: #DC2626; border-color: #FECACA; padding: 3px 8px;">🗑️ 取消订阅</button>
+            </div>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+      startXStatusTicker();
+    }
+
+    function startXStatusTicker() {
+      if (window._xStatusTicker) return;
+      window._xStatusTicker = setInterval(async () => {
+        const listEl = document.getElementById('xAccountsList');
+        if (!listEl) return;
+        try {
+          const statusList = await ipcRenderer.invoke('x:get-accounts-status') || [];
+          statusList.forEach(s => {
+            const sn = s.screen_name;
+            const badgeEl = document.getElementById(`cooling_badge_${sn}`);
+            const secEl = document.getElementById(`cooling_sec_${sn}`);
+            if (s.isCooling) {
+              if (badgeEl && secEl) {
+                secEl.textContent = String(s.coolingRemainingSec);
+              } else {
+                renderXAccountsList();
+              }
+            } else {
+              if (badgeEl && badgeEl.classList.contains('x-status-cooling')) {
+                badgeEl.className = 'x-status-pill x-status-active';
+                badgeEl.innerHTML = '🟢 正常监听中';
+                badgeEl.title = '正常监听中';
+                badgeEl.onclick = null;
+                badgeEl.style.cursor = 'default';
+              }
+            }
+          });
+        } catch (e) {}
+      }, 1000);
+    }
+
+    window.clearCooling = async function(screenName) {
+      try {
+        await ipcRenderer.invoke('x:clear-cooling', screenName);
+        showNotice(`✅ 已清除 @${screenName} 频控冷却，恢复即刻监听`);
+        await renderXAccountsList();
+      } catch (e) {
+        showNotice(`重置失败: ${e.message}`);
+      }
+    };
+
     const DEFAULT_MAIMAI_KWS = ['裁员', '年终奖', '倒闭', '降薪', '涉案', '调查', '高管变动', '离职', '破产'];
 
     function parseKeywords(str) {
@@ -893,6 +1284,17 @@
     ipcRenderer.on('init-settings', (event, payload) => {
       const cfg = payload.config || payload || {};
       const stats = payload.stats || {};
+
+      // 动态对齐并统一顶部与页面当前版本号
+      const appVer = payload.appVersion || '1.1.0';
+      const vBadge = document.getElementById('versionBadge');
+      if (vBadge) {
+        vBadge.textContent = `🟢 v${appVer} · 运行中`;
+      }
+      const curVerEl = document.getElementById('updateCurrentVer');
+      if (curVerEl) {
+        curVerEl.textContent = `v${appVer}`;
+      }
 
       // 存储目录
       const storage = cfg.storage || {};
@@ -969,6 +1371,15 @@
       document.getElementById('maimaiCookie').value = maimai.cookie || '';
       document.getElementById('maimaiKwFilterEnabled').checked = !!maimai.keyword_filter_enabled;
       document.getElementById('maimaiKeywords').value = (Array.isArray(maimai.keywords) ? maimai.keywords : DEFAULT_MAIMAI_KWS).join(', ');
+
+      const xTwitter = sources.x_twitter || {};
+      document.getElementById('srcXTwitter').checked = xTwitter.enabled === true;
+      document.getElementById('xAutoTranslate').checked = xTwitter.auto_translate !== false;
+      document.getElementById('xPollInterval').value = xTwitter.poll_interval_sec || 30;
+      document.getElementById('xCustomProxy').value = xTwitter.proxy || '';
+      document.getElementById('xPrivateCookie').value = xTwitter.cookie || '';
+      xSubscribedAccounts = Array.isArray(xTwitter.accounts) ? [...xTwitter.accounts] : [];
+      renderXAccountsList();
 
       updateSourceSubStates();
 
@@ -1284,12 +1695,187 @@
         mmSub.style.opacity = mm ? '1' : '0.45';
         mmSub.style.pointerEvents = mm ? 'auto' : 'none';
       }
+
+      const xt = document.getElementById('srcXTwitter').checked;
+      const xtSub = document.getElementById('xTwitterOptionsSub');
+      if (xtSub) {
+        xtSub.style.opacity = xt ? '1' : '0.45';
+        xtSub.style.pointerEvents = xt ? 'auto' : 'none';
+      }
     }
 
     document.getElementById('srcJin10').addEventListener('change', updateSourceSubStates);
     document.getElementById('srcTopic').addEventListener('change', updateSourceSubStates);
     document.getElementById('srcXueqiu').addEventListener('change', updateSourceSubStates);
     document.getElementById('srcMaimai').addEventListener('change', updateSourceSubStates);
+    document.getElementById('srcXTwitter').addEventListener('change', updateSourceSubStates);
+
+    // 折叠高级配置
+    document.getElementById('xAdvToggleHeader').addEventListener('click', () => {
+      const body = document.getElementById('xAdvancedBody');
+      const chev = document.getElementById('xAdvChevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'flex';
+        chev.textContent = '▲ 收起';
+      } else {
+        body.style.display = 'none';
+        chev.textContent = '▼ 展开';
+      }
+    });
+
+    function setXLookupNotice(msg, type = 'info') {
+      const el = document.getElementById('xLookupNotice');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = 'block';
+      if (type === 'error') {
+        el.style.background = '#FEE2E2';
+        el.style.color = '#B91C1C';
+        el.style.border = '1px solid #FECACA';
+      } else if (type === 'success') {
+        el.style.background = '#DCFCE7';
+        el.style.color = '#15803D';
+        el.style.border = '1px solid #BBF7D0';
+      } else {
+        el.style.background = '#EFF6FF';
+        el.style.color = '#1D4ED8';
+        el.style.border = '1px solid #BFDBFE';
+      }
+      el.textContent = msg;
+    }
+
+    // 支持 Enter 键直接触发验证
+    const xInputEl = document.getElementById('xInputHandle');
+    if (xInputEl) {
+      xInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('btnLookupX').click();
+        }
+      });
+      xInputEl.addEventListener('input', () => {
+        setXLookupNotice('');
+      });
+    }
+
+    // 验证 X 博主
+    document.getElementById('btnLookupX').addEventListener('click', async () => {
+      const handleInput = document.getElementById('xInputHandle');
+      const handle = (handleInput.value || '').trim().replace(/^@+/, '').trim();
+      if (!handle) {
+        showNotice('请输入 X 用户名');
+        setXLookupNotice('⚠️ 请先输入 X 用户名 (如 realDonaldTrump 或 WhiteHouse)', 'error');
+        handleInput.focus();
+        return;
+      }
+
+      setXLookupNotice('');
+      const spinner = document.getElementById('lookupXSpinner');
+      spinner.style.display = 'inline';
+      showNotice('正在通过官方 Syndication 管道解析 @' + handle + '...');
+
+      try {
+        const res = await ipcRenderer.invoke('x:lookup-account', handle);
+        spinner.style.display = 'none';
+        if (res && res.success && res.account) {
+          xPendingAccount = res.account;
+          document.getElementById('xPreviewAvatar').src = res.account.avatar || '';
+          document.getElementById('xPreviewName').textContent = res.account.name || res.account.screen_name;
+          document.getElementById('xPreviewHandle').textContent = '@' + res.account.screen_name;
+          document.getElementById('xPreviewTweet').textContent = res.account.latest_tweet 
+            ? '最新推文: ' + res.account.latest_tweet.substring(0, 140) + '...'
+            : '该博主暂无推文';
+          
+          // 如果是特朗普或白宫等核心宏观政治账号，默认推荐开启 AI 研判
+          const sn = (res.account.screen_name || '').toLowerCase();
+          const subIndex = xSubscribedAccounts.findIndex(a => a.screen_name.toLowerCase() === sn);
+          const isAlreadySub = subIndex !== -1;
+
+          const previewAiEl = document.getElementById('xPreviewAiEnabled');
+          if (previewAiEl) {
+            if (isAlreadySub) {
+              previewAiEl.checked = !!xSubscribedAccounts[subIndex].ai_analysis_enabled;
+            } else {
+              const isKeyMacro = (sn === 'realdonaldtrump' || sn === 'whitehouse' || sn === 'federalreserve' || sn === 'presssec');
+              previewAiEl.checked = isKeyMacro;
+            }
+          }
+
+          document.getElementById('xPreviewCard').style.display = 'block';
+          updatePreviewCardState();
+
+          if (isAlreadySub) {
+            setXLookupNotice(`ℹ️ @${res.account.screen_name} (${res.account.name}) 已经在您的订阅列表中，可在此直接取消订阅`, 'info');
+          } else {
+            setXLookupNotice(`✅ 已成功解析 @${res.account.screen_name} (${res.account.name})，点击【订阅】即可加入监听`, 'success');
+          }
+          showNotice('✅ 验证成功: ' + res.account.name);
+        } else {
+          document.getElementById('xPreviewCard').style.display = 'none';
+          const errMsg = res ? res.msg : '未知错误';
+          setXLookupNotice(`❌ 验证失败: ${errMsg}`, 'error');
+          showNotice(`❌ 验证失败: ${errMsg}`);
+        }
+      } catch (e) {
+        spinner.style.display = 'none';
+        setXLookupNotice(`❌ 验证异常: ${e.message}`, 'error');
+        showNotice(`❌ 验证异常: ${e.message}`);
+      }
+    });
+
+    // 确认添加 / 取消 X 订阅
+    document.getElementById('btnConfirmAddX').addEventListener('click', () => {
+      if (!xPendingAccount) return;
+      const subIndex = xSubscribedAccounts.findIndex(a => a.screen_name.toLowerCase() === xPendingAccount.screen_name.toLowerCase());
+      
+      if (subIndex !== -1) {
+        // 当前已订阅 -> 执行取消订阅
+        const removed = xSubscribedAccounts.splice(subIndex, 1)[0];
+        saveAndSyncXAccounts();
+        renderXAccountsList();
+        updatePreviewCardState();
+        setXLookupNotice(`ℹ️ 已取消对 @${removed.screen_name} 的订阅，可随时再次点击【订阅】重新添加`, 'info');
+        showNotice('🗑️ 已取消订阅 @' + removed.screen_name);
+        return;
+      }
+
+      // 未在列表中 -> 执行订阅
+      const previewAiEl = document.getElementById('xPreviewAiEnabled');
+      const added = {
+        id: xPendingAccount.screen_name.toLowerCase(),
+        screen_name: xPendingAccount.screen_name,
+        name: xPendingAccount.name,
+        avatar: xPendingAccount.avatar,
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: previewAiEl ? previewAiEl.checked : false,
+        last_seen_id: xPendingAccount.latest_tweet_id || ''
+      };
+      xSubscribedAccounts.push(added);
+
+      saveAndSyncXAccounts();
+      renderXAccountsList();
+      updatePreviewCardState();
+      setXLookupNotice(`✅ 已成功订阅 @${added.screen_name} (${added.name})，系统将实时监听其推文`, 'success');
+      showNotice('🎉 已成功订阅 @' + added.screen_name);
+    });
+
+    const xPreviewAiCheckbox = document.getElementById('xPreviewAiEnabled');
+    if (xPreviewAiCheckbox) {
+      xPreviewAiCheckbox.addEventListener('change', () => {
+        if (!xPendingAccount) return;
+        const subIndex = xSubscribedAccounts.findIndex(a => a.screen_name.toLowerCase() === xPendingAccount.screen_name.toLowerCase());
+        if (subIndex !== -1) {
+          xSubscribedAccounts[subIndex].ai_analysis_enabled = xPreviewAiCheckbox.checked;
+          saveAndSyncXAccounts();
+          renderXAccountsList();
+          showNotice(xPreviewAiCheckbox.checked ? `🧠 已为 @${xPendingAccount.screen_name} 开启 AI 研判` : `已关闭 @${xPendingAccount.screen_name} 的 AI 研判`);
+        }
+      });
+    }
 
     // 重置默认关键词
     document.getElementById('btnResetJin10Kws').addEventListener('click', () => {
@@ -1435,6 +2021,14 @@
             cookie: document.getElementById('maimaiCookie').value.trim(),
             keyword_filter_enabled: document.getElementById('maimaiKwFilterEnabled').checked,
             keywords: parseKeywords(document.getElementById('maimaiKeywords').value)
+          },
+          x_twitter: {
+            enabled: document.getElementById('srcXTwitter').checked,
+            auto_translate: document.getElementById('xAutoTranslate').checked,
+            poll_interval_sec: Math.max(10, parseInt(document.getElementById('xPollInterval').value) || 30),
+            proxy: document.getElementById('xCustomProxy').value.trim(),
+            cookie: document.getElementById('xPrivateCookie').value.trim(),
+            accounts: xSubscribedAccounts
           }
         },
         rules: {
@@ -1501,13 +2095,18 @@
       if (!res) return;
       currentUpdateData = res;
 
-      const currentVer = res.currentVersion || '1.0.0';
+      const currentVer = res.currentVersion || '1.1.0';
       const latestTag = res.latestTag || `v${currentVer}`;
       const publishedAt = res.publishedAt || '--';
 
       document.getElementById('updateCurrentVer').textContent = `v${currentVer}`;
       document.getElementById('updateLatestVer').textContent = latestTag;
       document.getElementById('updatePubTime').textContent = `(发布于: ${publishedAt})`;
+
+      const vBadge = document.getElementById('versionBadge');
+      if (vBadge) {
+        vBadge.textContent = `🟢 v${currentVer} · 运行中`;
+      }
 
       const tabDot = document.getElementById('updateTabDot');
       const headerBadge = document.getElementById('updateHeaderBadge');

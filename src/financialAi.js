@@ -53,7 +53,7 @@ class FinancialAIEngine {
 
   async callLlmApi(provider, apiUrl, apiKey, model, text, timeoutSec = 6) {
     const systemPrompt = `你是一名顶级宏观对冲基金的资深首席策略分析师。
-你的任务是针对抓取到的最新突发财经/时政快讯，给出高度精炼、入木三分的深度AI解读（字数严格控制在30字以内），并结合全球宏观与加密货币逻辑，准确研判该事件对五大核心资产：【黄金、美元、原油、A股、虚拟币】的传导影响（方向只能在【利好】、【利空】、【中性】三者中选择其一）。
+你的任务是针对抓取到的最新突发财经、政经要闻与重要博主推文（如特朗普、白宫、美联储等），给出高度精炼、入木三分的深度AI解读（字数严格控制在30字以内），并结合全球宏观逻辑、“特朗普交易”（如宽松监管对加密货币、关税政策对美元等传导效应），敏锐研判该事件对五大核心资产：【黄金、美元、原油、A股、虚拟币】的传导影响（方向只能在【利好】、【利空】、【中性】三者中选择其一。对于时政大选动员、监管表态或宏观言论，应积极给出前瞻资产倾向，避免全部中性）。
 你必须严格返回以下 JSON 格式，不要携带任何额外的 Markdown 标记或多余字符：
 {
   "is_pending": false,
@@ -119,9 +119,14 @@ class FinancialAIEngine {
   }
 
   async analyze(alertData) {
-    const title = alertData.title || '';
-    const content = alertData.content || '';
-    const text = `${title} ${content}`.trim();
+    let text = '';
+    if (typeof alertData === 'string') {
+      text = alertData.trim();
+    } else if (alertData && typeof alertData === 'object') {
+      const title = alertData.title || '';
+      const content = alertData.content || alertData.text || '';
+      text = `${title} ${content}`.trim();
+    }
 
     // 1. 日程预告自动拦截
     if (this.isPendingOrScheduleEvent(text)) {
@@ -242,6 +247,15 @@ class FinancialAIEngine {
     if (['比特币', '以太坊', 'btc', 'eth', 'sol', '币圈', '加密货币', '虚拟币', '区块链', 'web3', 'sec批准', 'etf资金流入'].some(w => t.includes(w))) {
       res.summary = '加密资产热点事件驱动，链上流动性与情绪明显活跃';
       res.impacts['虚拟币'] = '利好';
+      return res;
+    }
+
+    if (['关税', '加征', '贸易战', '反倾销', '出口管制', '贸易摩擦', '贸易保护'].some(w => t.includes(w))) {
+      res.summary = '国际关税与贸易摩擦升级，推升二次通胀预期并扰动全球供应链';
+      res.impacts['美元'] = '利好';
+      res.impacts['黄金'] = '利好';
+      res.impacts['A股'] = '利空';
+      res.impacts['原油'] = '利空';
       return res;
     }
 

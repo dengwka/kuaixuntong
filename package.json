@@ -1,6 +1,6 @@
 {
   "name": "kuaixuntong",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "快讯通 - 实时突发财经与宏观事件监控助手",
   "main": "src/main.js",
   "scripts": {

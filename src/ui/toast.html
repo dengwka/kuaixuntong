@@ -88,6 +88,123 @@
     .badge-maimai {
       background: #0D9488;
     }
+    .badge-x {
+      background: #0F172A;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2.5px 7px;
+    }
+    .x-author-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      border: none;
+      padding: 0 0 8px 0;
+      border-bottom: 1px solid #F1F5F9;
+      margin-bottom: 4px;
+    }
+    .x-author-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #E2E8F0;
+      flex-shrink: 0;
+      background: #F1F5F9;
+    }
+    .x-author-info {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .x-author-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .x-author-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .x-author-handle {
+      font-size: 12px;
+      color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .x-author-subtext {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    .x-media-gallery {
+      gap: 6px;
+      margin-top: 6px;
+      width: 100%;
+    }
+    .x-media-gallery.grid-1 {
+      display: flex !important;
+      justify-content: center;
+      width: 100%;
+    }
+    .x-media-gallery.grid-2 {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+    }
+    .x-media-gallery.grid-3 {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .x-media-gallery.grid-4 {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+    }
+    .x-media-img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #E2E8F0;
+      background: #F1F5F9;
+      cursor: zoom-in !important;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .x-media-gallery.grid-1 .x-media-img {
+      max-width: 100%;
+      max-height: 260px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+      margin: 0 auto;
+    }
+    .x-media-gallery.grid-2 .x-media-img {
+      height: 130px;
+      object-fit: cover;
+    }
+    .x-media-gallery.grid-3 .x-media-img {
+      height: 95px;
+      object-fit: cover;
+    }
+    .x-media-gallery.grid-4 .x-media-img {
+      height: 110px;
+      object-fit: cover;
+    }
+    .x-media-img:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
     .time-lbl {
       font-size: 11.5px;
       color: #64748B;
@@ -119,7 +236,7 @@
     /* Content */
     .content-container {
       padding: 11px 16px 8px 16px;
-      max-height: 250px;
+      max-height: 420px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -151,16 +268,16 @@
       color: #0F172A;
       line-height: 1.45;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
       cursor: pointer;
       transition: color 0.15s ease;
     }
     .body-text {
-      font-size: 12.5px;
-      color: #334155;
-      line-height: 1.6;
+      font-size: 13px;
+      color: #1E293B;
+      line-height: 1.65;
       white-space: pre-wrap;
       word-break: break-word;
       cursor: pointer;
@@ -202,13 +319,20 @@
     }
     .alert-img {
       max-width: 100%;
-      max-height: 140px;
-      width: 100%;
-      border-radius: 6px;
-      margin-top: 6px;
-      object-fit: cover;
-      background: #F1F5F9;
+      max-height: 260px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+      margin: 6px auto 0 auto;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
       display: none;
+      cursor: zoom-in !important;
+      transition: transform 0.15s ease;
+    }
+    .alert-img:hover {
+      transform: scale(1.02);
     }
 
     /* AI Box */
@@ -405,10 +529,22 @@
 
     <!-- Content -->
     <div class="content-container" id="contentArea">
+      <!-- 𝕏 专属博主发布信息 (自然融合无割裂感) -->
+      <div class="x-author-card" id="xAuthorCard" style="display: none;">
+        <img class="x-author-avatar" id="xAuthorAvatar" src="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23E2E8F0\'/></svg>'" />
+        <div class="x-author-info">
+          <div class="x-author-name-row">
+            <span class="x-author-name" id="xAuthorName">--</span>
+            <span class="x-author-handle" id="xAuthorHandle">@--</span>
+          </div>
+          <div class="x-author-subtext" id="xAuthorSubtext">实时推文播报</div>
+        </div>
+      </div>
       <div class="title-text" id="titleText"></div>
       <div class="body-text" id="bodyText"></div>
       <div id="econArea"></div>
       <img id="alertImg" class="alert-img" style="display: none;" />
+      <div id="xMediaGallery" class="x-media-gallery" style="display: none;"></div>
     </div>
 
     <!-- AI Box -->
@@ -440,7 +576,24 @@
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
+    const { ipcRenderer, shell } = require('electron');
+
+    function openImage(picUrl) {
+      if (!picUrl) return;
+      let highResUrl = picUrl;
+      if (highResUrl.includes('twimg.com')) {
+        highResUrl = highResUrl.replace(/name=[a-zA-Z0-9_]+/i, 'name=orig');
+      }
+      try {
+        if (shell && typeof shell.openExternal === 'function') {
+          shell.openExternal(highResUrl);
+        }
+      } catch (e) {}
+      try {
+        ipcRenderer.send('toast-open-image', highResUrl);
+        ipcRenderer.send('open-external-url', highResUrl);
+      } catch (e) {}
+    }
 
     const card = document.getElementById('cardContainer');
     let currentAlert = null;
@@ -451,10 +604,27 @@
     let remainingMs = 15000;
     let countdownInterval = null;
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function highlightNumbers(text) {
       if (!text) return '';
       const pattern = /(?:(?<=[^\w])|(?<=^))[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?(?:(?=[^\w])|(?=$))/g;
       return text.replace(pattern, m => `<span class="num-highlight">${m}</span>`);
+    }
+
+    function isChineseText(str) {
+      if (!str) return false;
+      const clean = str.replace(/https?:\/\/\S+/g, '').replace(/[@#]\S+/g, '').trim();
+      const chCount = (clean.match(/[\u4e00-\u9fa5]/g) || []).length;
+      return chCount > 4 && (chCount / Math.max(1, clean.length) > 0.25 || chCount >= 8);
     }
 
     function extractDisplayTitle(alertData) {
@@ -575,19 +745,17 @@
 
       const isTest = alertData.is_test || (alertData.id && String(alertData.id).startsWith('test_'));
 
-      // 1. 如果是测试演练内容：不显示利好利空芯片，不可点击跳转，文案真实合理
+      // 1. 如果是测试演练内容：禁止跳转，样式微调
       const contentEl = document.getElementById('contentArea');
       const titleEl = document.getElementById('titleText');
       const bodyEl = document.getElementById('bodyText');
       if (isTest) {
         card.classList.add('is-test-card');
-        document.getElementById('chipsRow').style.display = 'none';
         contentEl.style.cursor = 'default';
         titleEl.style.cursor = 'default';
         bodyEl.style.cursor = 'default';
       } else {
         card.classList.remove('is-test-card');
-        document.getElementById('chipsRow').style.display = 'flex';
         contentEl.style.cursor = 'pointer';
         titleEl.style.cursor = 'pointer';
         bodyEl.style.cursor = 'pointer';
@@ -602,10 +770,16 @@
         cryptoEl.style.display = 'none';
       }
 
-      // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉 还是 测试演练）
+      // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉、𝕏 还是 测试演练）
       const badge = document.getElementById('sourceBadge');
       const srcName = alertData.source || '';
-      if (isTest || srcName.includes('测试')) {
+      const isXTwitter = (alertData.source_key === 'x_twitter' || srcName.includes('𝕏') || alertData.source_key === 'x' || !!alertData.author_handle);
+
+      if (isXTwitter) {
+        const testBadge = isTest ? ' [测试]' : '';
+        badge.textContent = `𝕏 关注动态${testBadge}`;
+        badge.className = 'badge badge-x';
+      } else if (isTest || srcName.includes('测试')) {
         badge.textContent = '🧪 测试演练';
         badge.className = 'badge badge-test';
       } else if (alertData.source_key === 'xueqiu' || srcName.includes('雪球')) {
@@ -650,8 +824,44 @@
       }
 
       // 4. 标题与正文（智能提取并兜底，彻底杜绝无标题与空白尴尬）
-      titleEl.textContent = extractDisplayTitle(alertData);
-      bodyEl.innerHTML = highlightNumbers(alertData.content || '');
+      const xAuthorCard = document.getElementById('xAuthorCard');
+      if (isXTwitter) {
+        // 𝕏 消息顶部展示博主原生发布信息 (头像 + 昵称 + @用户名 + 发布时间)，正文直接展示推文
+        titleEl.style.display = 'none';
+        if (xAuthorCard) {
+          xAuthorCard.style.display = 'flex';
+          const avatarUrl = alertData.author_avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+          document.getElementById('xAuthorAvatar').src = avatarUrl;
+          document.getElementById('xAuthorName').textContent = alertData.author_name || alertData.author_handle || '博主';
+          document.getElementById('xAuthorHandle').textContent = `@${alertData.author_handle || ''}`;
+          const pubTime = alertData.pub_time || alertData.time || '';
+          const subTextEl = document.getElementById('xAuthorSubtext');
+          if (subTextEl) {
+            subTextEl.textContent = pubTime ? `${pubTime} · 实时推文` : '实时推文播报';
+          }
+        }
+      } else {
+        if (xAuthorCard) xAuthorCard.style.display = 'none';
+        titleEl.style.display = '-webkit-box';
+        titleEl.textContent = extractDisplayTitle(alertData);
+      }
+
+      const rawContent = (alertData.content || '').trim();
+      const rawOriginal = (alertData.original_text || '').trim();
+      const cleanContent = rawContent.replace(/\n{3,}/g, '\n\n');
+      const cleanOriginal = rawOriginal.replace(/\n{3,}/g, '\n\n');
+
+      // 推文原文排版优化：如果原文为中文则坚决不显示原文；仅当属于外文机翻时，以清晰细横线隔开，紧凑自然排版
+      const hasForeignOriginal = alertData.original_text && 
+                                 alertData.is_translated && 
+                                 cleanOriginal !== cleanContent && 
+                                 !isChineseText(cleanOriginal);
+
+      if (isXTwitter && hasForeignOriginal) {
+        bodyEl.innerHTML = `<div style="font-size: 13px; color: #1E293B; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">${highlightNumbers(cleanContent)}</div><div style="border-top: 1px solid #E2E8F0; margin: 8px 0 6px 0;"></div><div style="font-size: 11.5px; color: #64748B; line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(cleanOriginal)}</div>`;
+      } else {
+        bodyEl.innerHTML = `<div style="font-size: 13px; color: #1E293B; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">${highlightNumbers(cleanContent)}</div>`;
+      }
 
       // 财经日历数据
       const econArea = document.getElementById('econArea');
@@ -675,56 +885,104 @@
         `;
       }
 
-      // 图片（限高防溢出，加载完成即刻触发重新贴角测算）
+      // 图片展示：支持单图自适应与推文多图画廊（最多展示 4 张缩略图，排版紧凑不溢出，点击即刻调用系统/浏览器打开超清原图）
       const imgEl = document.getElementById('alertImg');
-      if (alertData.pic) {
-        imgEl.onload = () => {
-          notifyReady();
-        };
-        imgEl.onerror = () => {
-          imgEl.style.display = 'none';
-          notifyReady();
-        };
-        imgEl.src = alertData.pic;
-        imgEl.style.display = 'block';
+      const galleryEl = document.getElementById('xMediaGallery');
+      const pics = Array.isArray(alertData.pics) ? alertData.pics.filter(Boolean) : (alertData.pic ? [alertData.pic] : []);
+
+      imgEl.title = '🔍 点击查看并放大高清原图';
+      imgEl.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openImage(imgEl.src);
+      };
+
+      if (pics.length > 0) {
+        imgEl.style.display = 'none';
+        galleryEl.innerHTML = '';
+        const displayPics = pics.slice(0, 4);
+        galleryEl.className = `x-media-gallery grid-${displayPics.length}`;
+
+        displayPics.forEach(picUrl => {
+          const mImg = document.createElement('img');
+          mImg.className = 'x-media-img';
+          mImg.src = picUrl;
+          mImg.title = '🔍 点击查看并放大高清原图';
+          mImg.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openImage(picUrl);
+          };
+          mImg.onload = () => notifyReady();
+          mImg.onerror = () => {
+            mImg.style.display = 'none';
+            notifyReady();
+          };
+          galleryEl.appendChild(mImg);
+        });
+        galleryEl.style.display = (displayPics.length === 1) ? 'flex' : 'grid';
       } else {
-        imgEl.onload = null;
-        imgEl.onerror = null;
+        galleryEl.style.display = 'none';
+        galleryEl.innerHTML = '';
         imgEl.style.display = 'none';
       }
 
-      // 5. AI 分析（清晰标注来源于 DeepSeek、智谱 GLM 还是 本地规则默认分析）
-      const aiData = alertData.ai_analysis || {};
-      const aiTag = document.getElementById('aiTagBadge');
-      const aiSource = aiData.ai_source || '本地规则默认分析';
-      aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
+      // 5. AI 观点与利多利空分析（仅在消息携带有效 ai_analysis 时展示，普通账号不开启则彻底隐藏）
+      const aiBox = document.getElementById('aiBox');
+      const aiData = alertData.ai_analysis;
 
-      if (aiSource.includes('DeepSeek')) {
-        aiTag.className = 'ai-tag-badge ai-tag-deepseek';
-      } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
-        aiTag.className = 'ai-tag-badge ai-tag-zhipu';
-      } else if (isTest) {
-        aiTag.className = 'ai-tag-badge ai-tag-test';
-      } else {
-        aiTag.className = 'ai-tag-badge ai-tag-rule';
-      }
+      if (aiData && (aiData.summary || aiData.impacts)) {
+        aiBox.style.display = 'flex';
+        const aiTag = document.getElementById('aiTagBadge');
+        const aiSource = aiData.ai_source || '本地规则默认分析';
+        aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
 
-      document.getElementById('aiSummary').textContent = aiData.summary || '暂无深度研判，保持常态化监控。';
-
-      // 利好利空芯片（非测试卡片时才渲染）
-      const chipsRow = document.getElementById('chipsRow');
-      chipsRow.innerHTML = '';
-      if (!isTest) {
-        const impacts = aiData.impacts || {};
-        for (const [asset, dir] of Object.entries(impacts)) {
-          const chip = document.createElement('span');
-          let chipClass = 'chip-neutral';
-          if (dir === '利好') chipClass = 'chip-bull';
-          else if (dir === '利空') chipClass = 'chip-bear';
-          chip.className = `chip ${chipClass}`;
-          chip.textContent = `${asset} ${dir}`;
-          chipsRow.appendChild(chip);
+        if (aiSource.includes('DeepSeek')) {
+          aiTag.className = 'ai-tag-badge ai-tag-deepseek';
+        } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
+          aiTag.className = 'ai-tag-badge ai-tag-zhipu';
+        } else if (isTest) {
+          aiTag.className = 'ai-tag-badge ai-tag-test';
+        } else {
+          aiTag.className = 'ai-tag-badge ai-tag-rule';
         }
+
+        document.getElementById('aiSummary').textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
+
+        // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性）
+        const chipsRow = document.getElementById('chipsRow');
+        chipsRow.innerHTML = '';
+        const impacts = aiData.impacts || {};
+        const entries = Object.entries(impacts);
+
+        if (entries.length > 0) {
+          // 智能排序：优先将明确的【利好】和【利空】排在最前，中性排在后方
+          entries.sort((a, b) => {
+            const weight = (d) => (d === '利好' || d === '利空' ? 2 : 1);
+            return weight(b[1]) - weight(a[1]);
+          });
+
+          for (const [asset, dir] of entries) {
+            const chip = document.createElement('span');
+            let chipClass = 'chip-neutral';
+            let icon = '⚪';
+            if (dir === '利好') {
+              chipClass = 'chip-bull';
+              icon = '🟢';
+            } else if (dir === '利空') {
+              chipClass = 'chip-bear';
+              icon = '🔴';
+            }
+            chip.className = `chip ${chipClass}`;
+            chip.innerHTML = `<span>${icon}</span> <span>${escapeHtml(asset)}</span> <b>${escapeHtml(dir)}</b>`;
+            chipsRow.appendChild(chip);
+          }
+          chipsRow.style.display = 'flex';
+        } else {
+          chipsRow.style.display = 'none';
+        }
+      } else {
+        aiBox.style.display = 'none';
       }
 
       // 6. 翻看上一条未读与忽略历史逻辑

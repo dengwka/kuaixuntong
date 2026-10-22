@@ -53,6 +53,26 @@ class ToastManager {
       }
     });
 
+    ipcMain.on('toast-open-image', (event, picUrl) => {
+      if (picUrl) {
+        try {
+          shell.openExternal(picUrl);
+        } catch (e) {
+          logger.error('[ToastManager] 打开图片失败:', e);
+        }
+      }
+    });
+
+    ipcMain.on('open-external-url', (event, url) => {
+      if (url) {
+        try {
+          shell.openExternal(url);
+        } catch (e) {
+          logger.error('[ToastManager] 打开外部链接失败:', e);
+        }
+      }
+    });
+
     // 单帧完美渲染完成后再统一显示窗口，彻底杜绝闪烁和尺寸跳跃
     ipcMain.on('toast-ready-to-display', (event, { height }) => {
       if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
@@ -223,7 +243,8 @@ class ToastManager {
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
     const width = this.toastWidth;
-    const maxHeight = Math.min(460, workArea.height - 40);
+    const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 520;
+    const maxHeight = Math.min(Math.max(520, userMaxHeight), workArea.height - 30);
     const targetHeight = Math.min(Math.max(160, Math.ceil(height)), maxHeight);
 
     const isMac = process.platform === 'darwin';
