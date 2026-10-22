@@ -102,6 +102,12 @@ class ConfigManager {
         auto_cleanup: true,
         retention_days: 3,
         max_file_size_mb: 10
+      },
+      updates: {
+        strategy: 'auto', // 'auto': 自动更新(启动与定时后台检测) | 'manual': 手动更新(仅手动点击检查)
+        auto_check: true,
+        notify_on_new: true,
+        check_interval_hours: 12
       }
     };
   }
@@ -134,7 +140,8 @@ class ConfigManager {
           rules: { ...defaults.rules, ...(parsed.rules || {}) },
           ai_analysis: { ...defaults.ai_analysis, ...(parsed.ai_analysis || {}) },
           crypto_prices: { ...defaults.crypto_prices, ...(parsed.crypto_prices || {}) },
-          storage: { ...defaults.storage, ...(parsed.storage || {}) }
+          storage: { ...defaults.storage, ...(parsed.storage || {}) },
+          updates: { ...defaults.updates, ...(parsed.updates || {}) }
         };
         return merged;
       }
@@ -161,7 +168,8 @@ class ConfigManager {
       rules: { ...(cur.rules || {}), ...(newConfig.rules || {}) },
       ai_analysis: { ...(cur.ai_analysis || {}), ...(newConfig.ai_analysis || {}) },
       storage: { ...(cur.storage || {}), ...(newConfig.storage || {}) },
-      crypto_prices: { ...(cur.crypto_prices || {}), ...(newConfig.crypto_prices || {}) }
+      crypto_prices: { ...(cur.crypto_prices || {}), ...(newConfig.crypto_prices || {}) },
+      updates: { ...(cur.updates || {}), ...(newConfig.updates || {}) }
     };
     try {
       const data = JSON.stringify(this.config, null, 2);

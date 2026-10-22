@@ -12,10 +12,14 @@ class TrayManager {
     this.onShowUnread = null;
     this.onOpenSettings = null;
     this.onSendTest = null;
+    this.onCheckUpdate = null;
 
     this.normalIcon = null;
     this.badgeIcon = null;
     this.blankIcon = null;
+
+    this.hasUpdate = false;
+    this.latestTag = '';
   }
 
   init({ onShowUnread, onOpenSettings, onSendTest, onCheckUpdate }) {
@@ -72,12 +76,22 @@ class TrayManager {
     }
   }
 
+  setHasUpdate(hasUpdate, tag = '') {
+    this.hasUpdate = !!hasUpdate;
+    this.latestTag = tag || '';
+    this.updateContextMenu();
+  }
+
   updateContextMenu() {
     if (!this.tray) return;
 
     const unreadLabel = this.unreadCount > 0 
       ? `📰 查看未看快讯 (${this.unreadCount} 条未看)`
       : '📰 查看未看快讯 (暂无未看)';
+
+    const updateLabel = this.hasUpdate
+      ? `🔄 检查版本更新 🔴 (新版 ${this.latestTag || ''} 可用)`
+      : '🔄 检查版本更新';
 
     const contextMenu = Menu.buildFromTemplate([
       {
@@ -94,9 +108,13 @@ class TrayManager {
         }
       },
       {
-        label: '🔄 检查版本更新',
+        label: updateLabel,
         click: () => {
-          if (this.onCheckUpdate) this.onCheckUpdate();
+          if (this.onCheckUpdate) {
+            this.onCheckUpdate();
+          } else if (this.onOpenSettings) {
+            this.onOpenSettings('update');
+          }
         }
       },
       { type: 'separator' },
@@ -140,15 +158,13 @@ class TrayManager {
     // QQ 消息式经典闪烁循环：400ms 交替切换红点图标与空白图标
     this.flashTimer = setInterval(() => {
       if (!this.tray) return;
-      try {
-        if (this.flashState) {
-          this.tray.setImage(this.badgeIcon);
-        } else {
-          this.tray.setImage(this.blankIcon);
-        }
-        this.flashState = !this.flashState;
-      } catch (e) {}
-    }, 400);
+      this.flashState = !this.flashState;
+      if (this.flashState) {
+        this.tray.setImage(this.badgeIcon);
+      } else {
+        this.tray.setImage(this.blankIcon);
+      }
+    }, 450);
   }
 
   stopFlashing() {
@@ -157,17 +173,17 @@ class TrayManager {
       clearInterval(this.flashTimer);
       this.flashTimer = null;
     }
-    if (this.tray) {
-      try {
-        this.tray.setImage(this.normalIcon);
-      } catch (e) {}
+    if (this.tray && this.normalIcon) {
+      this.tray.setImage(this.normalIcon);
     }
   }
 
   destroy() {
     this.stopFlashing();
     if (this.tray) {
-      this.tray.destroy();
+      try {
+        this.tray.destroy();
+      } catch (e) {}
       this.tray = null;
     }
   }

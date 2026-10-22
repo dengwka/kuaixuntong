@@ -1,4 +1,6 @@
 const { app, net, shell } = require('electron');
+const fs = require('fs');
+const path = require('path');
 const logger = require('./logger');
 
 class UpdateManager {
@@ -56,7 +58,15 @@ class UpdateManager {
       const releasePageUrl = release.html_url || `https://github.com/${this.owner}/${this.repo}/releases/latest`;
       const publishedAt = release.published_at ? new Date(release.published_at).toLocaleString('zh-CN', { hour12: false }) : '';
 
-      // 寻找对应的安装包资产
+      // 整理资产列表
+      const assetList = Array.isArray(release.assets) ? release.assets.map(a => ({
+        name: a.name,
+        size: a.size,
+        sizeMb: (a.size / (1024 * 1024)).toFixed(1) + ' MB',
+        downloadUrl: a.browser_download_url
+      })) : [];
+
+      // 寻找当前操作系统匹配的安装包资产
       let downloadUrl = releasePageUrl;
       const isWin = process.platform === 'win32';
       const isMac = process.platform === 'darwin';
@@ -85,7 +95,8 @@ class UpdateManager {
         releaseNotes,
         downloadUrl,
         releasePageUrl,
-        publishedAt
+        publishedAt,
+        assets: assetList
       };
 
       if (hasUpdate) {
@@ -117,34 +128,143 @@ class UpdateManager {
   }
 
   /**
-   * 启动时静默检查更新
+   * 下载安装包并在完成后自动执行安装
    */
-  scheduleStartupCheck(toastManager, delayMs = 6000) {
+  async downloadAndInstallUpdate(url, onProgress) {
+    const fetchFn = (typeof net !== 'undefined' && net.fetch) ? net.fetch : fetch;
+    const downloadUrl = url || (this.lastCheckResult && this.lastCheckResult.downloadUrl);
+    if (!downloadUrl) {
+      throw new Error('未找到可用安装包下载地址');
+    }
+
+    logger.info(`[Updater] 开始自动下载最新安装包: ${downloadUrl}`);
+    const res = await fetchFn(downloadUrl);
+    if (!res.ok) {
+      throw new Error(`下载请求失败: HTTP ${res.status}`);
+    }
+
+    const totalBytes = parseInt(res.headers.get('content-length') || '0', 10);
+    const isWin = process.platform === 'win32';
+    const isMac = process.platform === 'darwin';
+
+    const ext = isWin ? '.exe' : (isMac ? '.dmg' : '');
+    const fileName = `kuaixuntong-setup-${Date.now()}${ext}`;
+    const tempDir = app ? app.getPath('temp') : path.resolve(__dirname, '..', 'data');
+    const destPath = path.join(tempDir, fileName);
+
+    const destStream = fs.createWriteStream(destPath);
+    let receivedBytes = 0;
+
+    const { Readable } = require('stream');
+    const nodeStream = (typeof Readable.fromWeb === 'function' && res.body)
+      ? Readable.fromWeb(res.body)
+      : res.body;
+
+    nodeStream.on('data', (chunk) => {
+      receivedBytes += chunk.length;
+      if (totalBytes > 0 && typeof onProgress === 'function') {
+        const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+        onProgress({
+          percent,
+          receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
+          totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
+        });
+      }
+    });
+
+    await new Promise((resolve, reject) => {
+      nodeStream.pipe(destStream);
+      destStream.on('finish', resolve);
+      destStream.on('error', reject);
+      nodeStream.on('error', reject);
+    });
+
+    logger.info(`[Updater] 安装包已下载至: ${destPath} (${(receivedBytes / (1024 * 1024)).toFixed(1)} MB)，正在启动安装程序...`);
+
+    // 自动唤起安装包
+    if (shell) {
+      shell.openPath(destPath);
+    }
+
+    return {
+      success: true,
+      filePath: destPath
+    };
+  }
+
+  /**
+   * 触发新版本桌面通知弹窗
+   */
+  showUpdateToast(toastManager, result) {
+    if (!toastManager || !result) return;
+    const alertData = {
+      id: `update_${result.latestTag}_${Date.now()}`,
+      is_test: false,
+      source: '版本更新',
+      source_key: 'system',
+      time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      pub_time: result.publishedAt || new Date().toLocaleString('zh-CN', { hour12: false }),
+      title: `🚀 发现新版本: ${result.latestTag}`,
+      content: `快讯通已发布全新版本！\n\n• 当前运行版本: v${result.currentVersion}\n• 线上最新版本: ${result.latestTag}\n• 更新内容:\n${result.releaseNotes.substring(0, 160)}${result.releaseNotes.length > 160 ? '...' : ''}\n\n点击卡片即可前往下载更新。`,
+      url: result.downloadUrl || result.releasePageUrl,
+      important: true,
+      ai_analysis: {
+        ai_source: '版本更新管家',
+        source_type: 'system',
+        summary: `发现可用新版本 ${result.latestTag}，建议前往升级以获得最新性能与功能。`,
+        impacts: {}
+      }
+    };
+    toastManager.showToast(alertData);
+  }
+
+  /**
+   * 启动时检查更新（根据配置策略自动执行）
+   */
+  scheduleStartupCheck(configManager, toastManager, delayMs = 6000, onFoundCallback = null) {
     setTimeout(async () => {
+      const updateCfg = (configManager && configManager.config && configManager.config.updates) || {};
+      if (updateCfg.strategy === 'manual') {
+        logger.info('[Updater] 当前更新策略为【手动更新】，跳过启动自动检测。');
+        return;
+      }
+
       const result = await this.checkForUpdates();
-      if (result && result.hasUpdate && toastManager) {
-        // 发现新版本，弹出桌面卡片提醒
-        const alertData = {
-          id: `update_${result.latestTag}_${Date.now()}`,
-          is_test: false,
-          source: '系统升级',
-          source_key: 'system',
-          time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-          pub_time: result.publishedAt || new Date().toLocaleString('zh-CN', { hour12: false }),
-          title: `🚀 发现新版本: ${result.latestTag}`,
-          content: `快讯通已发布全新版本！\n\n• 当前运行版本: v${result.currentVersion}\n• 线上最新版本: ${result.latestTag}\n• 更新内容:\n${result.releaseNotes.substring(0, 180)}${result.releaseNotes.length > 180 ? '...' : ''}\n\n点击卡片即可前往下载更新。`,
-          url: result.downloadUrl || result.releasePageUrl,
-          important: true,
-          ai_analysis: {
-            ai_source: '版本更新管家',
-            source_type: 'system',
-            summary: `发现可用更新 ${result.latestTag}，建议前往升级以获得最新性能与功能。`,
-            impacts: {}
-          }
-        };
-        toastManager.showToast(alertData);
+      if (result && result.hasUpdate) {
+        if (typeof onFoundCallback === 'function') {
+          onFoundCallback(result);
+        }
+        if (updateCfg.notify_on_new !== false && toastManager) {
+          this.showUpdateToast(toastManager, result);
+        }
+      } else if (result && typeof onFoundCallback === 'function') {
+        onFoundCallback(result);
       }
     }, delayMs);
+  }
+
+  /**
+   * 后台周期性检测
+   */
+  startPeriodicCheck(configManager, toastManager, onFoundCallback = null) {
+    // 默认每 12 小时检查一次
+    const hours = (configManager && configManager.config && configManager.config.updates && configManager.config.updates.check_interval_hours) || 12;
+    const intervalMs = Math.max(1, hours) * 3600 * 1000;
+
+    setInterval(async () => {
+      const updateCfg = (configManager && configManager.config && configManager.config.updates) || {};
+      if (updateCfg.strategy === 'manual') return;
+
+      const result = await this.checkForUpdates();
+      if (result && result.hasUpdate) {
+        if (typeof onFoundCallback === 'function') {
+          onFoundCallback(result);
+        }
+        if (updateCfg.notify_on_new !== false && toastManager) {
+          this.showUpdateToast(toastManager, result);
+        }
+      }
+    }, intervalMs);
   }
 }
 

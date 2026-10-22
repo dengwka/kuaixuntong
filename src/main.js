@@ -36,7 +36,7 @@ let financialAi = null;
 let pollTimer = null;
 let pollCount = 0;
 
-function openSettingsWindow() {
+function openSettingsWindow(targetTab = null) {
   if (settingsWin && !settingsWin.isDestroyed()) {
     try {
       if (settingsWin.isMinimized()) settingsWin.restore();
@@ -44,6 +44,9 @@ function openSettingsWindow() {
       settingsWin.focus();
       settingsWin.setAlwaysOnTop(true);
       settingsWin.setAlwaysOnTop(false);
+      if (targetTab) {
+        settingsWin.webContents.send('switch-tab', targetTab);
+      }
     } catch (e) {}
     return;
   }
@@ -72,7 +75,9 @@ function openSettingsWindow() {
     if (!win.isDestroyed() && win.webContents) {
       win.webContents.send('init-settings', {
         config: configManager.config,
-        stats: historyManager.getStorageStats()
+        stats: historyManager.getStorageStats(),
+        targetTab: targetTab || null,
+        updateInfo: updateManager.lastCheckResult || null
       });
       win.show();
       win.focus();
@@ -177,31 +182,14 @@ app.whenReady().then(() => {
     onShowUnread: () => {
       toastManager.showNextUnread();
     },
-    onOpenSettings: () => {
-      openSettingsWindow();
+    onOpenSettings: (targetTab) => {
+      openSettingsWindow(targetTab);
     },
     onSendTest: () => {
       triggerTestToast();
     },
-    onCheckUpdate: async () => {
-      const res = await updateManager.checkForUpdates();
-      if (res && res.hasUpdate && toastManager) {
-        updateManager.scheduleStartupCheck(toastManager, 100);
-      } else if (res && res.success) {
-        dialog.showMessageBox(settingsWin || null, {
-          type: 'info',
-          title: '检查更新',
-          message: `当前已是最新版本 (v${updateManager.currentVersion})`,
-          detail: '暂无可用更新，快讯通正在持续为您监控市场行情。'
-        });
-      } else {
-        dialog.showMessageBox(settingsWin || null, {
-          type: 'warning',
-          title: '检查更新',
-          message: '未能连接到更新服务器',
-          detail: `错误详情: ${(res && res.error) || '网络请求超时'}`
-        });
-      }
+    onCheckUpdate: () => {
+      openSettingsWindow('update');
     }
   });
 
@@ -325,7 +313,29 @@ app.whenReady().then(() => {
 
   // 检查版本更新 IPC
   ipcMain.handle('check-for-updates', async () => {
-    return await updateManager.checkForUpdates();
+    const res = await updateManager.checkForUpdates();
+    if (res && res.success) {
+      trayManager.setHasUpdate(res.hasUpdate, res.latestTag);
+      if (settingsWin && !settingsWin.isDestroyed()) {
+        settingsWin.webContents.send('update-status-changed', res);
+      }
+    }
+    return res;
+  });
+
+  // 自动下载并执行安装包更新 IPC
+  ipcMain.handle('download-and-install-update', async (event, url) => {
+    try {
+      const res = await updateManager.downloadAndInstallUpdate(url, (progress) => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('update-download-progress', progress);
+        }
+      });
+      return res;
+    } catch (e) {
+      logger.error('[Updater] 自动下载安装包失败:', e);
+      return { success: false, error: e.message };
+    }
   });
 
   ipcMain.on('open-download-page', (event, url) => {
@@ -340,10 +350,27 @@ app.whenReady().then(() => {
   startPolling();
   logger.info(`[App] 快讯通已成功常驻启动，已载入 ${historyManager.pushedIds.size} 条历史已推送记录。`);
 
-  // 6. 启动后静默延迟检查一次新版本更新
-  updateManager.scheduleStartupCheck(toastManager, 8000);
+  // 6. 启动后静默延迟检查一次新版本更新（根据配置策略决定是否执行）
+  updateManager.scheduleStartupCheck(configManager, toastManager, 8000, (res) => {
+    if (res && res.hasUpdate) {
+      trayManager.setHasUpdate(true, res.latestTag);
+      if (settingsWin && !settingsWin.isDestroyed()) {
+        settingsWin.webContents.send('update-status-changed', res);
+      }
+    }
+  });
 
-  // 7. 用户手动双击启动时，直接打开管理配置中心主界面（开机自启动 --hidden 时静默常驻托盘）
+  // 7. 启动周期性后台版本检查
+  updateManager.startPeriodicCheck(configManager, toastManager, (res) => {
+    if (res && res.hasUpdate) {
+      trayManager.setHasUpdate(true, res.latestTag);
+      if (settingsWin && !settingsWin.isDestroyed()) {
+        settingsWin.webContents.send('update-status-changed', res);
+      }
+    }
+  });
+
+  // 8. 用户手动双击启动时，直接打开管理配置中心主界面（开机自启动 --hidden 时静默常驻托盘）
   const isHidden = process.argv.includes('--hidden') || process.argv.includes('--silent');
   if (!isHidden) {
     openSettingsWindow();

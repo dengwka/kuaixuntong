@@ -146,5 +146,11 @@
     "auto_cleanup": true,
     "retention_days": 3,
     "max_file_size_mb": 10
+  },
+  "updates": {
+    "strategy": "auto",
+    "auto_check": true,
+    "notify_on_new": true,
+    "check_interval_hours": 12
   }
 }

@@ -74,7 +74,7 @@
     }
     .tab-item {
       flex: 1;
-      min-width: 96px;
+      min-width: 90px;
       padding: 11px 4px;
       font-size: 12.5px;
       font-weight: 600;
@@ -90,6 +90,66 @@
       user-select: none;
       border-top-left-radius: 6px;
       border-top-right-radius: 6px;
+      position: relative;
+    }
+    .tab-badge-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      background-color: #EF4444;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px #FFFFFF;
+      display: inline-block;
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+    .header-badge-dot {
+      width: 7px;
+      height: 7px;
+      background-color: #EF4444;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1.5px #FFFFFF;
+      display: inline-block;
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.85; }
+    }
+    .release-body {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #334155;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .asset-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #1D4ED8;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .asset-pill:hover {
+      background: #DBEAFE;
+      border-color: #93C5FD;
+      color: #1E40AF;
+      transform: translateY(-1px);
     }
     .tab-item:hover {
       color: #1E293B;
@@ -257,9 +317,6 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button type="button" id="btnCheckUpdate" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border: 1px solid #CBD5E1; background: #FFFFFF; border-radius: 6px;">
-        <span id="btnCheckUpdateText">🔄 检查更新</span>
-      </button>
       <span class="status-badge" id="versionBadge">🟢 v1.0.0 · 运行中</span>
     </div>
   </div>
@@ -272,6 +329,10 @@
     <div class="tab-item" data-tab="toast">🔔 弹窗与行情</div>
     <div class="tab-item" data-tab="autostart">🚀 开机自启</div>
     <div class="tab-item" data-tab="storage">📂 数据与日志</div>
+    <div class="tab-item" data-tab="update" id="tabItemUpdate">
+      🔄 检查更新
+      <span class="tab-badge-dot" id="updateTabDot" style="display: none;"></span>
+    </div>
   </div>
 
   <!-- 内容滚动容器 -->
@@ -660,20 +721,100 @@
         </div>
       </div>
 
-      <!-- 版本与在线发布更新 -->
-      <div class="card" style="border-left: 3px solid #6366F1; margin-top: 10px;">
-        <div class="card-title">
-          <span>🚀 版本信息与发布更新</span>
-          <span style="font-size: 11px; font-weight: normal; color: #64748B;">GitHub 发布通道: dengwka/kuaixuntong</span>
+      <!-- 快捷跳转版本更新 -->
+      <div class="card" style="border-left: 3px solid #6366F1; margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #1E293B;">🚀 版本更新与发布管理</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">已移至专属的【检查更新】页面，支持版本说明实时拉取与自动/手动更新策略。</div>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="switchTab('update')" style="padding: 5px 12px; cursor: pointer;">
+          前往检查更新 ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 7: 检查与版本更新 (从GitHub Releases拉取) ==================== -->
+    <div class="tab-pane" id="pane-update">
+      <!-- 卡片 1: 核心版本状态与在线升级 -->
+      <div class="card" style="border-left: 3px solid #3B82F6;">
+        <div class="card-title">
+          <span>🚀 版本运行状态与在线升级</span>
+          <span id="updateHeaderBadge" class="status-badge" style="background: #E2E8F0; color: #475569;">已就绪</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
           <div>
-            <div style="font-size: 13px; font-weight: 700; color: #1E293B;">当前版本：<span style="color: #2563EB;">v1.0.0</span></div>
-            <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">已连通 GitHub Release 官方版本通道，有新版本时将自动提醒。</div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+              <span>当前运行版本：<b style="color: #2563EB;" id="updateCurrentVer">v1.0.0</b></span>
+              <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🟢 最新版</span>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;" id="updateLatestInfo">
+              线上最新版本：<b id="updateLatestVer">--</b> <span id="updatePubTime" style="margin-left: 8px; color: #94A3B8;"></span>
+            </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="btnCheckUpdateTab" style="padding: 5px 12px; cursor: pointer;">
-            🔄 立即检查更新
-          </button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshUpdate" style="padding: 6px 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <span id="refreshUpdateIcon">🔄</span> <span id="refreshUpdateText">立即检测更新</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnStartUpdate" style="display: none; padding: 7px 18px; font-weight: 700; cursor: pointer; background: #16A34A; border-color: #15803D; font-size: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);">
+              🚀 立即更新
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnOpenReleasePage" style="padding: 6px 12px; cursor: pointer;">
+              🌐 访问 Releases
+            </button>
+          </div>
+        </div>
+        <div id="updateNoticeBanner" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 4px;"></div>
+
+        <!-- 自动下载并触发安装的动态进度条 (点击【立即更新】后展示) -->
+        <div id="updateProgressBox" style="display: none; margin-top: 10px; padding: 10px 14px; background: #F8FAFC; border-radius: 6px; border: 1px solid #CBD5E1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #334155; margin-bottom: 6px;">
+            <span id="updateProgressLabel" style="font-weight: 600;">⏳ 正在为您下载最新安装包...</span>
+            <span id="updateProgressPercent" style="font-weight: 700; color: #2563EB;">0%</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
+            <div id="updateProgressBar" style="width: 0%; height: 100%; background: #2563EB; transition: width 0.2s ease;"></div>
+          </div>
+          <div id="updateProgressDetail" style="font-size: 11px; color: #64748B; margin-top: 4px; text-align: right;">0 MB / 0 MB</div>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 版本更新说明 (仅在检测到新版本时展示；若已是最新版则不展示更新说明，且不展示具体下载地址) -->
+      <div class="card" id="cardReleaseNotes" style="display: none; border-left: 3px solid #8B5CF6;">
+        <div class="card-title">
+          <span>📋 新版本更新内容与说明 (Release Notes)</span>
+          <span style="font-size: 11px; color: #64748B;">从 GitHub Releases 官方通道获取</span>
+        </div>
+        <div id="releaseNotesContainer" class="release-body">
+          <div style="color: #94A3B8; text-align: center; padding: 18px 0;">
+            正在从 GitHub Releases 官方源查询最新版本更新说明...
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 更新策略配置 (上下放置自动更新与手工更新两个选项) -->
+      <div class="card" style="border-left: 3px solid #10B981;">
+        <div class="card-title">
+          <span>⚙ 更新策略设置</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border-radius: 6px; background: #F8FAFC; border: 1px solid #E2E8F0;">
+            <input type="radio" name="updateStrategy" id="strategyAuto" value="auto" checked style="cursor: pointer;" />
+            <span style="font-weight: 600; color: #1E293B;">自动更新</span>
+            <span style="font-size: 11.5px; color: #64748B;">（软件启动及后台自动检测，发现新版提醒并标记小红点）</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border-radius: 6px; background: #F8FAFC; border: 1px solid #E2E8F0;">
+            <input type="radio" name="updateStrategy" id="strategyManual" value="manual" style="cursor: pointer;" />
+            <span style="font-weight: 600; color: #334155;">手工更新</span>
+            <span style="font-size: 11.5px; color: #64748B;">（不在后台进行网络检测，仅在点击“立即检测更新”时检测）</span>
+          </label>
+
+          <div style="margin-top: 4px; padding-left: 2px;">
+            <label class="checkbox-row" style="font-size: 12px; color: #475569;">
+              <input type="checkbox" id="updateNotifyOnNew" checked />
+              <span>发现可用新版本时，在桌面右下角弹出升级卡片提示</span>
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -774,6 +915,21 @@
 
       // 开机自启动配置（默认开启）
       document.getElementById('autoStartEnabled').checked = sys.auto_start !== false;
+
+      // 更新策略配置
+      const upd = cfg.updates || {};
+      document.getElementById('strategyAuto').checked = (upd.strategy !== 'manual');
+      document.getElementById('strategyManual').checked = (upd.strategy === 'manual');
+      document.getElementById('updateNotifyOnNew').checked = (upd.notify_on_new !== false);
+
+      if (payload.targetTab) {
+        switchTab(payload.targetTab);
+      }
+      if (payload.updateInfo) {
+        renderUpdateData(payload.updateInfo);
+      } else if (upd.strategy !== 'manual') {
+        triggerCheckUpdate(false);
+      }
 
       const qh = sys.quiet_hours || {};
       document.getElementById('qhEnabled').checked = !!qh.enabled;
@@ -1295,6 +1451,11 @@
           enabled: document.getElementById('cryptoEnabled').checked,
           selected_coins: Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value),
           custom_coins: customCoinsList
+        },
+        updates: {
+          strategy: document.getElementById('strategyAuto').checked ? 'auto' : 'manual',
+          notify_on_new: document.getElementById('updateNotifyOnNew').checked,
+          auto_check: document.getElementById('strategyAuto').checked
         }
       };
     }
@@ -1313,61 +1474,227 @@
       showNotice('配置已成功保存并立即生效！');
     });
 
-    // 检查版本更新交互逻辑
-    let downloadTargetUrl = '';
+    // 检查版本更新交互与页面渲染逻辑
+    let currentUpdateData = null;
 
-    async function triggerCheckUpdate() {
-      const btn = document.getElementById('btnCheckUpdate');
-      const btnText = document.getElementById('btnCheckUpdateText');
-      const btnTab = document.getElementById('btnCheckUpdateTab');
-      if (btn) btn.disabled = true;
-      if (btnTab) btnTab.disabled = true;
-      if (btnText) btnText.textContent = '⏳ 检查中...';
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatReleaseNotes(notes) {
+      if (!notes) return '<div style="color: #94A3B8;">暂无更新详细说明。</div>';
+      let html = escapeHtml(notes);
+      html = html.replace(/\r\n/g, '\n')
+                 .replace(/\n\n/g, '<div style="height: 8px;"></div>')
+                 .replace(/\n/g, '<br/>');
+      html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      return html;
+    }
+
+    function renderUpdateData(res) {
+      if (!res) return;
+      currentUpdateData = res;
+
+      const currentVer = res.currentVersion || '1.0.0';
+      const latestTag = res.latestTag || `v${currentVer}`;
+      const publishedAt = res.publishedAt || '--';
+
+      document.getElementById('updateCurrentVer').textContent = `v${currentVer}`;
+      document.getElementById('updateLatestVer').textContent = latestTag;
+      document.getElementById('updatePubTime').textContent = `(发布于: ${publishedAt})`;
+
+      const tabDot = document.getElementById('updateTabDot');
+      const headerBadge = document.getElementById('updateHeaderBadge');
+      const banner = document.getElementById('updateNoticeBanner');
+      const tagDiff = document.getElementById('updateTagDiff');
+      const btnStart = document.getElementById('btnStartUpdate');
+      const cardNotes = document.getElementById('cardReleaseNotes');
+      const progressBox = document.getElementById('updateProgressBox');
+
+      if (res.hasUpdate) {
+        // 发现新版本：点亮红点、展示【立即更新】按钮、展示更新说明卡片
+        if (tabDot) tabDot.style.display = 'inline-block';
+        if (btnStart) {
+          btnStart.style.display = 'inline-block';
+          btnStart.disabled = false;
+          btnStart.textContent = '🚀 立即更新';
+        }
+        if (tagDiff) tagDiff.style.display = 'none';
+        if (cardNotes) cardNotes.style.display = 'block'; // 有新版本时才显示更新内容
+
+        if (headerBadge) {
+          headerBadge.textContent = `🔴 发现新版: ${latestTag}`;
+          headerBadge.style.background = '#FEE2E2';
+          headerBadge.style.color = '#B91C1C';
+        }
+
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.background = '#EFF6FF';
+          banner.style.color = '#1E40AF';
+          banner.style.border = '1px solid #BFDBFE';
+          banner.innerHTML = `🚀 <b>检测到官方新版本 ${latestTag} 可用！</b> 点击上方【🚀 立即更新】将自动按当前操作系统下载并触发安装。`;
+        }
+
+        // 仅在有新版本时渲染更新内容
+        const notesContainer = document.getElementById('releaseNotesContainer');
+        if (notesContainer) {
+          notesContainer.innerHTML = formatReleaseNotes(res.releaseNotes);
+        }
+      } else {
+        // 当前为最新版：隐藏红点、隐藏【立即更新】按钮、隐藏更新内容卡片
+        if (tabDot) tabDot.style.display = 'none';
+        if (btnStart) btnStart.style.display = 'none';
+        if (tagDiff) tagDiff.style.display = 'inline-block';
+        if (cardNotes) cardNotes.style.display = 'none'; // 已是最新版时彻底不展示更新内容
+        if (progressBox) progressBox.style.display = 'none';
+
+        if (headerBadge) {
+          headerBadge.textContent = `🟢 已是最新版本`;
+          headerBadge.style.background = '#DCFCE7';
+          headerBadge.style.color = '#166534';
+        }
+
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.background = '#F0FDF4';
+          banner.style.color = '#15803D';
+          banner.style.border = '1px solid #BBF7D0';
+          banner.innerHTML = `🎉 <b>当前运行的快讯通已是最新版本 (v${currentVer})</b>，无需更新。持续为您提供突发情报监听服务。`;
+        }
+      }
+    }
+
+    async function triggerCheckUpdate(showNoticeTip = false) {
+      const btnRefresh = document.getElementById('btnRefreshUpdate');
+      const refreshIcon = document.getElementById('refreshUpdateIcon');
+      const refreshText = document.getElementById('refreshUpdateText');
+      const btnHeader = document.getElementById('btnCheckUpdate');
+      const btnHeaderText = document.getElementById('btnCheckUpdateText');
+
+      if (btnRefresh) btnRefresh.disabled = true;
+      if (btnHeader) btnHeader.disabled = true;
+      if (refreshText) refreshText.textContent = '检查中...';
+      if (btnHeaderText) btnHeaderText.textContent = '⏳ 检查中...';
 
       try {
         const res = await ipcRenderer.invoke('check-for-updates');
         if (!res || !res.success) {
-          showNotice(`⚠️ 检查更新失败: ${(res && res.error) || '网络连接异常'}`);
-        } else if (res.hasUpdate) {
-          document.getElementById('modalNewVersion').textContent = res.latestTag;
-          document.getElementById('modalReleaseTime').textContent = `发布时间: ${res.publishedAt || '--'}`;
-          document.getElementById('modalReleaseNotes').textContent = res.releaseNotes || '快讯通最新功能优化与问题修复。';
-          downloadTargetUrl = res.downloadUrl || res.releasePageUrl;
-          document.getElementById('updateModal').style.display = 'flex';
+          if (showNoticeTip) showNotice(`⚠️ 检查更新失败: ${(res && res.error) || '网络连接超时'}`);
+          const notesContainer = document.getElementById('releaseNotesContainer');
+          if (notesContainer) {
+            notesContainer.innerHTML = `<div style="color: #EF4444; padding: 10px;">⚠️ 未能连接至 GitHub Releases 官方源，请检查网络代理或稍后重试。<br><span style="color: #94A3B8; font-size: 11.5px;">错误信息: ${(res && res.error) || '网络超时'}</span></div>`;
+          }
         } else {
-          showNotice(`🎉 当前已是最新版本 (v${res.currentVersion})`);
+          renderUpdateData(res);
+          if (showNoticeTip) {
+            if (res.hasUpdate) {
+              showNotice(`🚀 发现新版本: ${res.latestTag}！可在页面中下载更新。`);
+            } else {
+              showNotice(`🎉 当前已是最新版本 (v${res.currentVersion})`);
+            }
+          }
         }
       } catch (e) {
-        showNotice(`⚠️ 检查更新异常: ${e.message}`);
+        if (showNoticeTip) showNotice(`⚠️ 检查更新异常: ${e.message}`);
       } finally {
-        if (btn) btn.disabled = false;
-        if (btnTab) btnTab.disabled = false;
-        if (btnText) btnText.textContent = '🔄 检查更新';
+        if (btnRefresh) btnRefresh.disabled = false;
+        if (btnHeader) btnHeader.disabled = false;
+        if (refreshText) refreshText.textContent = '立即检测更新';
+        if (btnHeaderText) btnHeaderText.textContent = '🔄 检查更新';
       }
     }
 
-    const btnCheckUpdate = document.getElementById('btnCheckUpdate');
-    if (btnCheckUpdate) btnCheckUpdate.addEventListener('click', triggerCheckUpdate);
+    // 事件绑定：刷新、下载与 Releases
+    document.getElementById('btnRefreshUpdate').addEventListener('click', () => {
+      triggerCheckUpdate(true);
+    });
 
-    const btnCheckUpdateTab = document.getElementById('btnCheckUpdateTab');
-    if (btnCheckUpdateTab) btnCheckUpdateTab.addEventListener('click', triggerCheckUpdate);
 
-    const btnModalClose = document.getElementById('btnModalClose');
-    if (btnModalClose) {
-      btnModalClose.addEventListener('click', () => {
-        document.getElementById('updateModal').style.display = 'none';
-      });
-    }
 
-    const btnModalDownload = document.getElementById('btnModalDownload');
-    if (btnModalDownload) {
-      btnModalDownload.addEventListener('click', () => {
-        document.getElementById('updateModal').style.display = 'none';
-        if (downloadTargetUrl) {
-          ipcRenderer.send('open-download-page', downloadTargetUrl);
+    // 一键自动下载并触发安装
+    let isDownloadingUpdate = false;
+    document.getElementById('btnStartUpdate').addEventListener('click', async () => {
+      if (isDownloadingUpdate) return;
+      if (!currentUpdateData || !currentUpdateData.downloadUrl) {
+        showNotice('⚠️ 未找到当前平台的最新安装包下载地址');
+        return;
+      }
+
+      isDownloadingUpdate = true;
+      const btnStart = document.getElementById('btnStartUpdate');
+      const progressBox = document.getElementById('updateProgressBox');
+      const progressLabel = document.getElementById('updateProgressLabel');
+      const progressBar = document.getElementById('updateProgressBar');
+      const progressPercent = document.getElementById('updateProgressPercent');
+      const progressDetail = document.getElementById('updateProgressDetail');
+
+      btnStart.disabled = true;
+      btnStart.textContent = '⏳ 正在准备下载...';
+      progressBox.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressBar.style.background = '#2563EB';
+      progressPercent.textContent = '0%';
+      progressLabel.textContent = '⏳ 正在下载最新版本安装包...';
+      progressDetail.textContent = '正在连接下载节点...';
+
+      try {
+        const result = await ipcRenderer.invoke('download-and-install-update', currentUpdateData.downloadUrl);
+        if (result && result.success) {
+          progressLabel.textContent = '✅ 安装包下载完成！已自动启动安装程序向导。';
+          progressBar.style.width = '100%';
+          progressBar.style.background = '#16A34A';
+          progressPercent.textContent = '100%';
+          btnStart.textContent = '✅ 已启动安装';
+          showNotice('🎉 安装包下载完成，已为您自动启动安装！');
+        } else {
+          progressLabel.textContent = `❌ 下载安装失败: ${(result && result.error) || '未知异常'}`;
+          progressBar.style.background = '#EF4444';
+          btnStart.disabled = false;
+          btnStart.textContent = '🚀 重新下载更新';
         }
-      });
-    }
+      } catch (err) {
+        progressLabel.textContent = `❌ 下载安装异常: ${err.message}`;
+        progressBar.style.background = '#EF4444';
+        btnStart.disabled = false;
+        btnStart.textContent = '🚀 重新下载更新';
+      } finally {
+        isDownloadingUpdate = false;
+      }
+    });
+
+    // 监听实时下载进度
+    ipcRenderer.on('update-download-progress', (event, p) => {
+      const progressBar = document.getElementById('updateProgressBar');
+      const progressPercent = document.getElementById('updateProgressPercent');
+      const progressDetail = document.getElementById('updateProgressDetail');
+      const progressLabel = document.getElementById('updateProgressLabel');
+
+      if (progressBar) progressBar.style.width = `${p.percent}%`;
+      if (progressPercent) progressPercent.textContent = `${p.percent}%`;
+      if (progressDetail) progressDetail.textContent = `${p.receivedMb} MB / ${p.totalMb} MB`;
+      if (progressLabel) progressLabel.textContent = `⏳ 正在下载最新版本安装包 (${p.percent}%)...`;
+    });
+
+    document.getElementById('btnOpenReleasePage').addEventListener('click', () => {
+      const url = (currentUpdateData && currentUpdateData.releasePageUrl) || 'https://github.com/dengwka/kuaixuntong/releases';
+      ipcRenderer.send('open-download-page', url);
+    });
+
+    // 跨进程 Tab 切换与更新状态监听
+    ipcRenderer.on('switch-tab', (event, targetTab) => {
+      if (targetTab) switchTab(targetTab);
+    });
+
+    ipcRenderer.on('update-status-changed', (event, updateInfo) => {
+      if (updateInfo) renderUpdateData(updateInfo);
+    });
   </script>
 </body>
 </html>
