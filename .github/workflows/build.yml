@@ -57,6 +57,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
+          name: 快讯通 v1.0.0 正式版发布
+          body: 多源聚合监控（金十/雪球/脉脉），毫秒级桌面气泡提醒，AI智能研判，支持静音免打扰与在线一键更新。
           files: |
             release/*.exe
             release/*.dmg

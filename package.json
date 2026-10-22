@@ -45,7 +45,7 @@
         "nsis"
       ],
       "icon": "assets/app_icon.ico",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "kuaixuntong-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -53,7 +53,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "快讯通",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "kuaixuntong-Setup-${version}.${ext}"
     },
     "mac": {
       "identity": null,
@@ -63,10 +63,10 @@
       ],
       "icon": "assets/app_icon.icns",
       "category": "public.app-category.finance",
-      "artifactName": "${productName}-${version}.${ext}"
+      "artifactName": "kuaixuntong-${version}.${ext}"
     },
     "dmg": {
-      "artifactName": "${productName}-${version}.${ext}",
+      "artifactName": "kuaixuntong-${version}.${ext}",
       "contents": [
         {
           "x": 130,
