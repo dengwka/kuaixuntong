@@ -39,13 +39,17 @@ let pollCount = 0;
 function openSettingsWindow() {
   if (settingsWin && !settingsWin.isDestroyed()) {
     try {
+      if (settingsWin.isMinimized()) settingsWin.restore();
       settingsWin.show();
       settingsWin.focus();
+      settingsWin.setAlwaysOnTop(true);
+      settingsWin.setAlwaysOnTop(false);
     } catch (e) {}
     return;
   }
 
   const win = new BrowserWindow({
+    show: false,
     width: 780,
     height: 800,
     minWidth: 700,
@@ -72,6 +76,8 @@ function openSettingsWindow() {
       });
       win.show();
       win.focus();
+      win.setAlwaysOnTop(true);
+      win.setAlwaysOnTop(false);
     }
   });
 
@@ -336,6 +342,12 @@ app.whenReady().then(() => {
 
   // 6. 启动后静默延迟检查一次新版本更新
   updateManager.scheduleStartupCheck(toastManager, 8000);
+
+  // 7. 用户手动双击启动时，直接打开管理配置中心主界面（开机自启动 --hidden 时静默常驻托盘）
+  const isHidden = process.argv.includes('--hidden') || process.argv.includes('--silent');
+  if (!isHidden) {
+    openSettingsWindow();
+  }
 });
 
 // Windows/Mac 平台关闭所有窗口不退出程序（保持常驻托盘）
@@ -344,9 +356,12 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('second-instance', () => {
-  if (trayManager && trayManager.unreadCount > 0) {
-    if (toastManager) toastManager.showNextUnread();
-  } else {
-    openSettingsWindow();
+  openSettingsWindow();
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    if (settingsWin.isMinimized()) settingsWin.restore();
+    settingsWin.show();
+    settingsWin.focus();
+    settingsWin.setAlwaysOnTop(true);
+    settingsWin.setAlwaysOnTop(false);
   }
 });
