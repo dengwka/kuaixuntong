@@ -56,11 +56,12 @@
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
+      "identity": null,
       "target": [
         "dmg",
         "zip"
       ],
-      "icon": "assets/app_icon.png",
+      "icon": "assets/app_icon.icns",
       "category": "public.app-category.finance",
       "artifactName": "${productName}-${version}.${ext}"
     },
