@@ -731,11 +731,17 @@ class XFetcher {
       this.coolingMap.delete(screenName.toLowerCase());
     }
 
-    // 过滤日常回复 (除非用户显式开启)
+    // 过滤日常回复与历史远古推文 (时效性强校验：超过24小时的历史旧推文一律排除)
+    const now = Date.now();
+    const MAX_TWEET_AGE_MS = 24 * 3600 * 1000;
     const validTweets = [];
     for (const tweet of res.tweets) {
       if (tweet.is_reply && !account.include_replies) {
         continue;
+      }
+      const tweetAgeMs = now - (tweet.created_at_ms || 0);
+      if (tweetAgeMs > MAX_TWEET_AGE_MS) {
+        continue; // 彻底无视24小时以前的历史旧推文
       }
       validTweets.push(tweet);
     }
@@ -747,28 +753,55 @@ class XFetcher {
 
     let tweetsToProcess = [];
 
+    // 解析当前账号已记录的水位线 (支持 64位 Snowflake BigInt 比较)
+    let lastSeenBigInt = null;
+    try {
+      if (account.last_seen_id && /^\d+$/.test(String(account.last_seen_id).trim())) {
+        lastSeenBigInt = BigInt(String(account.last_seen_id).trim());
+      }
+    } catch (e) {}
+
     if (!account.last_seen_id) {
       // 如果是首次监听该账号或未落盘水位线：
       // 检查最新推文发布时间：如果是在最近 2 小时 (120 分钟) 内发布的极新鲜推文（例如用户发推测试或博主突发），立即触发实时播报！
-      const ageMs = Date.now() - (latestTweet.created_at_ms || 0);
+      const ageMs = now - (latestTweet.created_at_ms || 0);
       const isRecentTestOrBreaking = (ageMs >= 0 && ageMs < 120 * 60 * 1000);
 
       account.last_seen_id = latestTweet.id_str;
       if (isRecentTestOrBreaking) {
-        logger.info(`[XFetcher] @${screenName} 首次加入监控发现 2 小时内极新鲜推文 (${latestTweet.id_str})，启动实时弹窗播报！`);
+        logger.info(`[XFetcher] @${screenName} 首次加入监控发现 2 小时内新鲜推文 (${latestTweet.id_str})，启动实时弹窗播报！`);
         tweetsToProcess = [latestTweet];
       } else {
         logger.info(`[XFetcher] @${screenName} 首次加入监控，静默标记历史水位线推文 ID: ${latestTweet.id_str}`);
         return [];
       }
     } else {
-      // 正常轮询增量推文
+      // 正常轮询增量推文：
       for (const tweet of validTweets) {
         if (tweet.id_str === account.last_seen_id) {
           break;
         }
+        if (lastSeenBigInt !== null && /^\d+$/.test(tweet.id_str)) {
+          try {
+            if (BigInt(tweet.id_str) <= lastSeenBigInt) {
+              // 遇到小于或等于最后一次记录的水位线推文（如旧置顶推文、历史旧推文），停止向后收集
+              break;
+            }
+          } catch (e) {}
+        }
         tweetsToProcess.push(tweet);
       }
+    }
+
+    // 单次单账号最大增量推文限制（突发防刷防爆保护，单次至多推送 3 条最新推文）
+    const MAX_BURST_TWEETS = 3;
+    if (tweetsToProcess.length > MAX_BURST_TWEETS) {
+      logger.warn(`[XFetcher] @${screenName} 突发大量推文 (${tweetsToProcess.length} 条)，触发防刷屏保护，仅推送最新 ${MAX_BURST_TWEETS} 条，其余静默标记！`);
+      for (let i = MAX_BURST_TWEETS; i < tweetsToProcess.length; i++) {
+        const silentUid = `x_${account.screen_name}_${tweetsToProcess[i].id_str}`;
+        historyManager.recordInteraction(silentUid, 'flood_shield_ignored');
+      }
+      tweetsToProcess = tweetsToProcess.slice(0, MAX_BURST_TWEETS);
     }
 
     if (tweetsToProcess.length === 0) return [];

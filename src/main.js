@@ -142,6 +142,7 @@ async function pollCycle() {
     const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems];
 
     let newCount = 0;
+    const MAX_TOASTS_PER_CYCLE = 3; // 单轮轮询心跳最多弹出 3 条桌面卡片，防止突发洪峰刷屏
     for (const item of allItems) {
       const itemUid = historyManager.getItemUniqueId(item);
       if (historyManager.isPushed(itemUid)) continue;
@@ -163,8 +164,12 @@ async function pollCycle() {
         }
 
         historyManager.recordPushed(evalItem, evalItem.sync_delay_sec);
-        logger.info(`[提示触发] [${evalItem.source || '快讯'}] ${evalItem.title} (已落盘 ID: ${evalUid})`);
-        toastManager.showToast(evalItem);
+        if (newCount < MAX_TOASTS_PER_CYCLE) {
+          logger.info(`[提示触发] [${evalItem.source || '快讯'}] ${evalItem.title} (已落盘 ID: ${evalUid})`);
+          toastManager.showToast(evalItem);
+        } else {
+          logger.warn(`[限流保护] 本轮轮询触发量超过 ${MAX_TOASTS_PER_CYCLE} 条，[${evalItem.title}] 已记录历史但不弹窗打扰`);
+        }
         newCount++;
       }
     }
