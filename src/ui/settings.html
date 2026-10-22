@@ -256,7 +256,12 @@
       <h2>⚡ 快讯通 · 管理配置中心</h2>
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
-    <span class="status-badge">🟢 运行中 · 托盘常驻</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button type="button" id="btnCheckUpdate" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border: 1px solid #CBD5E1; background: #FFFFFF; border-radius: 6px;">
+        <span id="btnCheckUpdateText">🔄 检查更新</span>
+      </button>
+      <span class="status-badge" id="versionBadge">🟢 v1.0.0 · 运行中</span>
+    </div>
   </div>
 
   <!-- Tab 导航栏 (功能重要的排在前面，开机启动专设Tab，日志配置排在最后) -->
@@ -654,6 +659,23 @@
           </button>
         </div>
       </div>
+
+      <!-- 版本与在线发布更新 -->
+      <div class="card" style="border-left: 3px solid #6366F1; margin-top: 10px;">
+        <div class="card-title">
+          <span>🚀 版本信息与发布更新</span>
+          <span style="font-size: 11px; font-weight: normal; color: #64748B;">GitHub 发布通道: dengwka/kuaixuntong</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #1E293B;">当前版本：<span style="color: #2563EB;">v1.0.0</span></div>
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">已连通 GitHub Release 官方版本通道，有新版本时将自动提醒。</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnCheckUpdateTab" style="padding: 5px 12px; cursor: pointer;">
+            🔄 立即检查更新
+          </button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -665,6 +687,29 @@
   </div>
 
   <div class="toast-tip" id="toastTip"></div>
+
+  <!-- 更新提醒弹窗 Modal -->
+  <div id="updateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div style="background: #FFFFFF; border-radius: 12px; width: 440px; max-width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden; border: 1px solid #E2E8F0;">
+      <div style="background: linear-gradient(135deg, #2563EB, #1D4ED8); padding: 16px 20px; color: #FFFFFF;">
+        <div style="font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <span>🚀 发现新版本</span>
+          <span id="modalNewVersion" style="background: rgba(255,255,255,0.25); font-size: 12px; padding: 2px 8px; border-radius: 10px;">v1.0.1</span>
+        </div>
+        <div id="modalReleaseTime" style="font-size: 11px; opacity: 0.85; margin-top: 4px;">发布时间: --</div>
+      </div>
+      <div style="padding: 16px 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">更新日志与说明：</div>
+        <div id="modalReleaseNotes" style="font-size: 12px; color: #334155; line-height: 1.6; max-height: 180px; overflow-y: auto; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; border-radius: 6px; white-space: pre-wrap;"></div>
+      </div>
+      <div style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnModalClose">稍后再说</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnModalDownload" style="display: flex; align-items: center; gap: 4px;">
+          <span>⬇️ 立即前往下载</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const { ipcRenderer } = require('electron');
@@ -1267,6 +1312,62 @@
       ipcRenderer.send('settings-save-config', newCfg);
       showNotice('配置已成功保存并立即生效！');
     });
+
+    // 检查版本更新交互逻辑
+    let downloadTargetUrl = '';
+
+    async function triggerCheckUpdate() {
+      const btn = document.getElementById('btnCheckUpdate');
+      const btnText = document.getElementById('btnCheckUpdateText');
+      const btnTab = document.getElementById('btnCheckUpdateTab');
+      if (btn) btn.disabled = true;
+      if (btnTab) btnTab.disabled = true;
+      if (btnText) btnText.textContent = '⏳ 检查中...';
+
+      try {
+        const res = await ipcRenderer.invoke('check-for-updates');
+        if (!res || !res.success) {
+          showNotice(`⚠️ 检查更新失败: ${(res && res.error) || '网络连接异常'}`);
+        } else if (res.hasUpdate) {
+          document.getElementById('modalNewVersion').textContent = res.latestTag;
+          document.getElementById('modalReleaseTime').textContent = `发布时间: ${res.publishedAt || '--'}`;
+          document.getElementById('modalReleaseNotes').textContent = res.releaseNotes || '快讯通最新功能优化与问题修复。';
+          downloadTargetUrl = res.downloadUrl || res.releasePageUrl;
+          document.getElementById('updateModal').style.display = 'flex';
+        } else {
+          showNotice(`🎉 当前已是最新版本 (v${res.currentVersion})`);
+        }
+      } catch (e) {
+        showNotice(`⚠️ 检查更新异常: ${e.message}`);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnTab) btnTab.disabled = false;
+        if (btnText) btnText.textContent = '🔄 检查更新';
+      }
+    }
+
+    const btnCheckUpdate = document.getElementById('btnCheckUpdate');
+    if (btnCheckUpdate) btnCheckUpdate.addEventListener('click', triggerCheckUpdate);
+
+    const btnCheckUpdateTab = document.getElementById('btnCheckUpdateTab');
+    if (btnCheckUpdateTab) btnCheckUpdateTab.addEventListener('click', triggerCheckUpdate);
+
+    const btnModalClose = document.getElementById('btnModalClose');
+    if (btnModalClose) {
+      btnModalClose.addEventListener('click', () => {
+        document.getElementById('updateModal').style.display = 'none';
+      });
+    }
+
+    const btnModalDownload = document.getElementById('btnModalDownload');
+    if (btnModalDownload) {
+      btnModalDownload.addEventListener('click', () => {
+        document.getElementById('updateModal').style.display = 'none';
+        if (downloadTargetUrl) {
+          ipcRenderer.send('open-download-page', downloadTargetUrl);
+        }
+      });
+    }
   </script>
 </body>
 </html>

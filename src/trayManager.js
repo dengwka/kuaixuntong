@@ -18,10 +18,11 @@ class TrayManager {
     this.blankIcon = null;
   }
 
-  init({ onShowUnread, onOpenSettings, onSendTest }) {
+  init({ onShowUnread, onOpenSettings, onSendTest, onCheckUpdate }) {
     this.onShowUnread = onShowUnread;
     this.onOpenSettings = onOpenSettings;
     this.onSendTest = onSendTest;
+    this.onCheckUpdate = onCheckUpdate;
 
     const assetsDir = path.join(__dirname, '..', 'assets');
     const normalPath = path.join(assetsDir, 'tray_icon.png');
@@ -90,6 +91,12 @@ class TrayManager {
         label: '⚙ 管理配置中心',
         click: () => {
           if (this.onOpenSettings) this.onOpenSettings();
+        }
+      },
+      {
+        label: '🔄 检查版本更新',
+        click: () => {
+          if (this.onCheckUpdate) this.onCheckUpdate();
         }
       },
       { type: 'separator' },

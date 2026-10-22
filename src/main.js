@@ -13,6 +13,7 @@ const StrategyEngine = require('./strategy');
 const FinancialAIEngine = require('./financialAi');
 const ToastManager = require('./toastManager');
 const trayManager = require('./trayManager');
+const updateManager = require('./updater');
 
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
@@ -175,6 +176,26 @@ app.whenReady().then(() => {
     },
     onSendTest: () => {
       triggerTestToast();
+    },
+    onCheckUpdate: async () => {
+      const res = await updateManager.checkForUpdates();
+      if (res && res.hasUpdate && toastManager) {
+        updateManager.scheduleStartupCheck(toastManager, 100);
+      } else if (res && res.success) {
+        dialog.showMessageBox(settingsWin || null, {
+          type: 'info',
+          title: '检查更新',
+          message: `当前已是最新版本 (v${updateManager.currentVersion})`,
+          detail: '暂无可用更新，快讯通正在持续为您监控市场行情。'
+        });
+      } else {
+        dialog.showMessageBox(settingsWin || null, {
+          type: 'warning',
+          title: '检查更新',
+          message: '未能连接到更新服务器',
+          detail: `错误详情: ${(res && res.error) || '网络请求超时'}`
+        });
+      }
     }
   });
 
@@ -296,6 +317,15 @@ app.whenReady().then(() => {
     return await financialAi.testApiKey(provider, key);
   });
 
+  // 检查版本更新 IPC
+  ipcMain.handle('check-for-updates', async () => {
+    return await updateManager.checkForUpdates();
+  });
+
+  ipcMain.on('open-download-page', (event, url) => {
+    updateManager.openDownloadPage(url);
+  });
+
   if (configManager.config.storage && configManager.config.storage.data_dir) {
     historyManager.setDataDir(configManager.config.storage.data_dir);
   }
@@ -303,6 +333,9 @@ app.whenReady().then(() => {
   // 5. 启动轮询（启动时保持彻底静默，杜绝重复弹窗）
   startPolling();
   logger.info(`[App] 快讯通已成功常驻启动，已载入 ${historyManager.pushedIds.size} 条历史已推送记录。`);
+
+  // 6. 启动后静默延迟检查一次新版本更新
+  updateManager.scheduleStartupCheck(toastManager, 8000);
 });
 
 // Windows/Mac 平台关闭所有窗口不退出程序（保持常驻托盘）
