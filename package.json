@@ -19,7 +19,7 @@
     "desktop",
     "tray"
   ],
-  "author": "Antigravity",
+  "author": "dengwk",
   "license": "MIT",
   "build": {
     "appId": "cn.antigravity.kuaixuntong",
