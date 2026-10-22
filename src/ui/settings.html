@@ -121,14 +121,113 @@
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       border-radius: 8px;
-      padding: 14px 16px;
-      font-size: 12.5px;
-      line-height: 1.7;
+      padding: 16px 18px;
+      font-size: 13px;
+      line-height: 1.65;
       color: #334155;
-      max-height: 280px;
+      max-height: 320px;
       overflow-y: auto;
-      white-space: pre-wrap;
       word-break: break-word;
+    }
+    .rn-h1 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 12px 0 8px 0;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .rn-h1:first-child {
+      margin-top: 0;
+    }
+    .rn-h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+      margin: 12px 0 6px 0;
+    }
+    .rn-h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+      margin: 10px 0 5px 0;
+    }
+    .rn-h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin: 8px 0 4px 0;
+    }
+    .rn-hr {
+      border: 0;
+      height: 1px;
+      background: #E2E8F0;
+      margin: 12px 0;
+    }
+    .rn-quote {
+      border-left: 3px solid #3B82F6;
+      background: #EFF6FF;
+      color: #1E40AF;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      font-size: 12.5px;
+    }
+    .rn-ul {
+      margin: 4px 0 8px 20px;
+      padding: 0;
+    }
+    .rn-li {
+      margin-bottom: 4px;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .rn-p {
+      margin: 4px 0;
+      color: #334155;
+      line-height: 1.65;
+    }
+    .rn-spacer {
+      height: 6px;
+    }
+    .rn-code {
+      background: #E2E8F0;
+      color: #0F172A;
+      padding: 1.5px 5px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-size: 11.5px;
+    }
+    .rn-link {
+      color: #2563EB;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .rn-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 12px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .rn-table th {
+      background: #F1F5F9;
+      color: #1E293B;
+      font-weight: 700;
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 1px solid #CBD5E1;
+    }
+    .rn-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #E2E8F0;
+      color: #334155;
+    }
+    .rn-table tr:last-child td {
+      border-bottom: none;
     }
     .asset-pill {
       display: inline-flex;
@@ -2081,13 +2180,133 @@
         .replace(/'/g, '&#039;');
     }
 
+    function parseInlineMarkdown(text) {
+      if (!text) return '';
+      let s = escapeHtml(text);
+      // Bold: **text** or __text__
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+      // Italic: *text* or _text_
+      s = s.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+      // Inline code: `code`
+      s = s.replace(/`([^`]+?)`/g, '<code class="rn-code">$1</code>');
+      // Links: [text](url)
+      s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" class="rn-link" onclick="openExternalUrl(\'$2\'); return false;">$1</a>');
+      return s;
+    }
+
     function formatReleaseNotes(notes) {
-      if (!notes) return '<div style="color: #94A3B8;">暂无更新详细说明。</div>';
-      let html = escapeHtml(notes);
-      html = html.replace(/\r\n/g, '\n')
-                 .replace(/\n\n/g, '<div style="height: 8px;"></div>')
-                 .replace(/\n/g, '<br/>');
-      html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      if (!notes || !notes.trim()) return '<div style="color: #94A3B8;">暂无更新详细说明。</div>';
+
+      const lines = notes.replace(/\r\n/g, '\n').split('\n');
+      let html = '';
+      let inList = false;
+      let inTable = false;
+      let tableRows = [];
+
+      function flushTable() {
+        if (!inTable) return;
+        inTable = false;
+        if (tableRows.length === 0) return;
+
+        html += '<table class="rn-table">';
+        const headerCols = tableRows[0];
+        html += '<thead><tr>';
+        for (const col of headerCols) {
+          html += `<th>${col}</th>`;
+        }
+        html += '</tr></thead><tbody>';
+
+        for (let i = 1; i < tableRows.length; i++) {
+          const row = tableRows[i];
+          html += '<tr>';
+          for (let j = 0; j < headerCols.length; j++) {
+            html += `<td>${row[j] || ''}</td>`;
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        tableRows = [];
+      }
+
+      function flushList() {
+        if (!inList) return;
+        inList = false;
+        html += '</ul>';
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+
+        // 1. 表格检测: 以 | 开头并以 | 结尾
+        if (line.startsWith('|') && line.endsWith('|')) {
+          flushList();
+          // 跳过 markdown 表格分隔行如 | :--- | :--- |
+          if (/^\|[\s\-:|]+\|$/.test(line)) {
+            continue;
+          }
+          const cells = line.split('|').slice(1, -1).map(c => parseInlineMarkdown(c.trim()));
+          if (!inTable) {
+            inTable = true;
+            tableRows = [];
+          }
+          tableRows.push(cells);
+          continue;
+        } else {
+          flushTable();
+        }
+
+        // 2. 水平分割线: --- 或 ***
+        if (/^(\-{3,}|\*{3,}|_{3,})$/.test(line)) {
+          flushList();
+          html += '<hr class="rn-hr"/>';
+          continue;
+        }
+
+        // 3. 标题识别: #, ##, ###, ####, #####
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headingMatch) {
+          flushList();
+          const level = headingMatch[1].length;
+          const text = parseInlineMarkdown(headingMatch[2]);
+          html += `<h${level} class="rn-h${level}">${text}</h${level}>`;
+          continue;
+        }
+
+        // 4. 引用块: > 引用文本
+        if (line.startsWith('>')) {
+          flushList();
+          const quoteText = parseInlineMarkdown(line.replace(/^>\s*/, ''));
+          html += `<blockquote class="rn-quote">${quoteText}</blockquote>`;
+          continue;
+        }
+
+        // 5. 无序列表项: - 或 *
+        const listMatch = line.match(/^[-*+]\s+(.*)$/);
+        if (listMatch) {
+          if (!inList) {
+            inList = true;
+            html += '<ul class="rn-ul">';
+          }
+          const itemText = parseInlineMarkdown(listMatch[1]);
+          html += `<li class="rn-li">${itemText}</li>`;
+          continue;
+        } else {
+          flushList();
+        }
+
+        // 6. 空白行
+        if (!line) {
+          html += '<div class="rn-spacer"></div>';
+          continue;
+        }
+
+        // 7. 普通段落文本
+        html += `<p class="rn-p">${parseInlineMarkdown(line)}</p>`;
+      }
+
+      flushList();
+      flushTable();
       return html;
     }
 

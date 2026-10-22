@@ -197,6 +197,16 @@ class UpdateManager {
    */
   showUpdateToast(toastManager, result) {
     if (!toastManager || !result) return;
+    const cleanNotes = (result.releaseNotes || '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/^(\-{3,}|\*{3,}|_{3,})$/gm, '')
+      .replace(/^\s*[-*+]\s+/gm, '• ')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\|.*?\|/g, '')
+      .trim();
+    const snippet = cleanNotes.substring(0, 140) + (cleanNotes.length > 140 ? '...' : '');
+
     const alertData = {
       id: `update_${result.latestTag}_${Date.now()}`,
       is_test: false,
@@ -205,7 +215,7 @@ class UpdateManager {
       time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
       pub_time: result.publishedAt || new Date().toLocaleString('zh-CN', { hour12: false }),
       title: `🚀 发现新版本: ${result.latestTag}`,
-      content: `快讯通已发布全新版本！\n\n• 当前运行版本: v${result.currentVersion}\n• 线上最新版本: ${result.latestTag}\n• 更新内容:\n${result.releaseNotes.substring(0, 160)}${result.releaseNotes.length > 160 ? '...' : ''}\n\n点击卡片即可前往下载更新。`,
+      content: `快讯通已发布全新版本！\n\n• 当前运行版本: v${result.currentVersion}\n• 线上最新版本: ${result.latestTag}\n• 更新亮点概要:\n${snippet}\n\n点击卡片即可前往配置中心一键更新。`,
       url: result.downloadUrl || result.releasePageUrl,
       important: true,
       ai_analysis: {
