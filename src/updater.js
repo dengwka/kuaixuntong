@@ -138,7 +138,7 @@ class UpdateManager {
     }
 
     logger.info(`[Updater] 开始自动下载最新安装包: ${downloadUrl}`);
-    const res = await fetchFn(downloadUrl);
+    const res = await fetchFn(downloadUrl, { redirect: 'follow' });
     if (!res.ok) {
       throw new Error(`下载请求失败: HTTP ${res.status}`);
     }
@@ -155,35 +155,72 @@ class UpdateManager {
     const destStream = fs.createWriteStream(destPath);
     let receivedBytes = 0;
 
-    const { Readable } = require('stream');
-    const nodeStream = (typeof Readable.fromWeb === 'function' && res.body)
-      ? Readable.fromWeb(res.body)
-      : res.body;
-
-    nodeStream.on('data', (chunk) => {
-      receivedBytes += chunk.length;
-      if (totalBytes > 0 && typeof onProgress === 'function') {
-        const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-        onProgress({
-          percent,
-          receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
-          totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
-        });
+    // 采用高可靠 Reader 流式管道读取，严格保障背压与字节完整性，彻底杜绝数据块丢失
+    if (res.body && typeof res.body.getReader === 'function') {
+      const reader = res.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value && value.length > 0) {
+          receivedBytes += value.length;
+          const canContinue = destStream.write(value);
+          if (!canContinue) {
+            await new Promise(r => destStream.once('drain', r));
+          }
+          if (totalBytes > 0 && typeof onProgress === 'function') {
+            const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+            onProgress({
+              percent,
+              receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
+              totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
+            });
+          }
+        }
       }
-    });
+    } else {
+      // 备用 Node.js Stream 分块读取
+      for await (const chunk of res.body) {
+        receivedBytes += chunk.length;
+        const canContinue = destStream.write(chunk);
+        if (!canContinue) {
+          await new Promise(r => destStream.once('drain', r));
+        }
+        if (totalBytes > 0 && typeof onProgress === 'function') {
+          const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+          onProgress({
+            percent,
+            receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
+            totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
+          });
+        }
+      }
+    }
 
+    // 严格等待文件句柄完全关闭且刷盘完成 (close 事件)
     await new Promise((resolve, reject) => {
-      nodeStream.pipe(destStream);
-      destStream.on('finish', resolve);
+      destStream.on('close', resolve);
       destStream.on('error', reject);
-      nodeStream.on('error', reject);
+      destStream.end();
     });
 
-    logger.info(`[Updater] 安装包已下载至: ${destPath} (${(receivedBytes / (1024 * 1024)).toFixed(1)} MB)，正在启动安装程序...`);
+    // 完整性严格校验：文件大小与 Content-Length 比对
+    const stat = fs.statSync(destPath);
+    if (totalBytes > 0 && stat.size !== totalBytes) {
+      try { fs.unlinkSync(destPath); } catch (e) {}
+      throw new Error(`安装包完整性校验未通过: 预期 ${totalBytes} 字节，实际仅接收 ${stat.size} 字节，请检查网络后重试！`);
+    }
+
+    logger.info(`[Updater] 安装包已安全下载并验证完成: ${destPath} (${(receivedBytes / (1024 * 1024)).toFixed(1)} MB)，正在启动安装程序...`);
+
+    // 停顿 600ms 确保操作系统与杀毒软件安全检测释放句柄
+    await new Promise(r => setTimeout(r, 600));
 
     // 自动唤起安装包
-    if (shell) {
-      shell.openPath(destPath);
+    if (shell && typeof shell.openPath === 'function') {
+      const err = await shell.openPath(destPath);
+      if (err) {
+        logger.warn(`[Updater] shell.openPath 启动安装程序返回提示: ${err}`);
+      }
     }
 
     return {
