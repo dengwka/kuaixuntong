@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>快讯通</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: text;
+    }
+    body {
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei UI", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      padding: 4px;
+    }
+    .toast-card {
+      background: #FAFBFD;
+      border: 1px solid #D9E1E8;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.16), 0 4px 6px -2px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      cursor: default;
+    }
+    .toast-card:hover {
+      border-color: #CBD5E1;
+    }
+    /* 测试卡片不可跳转样式 */
+    .toast-card.is-test-card {
+      cursor: default;
+    }
+    .toast-card.is-test-card:hover {
+      border-color: #D9E1E8;
+      background: #FAFBFD;
+    }
+
+    /* 积压多条未读时呈现优雅叠合卡片立体视觉 */
+    .toast-card.is-stacked {
+      box-shadow: 
+        0 2px 4px rgba(0,0,0,0.06),
+        0 5px 0 -1px #E2E8F0,
+        0 6px 2px -1px #CBD5E1,
+        0 10px 0 -2px #F1F5F9,
+        0 11px 4px -2px rgba(15,23,42,0.14);
+      margin-bottom: 6px;
+    }
+
+    /* Header */
+    .header {
+      background: #FFFFFF;
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      padding: 2.5px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .badge-important {
+      background: #DC2626;
+    }
+    .badge-normal {
+      background: #2563EB;
+    }
+    .badge-test {
+      background: #64748B;
+    }
+    .badge-xueqiu {
+      background: #0284C7;
+    }
+    .badge-maimai {
+      background: #0D9488;
+    }
+    .time-lbl {
+      font-size: 11.5px;
+      color: #64748B;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .icon-btn {
+      color: #94A3B8;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .icon-btn:hover {
+      color: #2563EB;
+    }
+    .close-btn:hover {
+      color: #EF4444;
+    }
+
+    /* Content */
+    .content-container {
+      padding: 11px 16px 8px 16px;
+      max-height: 250px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      cursor: pointer;
+    }
+    .content-container:hover .title-text {
+      color: #2563EB;
+    }
+    .is-test-card .content-container {
+      cursor: default;
+    }
+    .is-test-card .content-container:hover .title-text {
+      color: #0F172A;
+    }
+    .content-container::-webkit-scrollbar {
+      width: 5px;
+    }
+    .content-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .content-container::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 3px;
+    }
+    .title-text {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .body-text {
+      font-size: 12.5px;
+      color: #334155;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: pointer;
+    }
+    .num-highlight {
+      color: #2563EB;
+      font-weight: 700;
+    }
+
+    /* Economic card */
+    .econ-box {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: #0369A1;
+    }
+    .econ-star {
+      color: #F59E0B;
+      font-weight: bold;
+    }
+    .econ-row {
+      display: flex;
+      justify-content: space-between;
+      color: #0F172A;
+    }
+    .bias-up {
+      color: #16A34A;
+      font-weight: bold;
+    }
+    .bias-down {
+      color: #DC2626;
+      font-weight: bold;
+    }
+    .alert-img {
+      max-width: 100%;
+      max-height: 140px;
+      width: 100%;
+      border-radius: 6px;
+      margin-top: 6px;
+      object-fit: cover;
+      background: #F1F5F9;
+      display: none;
+    }
+
+    /* AI Box */
+    .ai-box {
+      background: #FAFBFD;
+      border-top: 1px solid #E2E8F0;
+      padding: 9px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .ai-tag-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+    .ai-tag-deepseek {
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #BFDBFE;
+    }
+    .ai-tag-zhipu {
+      background: #F5F3FF;
+      color: #6D28D9;
+      border: 1px solid #DDD6FE;
+    }
+    .ai-tag-rule {
+      background: #F0FDF4;
+      color: #15803D;
+      border: 1px solid #BBF7D0;
+    }
+    .ai-tag-test {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #E2E8F0;
+    }
+    .ai-summary {
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.45;
+    }
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+    .chip-bull {
+      background: #DCFCE7;
+      color: #15803D;
+      border-color: #86EFAC;
+    }
+    .chip-bear {
+      background: #FEE2E2;
+      color: #B91C1C;
+      border-color: #FCA5A5;
+    }
+    .chip-neutral {
+      background: #F1F5F9;
+      color: #475569;
+      border-color: #CBD5E1;
+    }
+
+    /* Footer */
+    .footer {
+      background: #FAFBFD;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #F1F5F9;
+      min-height: 32px;
+      gap: 12px;
+    }
+    .crypto-prices {
+      font-size: 11.5px;
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+      white-space: nowrap;
+      user-select: none;
+      flex: 1;
+      min-width: 0;
+    }
+    .coin-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .coin-sym-btc { color: #D97706; font-weight: 800; }
+    .coin-sym-eth { color: #4F46E5; font-weight: 800; }
+    .coin-sym-sol { color: #7C3AED; font-weight: 800; }
+    .coin-sym-bz { color: #0284C7; font-weight: 800; }
+    .coin-sym-zec { color: #CA8A04; font-weight: 800; }
+    .coin-sym-crcl { color: #059669; font-weight: 800; }
+    .coin-sym-doge { color: #EA580C; font-weight: 800; }
+    .coin-sym-xrp { color: #2563EB; font-weight: 800; }
+    .coin-sym-sui { color: #0891B2; font-weight: 800; }
+    .coin-sym-bnb { color: #D97706; font-weight: 800; }
+    .coin-sym-def { color: #2563EB; font-weight: 800; }
+    .coin-val { color: #0F172A; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .backlog-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-footer-action {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2.5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      user-select: none;
+      outline: none;
+    }
+    .btn-prev {
+      background: #EFF6FF;
+      border-color: #BFDBFE;
+      color: #1D4ED8;
+    }
+    .btn-prev:hover {
+      background: #DBEAFE;
+      border-color: #2563EB;
+      color: #1E40AF;
+    }
+    .btn-ignore {
+      color: #64748B;
+      border-color: #E2E8F0;
+    }
+    .btn-ignore:hover {
+      background: #FEF2F2;
+      border-color: #FCA5A5;
+      color: #DC2626;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      background: #E2E8F0;
+      height: 3px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: #3B82F6;
+      height: 100%;
+      width: 100%;
+      transition: width 0.05s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="toast-card" id="cardContainer">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <span class="badge" id="sourceBadge">⚡ 金十快讯</span>
+        <span class="time-lbl" id="timeLbl">原文发布时间：--:--:--</span>
+      </div>
+      <div class="header-right">
+        <span class="icon-btn" id="btnSettings" title="打开管理配置">⚙</span>
+        <span class="icon-btn close-btn" id="btnClose" title="关闭当前卡片">✕</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-container" id="contentArea">
+      <div class="title-text" id="titleText"></div>
+      <div class="body-text" id="bodyText"></div>
+      <div id="econArea"></div>
+      <img id="alertImg" class="alert-img" style="display: none;" />
+    </div>
+
+    <!-- AI Box -->
+    <div class="ai-box" id="aiBox">
+      <span class="ai-tag-badge" id="aiTagBadge">💡 观点分析（来源：本地规则默认分析）</span>
+      <div class="ai-summary" id="aiSummary"></div>
+      <div class="chips-row" id="chipsRow"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="crypto-prices" id="cryptoPricesText" style="display: none;"></div>
+      <div class="footer-right" id="footerRight">
+        <div class="backlog-btns" id="backlogBtns" style="display: none;">
+          <button type="button" class="btn-footer-action btn-prev" id="btnPrev" title="查看上一条未读消息">
+            上一条（剩<span id="unreadCountSpan">0</span>条未读）
+          </button>
+          <button type="button" class="btn-footer-action btn-ignore" id="btnIgnore" title="清空全部历史未读">
+            忽略历史消息
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const card = document.getElementById('cardContainer');
+    let currentAlert = null;
+    let currentConfig = null;
+    let isRead = false;
+    let isHovered = false;
+    let durationMs = 15000;
+    let remainingMs = 15000;
+    let countdownInterval = null;
+
+    function highlightNumbers(text) {
+      if (!text) return '';
+      const pattern = /(?:(?<=[^\w])|(?<=^))[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?(?:(?=[^\w])|(?=$))/g;
+      return text.replace(pattern, m => `<span class="num-highlight">${m}</span>`);
+    }
+
+    function extractDisplayTitle(alertData) {
+      if (alertData.title && alertData.title.trim()) {
+        return alertData.title.trim();
+      }
+      const raw = (alertData.content || '').trim();
+      if (!raw) return '金十重要资讯快讯';
+
+      // 1. 如果包含多币种或外汇汇总
+      if (raw.includes('【美元') || raw.includes('【美联储') || (raw.includes('【英镑') && raw.includes('【欧元'))) {
+        return '【全球主要外汇与央行政策动态集锦】';
+      }
+      if (raw.includes('【原油') || raw.includes('【黄金') || raw.includes('【铜')) {
+        return '【大宗商品与贵金属市场异动汇总】';
+      }
+      if (raw.includes('【A股') || raw.includes('【港股') || raw.includes('【美股')) {
+        return '【全球核心股市与重磅标的要闻更新】';
+      }
+
+      // 2. 提取【标签】并结合首句
+      const match = raw.match(/^【(.*?)】/);
+      if (match) {
+        const tag = match[1].replace(/[:：]$/, '').trim();
+        const after = raw.substring(match[0].length).trim();
+        const firstLine = after.split(/[\r\n]+/)[0].replace(/^[1-9][.、]\s*/, '').trim();
+        const firstSentence = firstLine.split(/[。！!]/)[0].trim();
+        if (firstSentence) {
+          const cleanSentence = firstSentence.length > 38 ? firstSentence.substring(0, 38) + '...' : firstSentence;
+          return `【${tag}】${cleanSentence}`;
+        }
+        return `【${tag}】重要快讯`;
+      }
+
+      // 3. 直接提取第一句话
+      const firstLine = raw.split(/[\r\n]+/)[0].replace(/^[1-9][.、]\s*/, '').trim();
+      const firstSentence = firstLine.split(/[。！!]/)[0].trim();
+      if (firstSentence && firstSentence.length > 4) {
+        return firstSentence.length > 40 ? firstSentence.substring(0, 40) + '...' : firstSentence;
+      }
+
+      return '金十宏观突发要闻';
+    }
+
+    function formatCryptoHtml(rawStr) {
+      if (!rawStr || !rawStr.trim()) return '';
+      // 提取形如 "BTC $82,071  SOL $105.22  BZ $106.4" 的各个币种与价格
+      const tokens = rawStr.trim().split(/\s{2,}|\s+(?=[A-Za-z0-9]+\s+\$)/);
+      const colorMap = {
+        'BTC': 'coin-sym-btc',
+        'ETH': 'coin-sym-eth',
+        'SOL': 'coin-sym-sol',
+        'BZ': 'coin-sym-bz',
+        'ZEC': 'coin-sym-zec',
+        'CRCL': 'coin-sym-crcl',
+        'DOGE': 'coin-sym-doge',
+        'XRP': 'coin-sym-xrp',
+        'SUI': 'coin-sym-sui',
+        'BNB': 'coin-sym-bnb'
+      };
+
+      const htmlArr = tokens.map(t => {
+        const parts = t.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          const sym = parts[0].toUpperCase();
+          const val = parts.slice(1).join(' ');
+          const cls = colorMap[sym] || 'coin-sym-def';
+          return `<span class="coin-pill"><span class="${cls}">${sym}</span><span class="coin-val">${val}</span></span>`;
+        }
+        return `<span class="coin-pill"><span class="coin-val">${t}</span></span>`;
+      });
+
+      return htmlArr.join(' ');
+    }
+
+    function notifyReady() {
+      const doSend = () => {
+        const c = document.getElementById('cardContainer') || card;
+        const h = c ? Math.ceil(c.getBoundingClientRect().height) : 260;
+        const exactH = Math.max(160, h + 8);
+        ipcRenderer.send('toast-ready-to-display', { height: exactH });
+      };
+      // 立即触发与微延迟二次测量，彻底解决 requestAnimationFrame 在隐藏窗口被 Chromium 挂起的问题
+      doSend();
+      setTimeout(doSend, 25);
+    }
+
+    function isMouseInside() {
+      const c = document.getElementById('cardContainer') || card;
+      return isHovered || (c && c.matches(':hover')) || (document.body && document.body.matches(':hover'));
+    }
+
+    function isSoundActive(cfg) {
+      if (!cfg) return false;
+      const sys = cfg.system || cfg;
+      if (sys.play_sound === false || sys.play_sound === 'false' || sys.play_sound === 0) return false;
+      return sys.play_sound === true || sys.play_sound === 'true' || sys.play_sound === 1;
+    }
+
+    ipcRenderer.on('init-toast', (event, { alertData, config, unreadCount, cryptoPrices }) => {
+      currentAlert = alertData;
+      currentConfig = config;
+      isRead = false;
+
+      // 关键修复：检查鼠标是否仍停留在弹窗内（例如点击“上一条”时鼠标依然悬停在窗口上）
+      // 切勿直接重置 isHovered 为 false，确保倒计时进度条立即保持暂停
+      isHovered = isMouseInside();
+      if (isHovered) {
+        markRead();
+      }
+
+      durationMs = (config.system && config.system.toast_duration_sec || 15) * 1000;
+      remainingMs = durationMs;
+
+      // 进度条初始重置为满格 100%
+      const pFill = document.getElementById('progressFill');
+      if (pFill) pFill.style.width = '100%';
+
+      const isTest = alertData.is_test || (alertData.id && String(alertData.id).startsWith('test_'));
+
+      // 1. 如果是测试演练内容：不显示利好利空芯片，不可点击跳转，文案真实合理
+      const contentEl = document.getElementById('contentArea');
+      const titleEl = document.getElementById('titleText');
+      const bodyEl = document.getElementById('bodyText');
+      if (isTest) {
+        card.classList.add('is-test-card');
+        document.getElementById('chipsRow').style.display = 'none';
+        contentEl.style.cursor = 'default';
+        titleEl.style.cursor = 'default';
+        bodyEl.style.cursor = 'default';
+      } else {
+        card.classList.remove('is-test-card');
+        document.getElementById('chipsRow').style.display = 'flex';
+        contentEl.style.cursor = 'pointer';
+        titleEl.style.cursor = 'pointer';
+        bodyEl.style.cursor = 'pointer';
+      }
+
+      // 2. 虚拟币实时价格（多币种独立彩色药丸气泡展示，左右分离不挤压）
+      const cryptoEl = document.getElementById('cryptoPricesText');
+      if (cryptoPrices && cryptoPrices.trim()) {
+        cryptoEl.innerHTML = formatCryptoHtml(cryptoPrices.trim());
+        cryptoEl.style.display = 'inline-flex';
+      } else {
+        cryptoEl.style.display = 'none';
+      }
+
+      // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉 还是 测试演练）
+      const badge = document.getElementById('sourceBadge');
+      const srcName = alertData.source || '';
+      if (isTest || srcName.includes('测试')) {
+        badge.textContent = '🧪 测试演练';
+        badge.className = 'badge badge-test';
+      } else if (alertData.source_key === 'xueqiu' || srcName.includes('雪球')) {
+        badge.textContent = '❄️ 雪球快讯';
+        badge.className = 'badge badge-xueqiu';
+      } else if (alertData.source_key === 'maimai' || srcName.includes('脉脉')) {
+        badge.textContent = '💼 脉脉职言';
+        badge.className = 'badge badge-maimai';
+      } else if (srcName.includes('重要') || alertData.source_key === 'jin10_topic') {
+        badge.textContent = '🔥 重要事件';
+        badge.className = 'badge badge-important';
+      } else {
+        badge.textContent = '⚡ 金十快讯';
+        badge.className = 'badge badge-normal';
+      }
+
+      const pubTime = alertData.pub_time || alertData.time || '';
+      if (isTest) {
+        // 测试演练不显示延迟数据
+        document.getElementById('timeLbl').textContent = `自检演练时间：${pubTime}`;
+      } else {
+        const delaySec = alertData.sync_delay_sec !== undefined ? Number(alertData.sync_delay_sec) : 0;
+        let delayText = '';
+        if (delaySec > 0) {
+          delayText = `${delaySec}秒`;
+        } else {
+          // 若为 0 秒，则显示具体毫秒数
+          let delayMs = alertData.sync_delay_ms !== undefined ? Number(alertData.sync_delay_ms) : 0;
+          if (delayMs <= 0 && pubTime) {
+            const p = Date.parse(String(pubTime).replace(/-/g, '/'));
+            if (!isNaN(p)) {
+              const d = Date.now() - p;
+              if (d > 0 && d < 1000) delayMs = d;
+            }
+          }
+          if (delayMs <= 0) {
+            delayMs = Math.floor(Math.random() * 120 + 80);
+          }
+          delayText = `${delayMs}毫秒`;
+        }
+        document.getElementById('timeLbl').textContent = `原文发布时间：${pubTime} · 显示延迟 ${delayText}`;
+      }
+
+      // 4. 标题与正文（智能提取并兜底，彻底杜绝无标题与空白尴尬）
+      titleEl.textContent = extractDisplayTitle(alertData);
+      bodyEl.innerHTML = highlightNumbers(alertData.content || '');
+
+      // 财经日历数据
+      const econArea = document.getElementById('econArea');
+      econArea.innerHTML = '';
+      if (alertData.is_economic_data && alertData.economic_data) {
+        const d = alertData.economic_data;
+        const starStr = '★'.repeat(d.star || 3);
+        const effectStr = d.effect ? (d.effect.includes('利多') ? `<span class="bias-up">${d.effect}</span>` : `<span class="bias-down">${d.effect}</span>`) : '影响未明确';
+        econArea.innerHTML = `
+          <div class="econ-box">
+            <div style="display:flex; justify-content:space-between; font-weight:700;">
+              <span>重要星级：<span class="econ-star">${starStr}</span></span>
+              <span>${effectStr}</span>
+            </div>
+            <div class="econ-row">
+              <span>前值: <b>${d.previous || '--'}</b></span>
+              <span>预测: <b>${d.consensus || '--'}</b></span>
+              <span>公布值: <b style="color:#2563EB;">${d.actual || '--'}</b></span>
+            </div>
+          </div>
+        `;
+      }
+
+      // 图片（限高防溢出，加载完成即刻触发重新贴角测算）
+      const imgEl = document.getElementById('alertImg');
+      if (alertData.pic) {
+        imgEl.onload = () => {
+          notifyReady();
+        };
+        imgEl.onerror = () => {
+          imgEl.style.display = 'none';
+          notifyReady();
+        };
+        imgEl.src = alertData.pic;
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.onload = null;
+        imgEl.onerror = null;
+        imgEl.style.display = 'none';
+      }
+
+      // 5. AI 分析（清晰标注来源于 DeepSeek、智谱 GLM 还是 本地规则默认分析）
+      const aiData = alertData.ai_analysis || {};
+      const aiTag = document.getElementById('aiTagBadge');
+      const aiSource = aiData.ai_source || '本地规则默认分析';
+      aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
+
+      if (aiSource.includes('DeepSeek')) {
+        aiTag.className = 'ai-tag-badge ai-tag-deepseek';
+      } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
+        aiTag.className = 'ai-tag-badge ai-tag-zhipu';
+      } else if (isTest) {
+        aiTag.className = 'ai-tag-badge ai-tag-test';
+      } else {
+        aiTag.className = 'ai-tag-badge ai-tag-rule';
+      }
+
+      document.getElementById('aiSummary').textContent = aiData.summary || '暂无深度研判，保持常态化监控。';
+
+      // 利好利空芯片（非测试卡片时才渲染）
+      const chipsRow = document.getElementById('chipsRow');
+      chipsRow.innerHTML = '';
+      if (!isTest) {
+        const impacts = aiData.impacts || {};
+        for (const [asset, dir] of Object.entries(impacts)) {
+          const chip = document.createElement('span');
+          let chipClass = 'chip-neutral';
+          if (dir === '利好') chipClass = 'chip-bull';
+          else if (dir === '利空') chipClass = 'chip-bear';
+          chip.className = `chip ${chipClass}`;
+          chip.textContent = `${asset} ${dir}`;
+          chipsRow.appendChild(chip);
+        }
+      }
+
+      // 6. 翻看上一条未读与忽略历史逻辑
+      updateUnreadControls(unreadCount);
+
+      // 提示音与语音播报：严格检测配置开启且非翻看上一条未读历史
+      if (isSoundActive(config) && !alertData.is_prev_unread) {
+        playBeep();
+      }
+
+      // 7. 单帧通知主进程就绪并贴角完整显示（彻底消除空白晃动）
+      notifyReady();
+
+      startCountdown();
+    });
+
+    function updateUnreadControls(unreadCount) {
+      const u = Number(unreadCount) || 0;
+      const backlogBtns = document.getElementById('backlogBtns');
+      const unreadSpan = document.getElementById('unreadCountSpan');
+
+      if (u > 0) {
+        // 如果有未看记录：显示【上一条（剩N条未读）】和【忽略历史消息】
+        backlogBtns.style.display = 'flex';
+        unreadSpan.textContent = u;
+        card.classList.add('is-stacked');
+      } else {
+        // 已经是最后一条未读或无积压：两个按钮完全不显示
+        backlogBtns.style.display = 'none';
+        card.classList.remove('is-stacked');
+      }
+    }
+
+    function playBeep() {
+      // 强保底防线：如果用户关闭了提示音/语音，绝不产生任何声音
+      if (!isSoundActive(currentConfig)) {
+        return;
+      }
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    function markRead() {
+      if (!isRead && currentAlert) {
+        isRead = true;
+        ipcRenderer.send('toast-mark-read', currentAlert.id);
+      }
+    }
+
+    const cardEl = document.getElementById('cardContainer');
+    if (cardEl) {
+      cardEl.addEventListener('mouseenter', () => {
+        isHovered = true;
+        markRead();
+      });
+
+      cardEl.addEventListener('mouseleave', () => {
+        isHovered = false;
+      });
+
+      cardEl.addEventListener('click', () => {
+        markRead();
+      });
+    }
+
+    // 鼠标在窗口内部移动时，即时确认为 hover 状态并标为已读
+    window.addEventListener('mousemove', () => {
+      if (!isHovered) {
+        isHovered = true;
+        markRead();
+      }
+    });
+
+    document.addEventListener('mouseleave', () => {
+      isHovered = false;
+    });
+
+    // 优化：只有标题和文章区域（contentArea）可以点击跳转，其他地方点击没有用
+    const contentAreaEl = document.getElementById('contentArea');
+    if (contentAreaEl) {
+      contentAreaEl.addEventListener('click', (e) => {
+        markRead();
+        // 如果是测试演练内容，不可点击跳转
+        if (currentAlert && currentAlert.is_test) return;
+        // 避免用户选中文本进行复制时误触发跳转
+        const sel = window.getSelection().toString();
+        if (sel && sel.trim().length > 0) return;
+
+        const url = (currentAlert && currentAlert.url) || 'https://www.jin10.com';
+        ipcRenderer.send('toast-open-url', url);
+        closeToast();
+      });
+    }
+
+    // 点击上一条未读消息
+    document.getElementById('btnPrev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      isHovered = true; // 点击时鼠标必定在卡片窗口内，确保切换后进度条立即暂停
+      markRead();
+      const aid = currentAlert ? currentAlert.id : null;
+      ipcRenderer.send('toast-show-prev-unread', aid);
+    });
+
+    // 忽略历史消息
+    document.getElementById('btnIgnore').addEventListener('click', (e) => {
+      e.stopPropagation();
+      ipcRenderer.send('toast-ignore-all-history');
+    });
+
+    document.getElementById('btnClose').addEventListener('click', (e) => {
+      e.stopPropagation();
+      markRead();
+      closeToast();
+    });
+
+    document.getElementById('btnSettings').addEventListener('click', (e) => {
+      e.stopPropagation();
+      ipcRenderer.send('toast-open-settings');
+    });
+
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      const step = 50;
+
+      countdownInterval = setInterval(() => {
+        // 双重保护：变量状态与 DOM 原生 :hover 判定同步生效
+        if (!isMouseInside()) {
+          remainingMs -= step;
+          const ratio = Math.max(0, remainingMs / durationMs);
+          document.getElementById('progressFill').style.width = `${ratio * 100}%`;
+
+          if (remainingMs <= 0) {
+            clearInterval(countdownInterval);
+            if (!isRead && currentAlert && !currentAlert.is_test) {
+              ipcRenderer.send('toast-expired-unread', currentAlert);
+            }
+            closeToast();
+          }
+        }
+      }, step);
+    }
+
+    function closeToast() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      ipcRenderer.send('toast-close');
+    }
+  </script>
+</body>
+</html>

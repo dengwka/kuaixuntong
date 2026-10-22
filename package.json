@@ -1,0 +1,81 @@
+{
+  "name": "kuaixuntong",
+  "version": "1.0.0",
+  "description": "快讯通 - 实时突发财经与宏观事件监控助手",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "keywords": [
+    "kuaixuntong",
+    "jin10",
+    "financial",
+    "news",
+    "alert",
+    "desktop",
+    "tray"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "build": {
+    "appId": "cn.antigravity.kuaixuntong",
+    "productName": "快讯通",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/app_icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "快讯通",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/app_icon.png",
+      "category": "public.app-category.finance",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  }
+}

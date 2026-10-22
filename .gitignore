@@ -1,0 +1,28 @@
+# 依赖与打包构建产物（安装包放 GitHub Releases，不可入 Git 仓库）
+node_modules/
+release/
+dist/
+build/
+*.exe
+*.dmg
+*.zip
+*.blockmap
+*.7z
+
+# 本地运行快讯历史数据与系统日志（保护个人本地数据）
+data/
+log/
+logs/
+*.log
+
+# 个人私人研究笔记或本地调试临时脚本
+*投资研究报告.md
+tmp*/
+
+# 系统与编辑器缓存
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+

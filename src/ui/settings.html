@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>快讯通 · 常驻服务与管理配置中心</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #F8FAFC;
+      color: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+      padding: 0;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      user-select: none;
+    }
+    .header {
+      background: #FFFFFF;
+      padding: 12px 20px;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header p {
+      font-size: 11.5px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #DCFCE7;
+      color: #166534;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Tab 导航栏 */
+    .tab-nav {
+      display: flex;
+      background: #FFFFFF;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 0 10px;
+      gap: 2px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .tab-nav::-webkit-scrollbar {
+      height: 3px;
+    }
+    .tab-nav::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 2px;
+    }
+    .tab-item {
+      flex: 1;
+      min-width: 96px;
+      padding: 11px 4px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #64748B;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      user-select: none;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+    }
+    .tab-item:hover {
+      color: #1E293B;
+      background: #F8FAFC;
+    }
+    .tab-item.active {
+      color: #2563EB;
+      border-bottom-color: #2563EB;
+      background: #EFF6FF;
+      font-weight: 700;
+    }
+
+    /* Tab 内容区 */
+    .scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px 24px 20px;
+    }
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* 卡片与表单样式 */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 12.5px;
+      color: #334155;
+    }
+    .form-row:last-child {
+      margin-bottom: 0;
+    }
+    input[type="number"], input[type="text"], select {
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12.5px;
+      outline: none;
+      background: #FFFFFF;
+      color: #0F172A;
+      user-select: text;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+    .input-sm {
+      width: 65px;
+      text-align: center;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+    .tip-text {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    textarea {
+      width: 100%;
+      height: 48px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      outline: none;
+      resize: vertical;
+      color: #0F172A;
+      user-select: text;
+    }
+    textarea:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    /* 底部保存与测试按钮 */
+    .footer {
+      background: #FFFFFF;
+      border-top: 1px solid #E2E8F0;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .btn {
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 11.5px;
+    }
+    .btn-secondary {
+      background: #F1F5F9;
+      color: #334155;
+      border: 1px solid #CBD5E1;
+    }
+    .btn-secondary:hover {
+      background: #E2E8F0;
+    }
+    .btn-primary {
+      background: #2563EB;
+      color: #FFFFFF;
+    }
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+    .toast-tip {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      color: #FFFFFF;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <div class="header">
+    <div>
+      <h2>⚡ 快讯通 · 管理配置中心</h2>
+      <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
+    </div>
+    <span class="status-badge">🟢 运行中 · 托盘常驻</span>
+  </div>
+
+  <!-- Tab 导航栏 (功能重要的排在前面，开机启动专设Tab，日志配置排在最后) -->
+  <div class="tab-nav">
+    <div class="tab-item active" data-tab="sources">📡 监控数据源</div>
+    <div class="tab-item" data-tab="keywords">🎯 关键词规则</div>
+    <div class="tab-item" data-tab="ai">💡 AI观点研判</div>
+    <div class="tab-item" data-tab="toast">🔔 弹窗与行情</div>
+    <div class="tab-item" data-tab="autostart">🚀 开机自启</div>
+    <div class="tab-item" data-tab="storage">📂 数据与日志</div>
+  </div>
+
+  <!-- 内容滚动容器 -->
+  <div class="scroll-body">
+
+    <!-- ==================== TAB 1: 监控数据源 (最重要功能放最前面) ==================== -->
+    <div class="tab-pane active" id="pane-sources">
+      <div class="card" style="border-left: 3px solid #0284C7;">
+        <div class="card-title">
+          <span>📡 聚合数据源设置 (金十 / 雪球 / 脉脉)</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
+          多通道聚合监听，支持官方重点快讯过滤、宏观星级指标并集推送与各通道独立关键词拦截。
+        </div>
+
+        <!-- A. 金十实时突发快讯流 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="srcJin10" checked />
+              <b style="color: #1E293B;">⚡ 启用金十实时突发快讯流</b>
+            </label>
+          </div>
+          <div id="jin10OptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="jin10FilterMode" id="jin10ModeImportant" value="important" checked />
+                <span style="color: #DC2626; font-weight: 600;">【重要】快讯</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="jin10FilterMode" id="jin10ModeAll" value="all" />
+                <span style="color: #475569;">全部快讯</span>
+              </label>
+            </div>
+            <!-- 宏观指标星级过滤配置 -->
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+              <span style="color: #475569; font-size: 12px; font-weight: 600;">📊 宏观指标推送:</span>
+              <select id="jin10MinStar" style="border: 1px solid #CBD5E1; border-radius: 6px; padding: 3px 8px; font-size: 12px; background: #FFFFFF; outline: none; cursor: pointer;">
+                <option value="1">1星（含）以上全部指标 (全量)</option>
+                <option value="2">2星（含）以上中重磅指标</option>
+                <option value="3" selected>3星（含）以上重磅指标 (默认推荐)</option>
+                <option value="4">4星（含）以上重大指标</option>
+                <option value="5">仅 5星 极重磅指标 (决议/非农/CPI)</option>
+              </select>
+              <span class="tip-text">(与下方关键词取并集，达标星级宏观指标均确保推送)</span>
+            </div>
+            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+              <label class="checkbox-row" style="font-size: 12px;">
+                <input type="checkbox" id="jin10KwFilterEnabled" />
+                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+              </label>
+              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                <input type="text" id="jin10Keywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="降息, 加息, 非农, CPI, 美联储, 央行, 利率, 战争, 制裁, 突发" />
+                <button type="button" class="btn btn-secondary btn-sm" id="btnResetJin10Kws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复金十默认关键词">重置默认</button>
+              </div>
+              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词（与星级宏观指标取并集）。</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 金十重要事件专栏 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
+          <div class="form-row">
+            <label class="checkbox-row">
+              <input type="checkbox" id="srcTopic" checked />
+              <b style="color: #059669;">🔥 启用金十【重要事件】专栏 (精选宏观深度分析)</b>
+            </label>
+          </div>
+          <div id="topicOptionsSub" style="margin-left: 22px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px; font-size: 12px;">
+            <label class="checkbox-row" style="font-size: 12px;">
+              <input type="checkbox" id="topicKwFilterEnabled" />
+              <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+            </label>
+            <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+              <input type="text" id="topicKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="美联储, 宏观决议, 地缘政治, 降息, 加息, 冲突, 战略, 关税" />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnResetTopicKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复专栏默认关键词">重置默认</button>
+            </div>
+            <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+          </div>
+        </div>
+
+        <!-- C. 雪球 7x24 快讯流 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="srcXueqiu" checked />
+              <b style="color: #0284C7;">❄️ 启用雪球 7×24 快讯流</b>
+            </label>
+          </div>
+          <div id="xqOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="xqFilterMode" id="xqModeImportant" value="important" checked />
+                <span style="color: #0284C7; font-weight: 600;">【重点】快讯</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="xqFilterMode" id="xqModeAll" value="all" />
+                <span style="color: #475569;">全部快讯</span>
+              </label>
+            </div>
+            <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #64748B; font-size: 11px; white-space: nowrap;">雪球 Cookie (可选):</span>
+              <input type="text" id="xueqiuCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="xq_a_token=... (留空自动走敏捷财经快讯专线)" />
+            </div>
+            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+              <label class="checkbox-row" style="font-size: 12px;">
+                <input type="checkbox" id="xqKwFilterEnabled" />
+                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+              </label>
+              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                <input type="text" id="xueqiuKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="涨停, 跌停, 财报, 业绩, 减持, 增持, 重组, 违约, 证监会, 突破" />
+                <button type="button" class="btn btn-secondary btn-sm" id="btnResetXqKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复雪球默认关键词">重置默认</button>
+              </div>
+              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- D. 脉脉职言 / 商业爆料 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="srcMaimai" checked />
+              <b style="color: #0D9488;">💼 启用脉脉职言 / 企业商业情报爆料</b>
+            </label>
+          </div>
+          <div id="maimaiOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #64748B; font-size: 11px; white-space: nowrap;">脉脉 Cookie (可选):</span>
+              <input type="text" id="maimaiCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="Cookie 字符串 (留空自动走商业企业精选热榜通道)" />
+            </div>
+            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+              <label class="checkbox-row" style="font-size: 12px;">
+                <input type="checkbox" id="maimaiKwFilterEnabled" />
+                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+              </label>
+              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                <input type="text" id="maimaiKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="裁员, 年终奖, 倒闭, 降薪, 涉案, 调查, 高管变动, 离职, 破产" />
+                <button type="button" class="btn btn-secondary btn-sm" id="btnResetMmKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复脉脉默认关键词">重置默认</button>
+              </div>
+              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: 关键词规则 ==================== -->
+    <div class="tab-pane" id="pane-keywords">
+      <div class="card" style="border-left: 3px solid #8B5CF6;">
+        <div class="card-title">🎯 全局关键词规则与过滤策略</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
+          设置跨所有通道的全局加分标签与一票否决黑名单。黑名单命中则绝对不推送。
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px;">
+            🌟 全局高亮优先关键词 (命中增加权重，并直接在卡片展示高亮徽章):
+          </div>
+          <textarea id="highKws" placeholder="突发, 降息, 加息, 非农, CPI, 原油, 黄金, 违约..."></textarea>
+          <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。命中后即使普通快讯亦能获得高优先级弹窗关注。</div>
+        </div>
+
+        <div>
+          <div style="font-size: 12px; font-weight: 600; color: #DC2626; margin-bottom: 4px;">
+            🚫 全局屏蔽黑名单 (一票否决，命中则一律拦截不推送):
+          </div>
+          <textarea id="exKws" placeholder="广告, 扫码, 领券, 下载App, 限时特惠..."></textarea>
+          <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。有效过滤无意义营销信息与低密度垃圾广告。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: AI 观点研判 ==================== -->
+    <div class="tab-pane" id="pane-ai">
+      <div class="card" style="border-left: 3px solid #6366F1;">
+        <div class="card-title">
+          <span>💡 宏观观点分析与资产影响研判</span>
+          <span id="aiEngineStatus" style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534;">🟢 本地规则默认分析</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
+          支持配置 DeepSeek 或 智谱 AI Key（若同时配置将动态智能双核调度）。若均不配置，系统将采用内置金融规则分析，免 Key 亦可完全正常运行。
+        </div>
+
+        <div class="form-row" style="margin-bottom: 12px;">
+          <label class="checkbox-row">
+            <input type="checkbox" id="aiEnabled" checked />
+            <b style="color: #1E293B;">启用实时观点分析与五大资产（黄金、美元、原油、A股、虚拟币）利好利空研判</b>
+          </label>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 4px;">
+          <span style="width: 140px; font-weight: 600;">DeepSeek API Key:</span>
+          <input type="text" id="deepseekApiKey" style="flex: 1; min-width: 0;" placeholder="sk-..." />
+          <button type="button" class="btn btn-secondary btn-sm" id="btnTestDsKey" style="flex-shrink: 0; padding: 5px 10px; font-size: 11px;">
+            ⚡ 检测可用性
+          </button>
+        </div>
+        <div id="dsTestNotice" style="font-size: 11.5px; margin: 2px 0 8px 140px; display: none; font-weight: 600;"></div>
+
+        <div class="form-row" style="margin-top: 8px;">
+          <span style="width: 140px; font-weight: 600;">智谱 GLM API Key:</span>
+          <input type="text" id="zhipuApiKey" style="flex: 1; min-width: 0;" placeholder="智谱开放平台 API Key..." />
+          <button type="button" class="btn btn-secondary btn-sm" id="btnTestZpKey" style="flex-shrink: 0; padding: 5px 10px; font-size: 11px;">
+            ⚡ 检测可用性
+          </button>
+        </div>
+        <div id="zpTestNotice" style="font-size: 11.5px; margin: 2px 0 8px 140px; display: none; font-weight: 600;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: 弹窗与行情 ==================== -->
+    <div class="tab-pane" id="pane-toast">
+      <!-- 轮询与弹窗 -->
+      <div class="card">
+        <div class="card-title">🔔 弹窗与交互策略</div>
+        <div class="form-row">
+          <span>抓取轮询间隔 (秒):</span>
+          <input type="number" id="pollInterval" min="3" max="60" class="input-sm" value="5" />
+          <span class="tip-text">(推荐 5~10 秒，极低内存与网络消耗)</span>
+        </div>
+        <div class="form-row" style="margin-top: 6px;">
+          <span>弹窗停留时长 (秒):</span>
+          <input type="number" id="toastDuration" min="5" max="60" class="input-sm" value="10" />
+          <span class="tip-text">(鼠标悬停自动暂停倒计时，移开继续)</span>
+        </div>
+        <div class="form-row" style="margin-top: 6px;">
+          <label class="checkbox-row" style="cursor: pointer;">
+            <input type="checkbox" id="playSound" checked />
+            <span style="font-weight: 600;">🔔 弹窗提示音与语音提醒 (新快讯弹窗时播放声音)</span>
+          </label>
+          <span id="soundStatusBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #DCFCE7; color: #166534; font-weight: 600; margin-left: 8px;">当前：声音开启</span>
+        </div>
+      </div>
+
+      <!-- 夜间免打扰 -->
+      <div class="card">
+        <div class="card-title">🌙 夜间免打扰</div>
+        <div class="form-row">
+          <label class="checkbox-row">
+            <input type="checkbox" id="qhEnabled" />
+            <b>启用夜间免打扰（静默不弹窗，保留未读记录）</b>
+          </label>
+        </div>
+        <div class="form-row" style="margin-top: 4px;">
+          <span>开始:</span>
+          <input type="text" id="qhStart" class="input-sm" value="23:00" placeholder="23:00" />
+          <span>结束:</span>
+          <input type="text" id="qhEnd" class="input-sm" value="08:00" placeholder="08:00" />
+          <span class="tip-text">(24小时制，自动支持跨午夜计算)</span>
+        </div>
+      </div>
+
+      <!-- 主流虚拟币实时价格 -->
+      <div class="card" style="border-left: 3px solid #10B981;">
+        <div class="card-title">
+          <span>🪙 主流虚拟币实时价格 (优先 OKX 报价)</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px;">
+          弹窗弹出时实时获取所选币种的最新报价，展示在卡片底部居中位置。最多勾选 3 个币种。
+        </div>
+        <div class="form-row" style="margin-bottom: 8px;">
+          <label class="checkbox-row">
+            <input type="checkbox" id="cryptoEnabled" checked />
+            <b>启用弹窗底部虚拟币实时价格展示</b>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="customCoinInput" placeholder="输入币种搜索添加 (例如 ZEC, BZ, CRCL, PEPE...)" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px;" />
+          <button type="button" class="btn btn-secondary btn-sm" id="btnAddCoin" style="flex-shrink: 0; padding: 6px 12px; font-weight: 600;">
+            🔍 OKX 校验并添加
+          </button>
+        </div>
+        <div id="coinAddNotice" style="font-size: 11.5px; margin-bottom: 8px; padding: 5px 8px; border-radius: 4px; display: none;"></div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px 10px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;" id="cryptoCoinsContainer"></div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span id="cryptoLimitTip" style="font-size: 11.5px; color: #475569;">已选: BTC, SOL (2/3个)</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnTestCrypto">⚡ 实时测试获取 OKX 报价</button>
+        </div>
+        <div id="cryptoTestResult" style="font-size: 11.5px; font-weight: 600; margin-top: 6px; display: none;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: 开机自启 (专用独立Tab，默认开启) ==================== -->
+    <div class="tab-pane" id="pane-autostart">
+      <div class="card" style="border-left: 3px solid #F59E0B;">
+        <div class="card-title">
+          <span>🚀 开机自启动与后台常驻服务</span>
+          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #FEF3C7; color: #92400E; font-weight: 600;">推荐开启</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
+          设置电脑开机后快讯通的自动启动机制，确保随时随地第一时间捕获全球重磅突发财经情报。
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 12px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="autoStartEnabled" checked />
+              <b style="color: #0F172A; font-size: 13px;">开机自动启动快讯通 (系统登录后自动运行 · 默认开启)</b>
+            </label>
+          </div>
+          <div style="font-size: 11.5px; color: #64748B; margin-left: 22px; line-height: 1.5;">
+            勾选后，系统将在开机或用户登录时自动拉起快讯通服务，无需手动启动。系统级原生注册，开销几乎为零。
+          </div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px;">
+          <div style="font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 6px;">
+            💡 状态栏与系统托盘常驻说明
+          </div>
+          <div style="font-size: 11.5px; color: #475569; line-height: 1.6;">
+            • <b>未看消息优先</b>：单击或双击托盘图标，若有未读消息将优先弹出进行补看；<br>
+            • <b>快速唤起配置</b>：在无未读消息时，点击托盘图标将快速打开此配置中心；<br>
+            • <b>状态徽章提示</b>：产生未点击消息时托盘图标将自动显示未读角标并闪烁提醒；<br>
+            • <b>彻底退出方式</b>：右键点击托盘小图标，选择【❌ 退出程序】即可完全终止后台进程。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 6: 数据与日志 (放在最后一个Tab) ==================== -->
+    <div class="tab-pane" id="pane-storage">
+      <div class="card" style="border-left: 3px solid #2563EB;">
+        <div class="card-title">
+          <span>📂 数据与日志存储及自动巡检清理</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 10px;">
+          自动保存历史抓取记录、已推送快讯、未点击未读消息及运行日志。支持按时间和大小自动巡检修剪。
+        </div>
+
+        <!-- 存储路径输入与浏览 -->
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+          <input type="text" id="dataDirInput" style="flex: 1; min-width: 0; font-size: 11.5px; font-family: Consolas, monospace; padding: 6px 10px; background: #F8FAFC;" placeholder="存储目录绝对路径" />
+          <button type="button" class="btn btn-secondary btn-sm" id="btnBrowseDir" style="flex-shrink: 0;">📁 浏览更改...</button>
+        </div>
+
+        <!-- 打开系统目录快捷按钮 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnOpenDir" style="flex: 1; justify-content: center;">
+            📂 打开数据目录
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnOpenLog" style="flex: 1; justify-content: center;">
+            📄 打开运行日志
+          </button>
+        </div>
+
+        <!-- 自动清理配置策略 -->
+        <div style="background: #F1F5F9; border: 1px solid #E2E8F0; padding: 9px 12px; border-radius: 6px; margin-bottom: 10px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="autoCleanupEnabled" checked />
+              <b style="color: #1E293B;">启用历史快讯与日志自动定期清理 (每 6 小时自动巡检)</b>
+            </label>
+          </div>
+          <div class="form-row" style="flex-wrap: wrap; gap: 12px; font-size: 12px;">
+            <div>
+              <span>保留最近:</span>
+              <input type="number" id="retentionDays" min="1" max="90" class="input-sm" value="3" />
+              <span>天内数据 (清理3天前历史)</span>
+            </div>
+            <div>
+              <span>文件上限:</span>
+              <input type="number" id="maxFileSizeMb" min="1" max="100" class="input-sm" value="10" />
+              <span>MB (超过自动截断修剪)</span>
+            </div>
+          </div>
+          <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCleanStorageNow" style="color: #B91C1C; border-color: #FECACA; background: #FEF2F2;">
+              🧹 立即清理历史数据与日志
+            </button>
+            <span id="cleanNoticeText" style="font-size: 11px; color: #059669; font-weight: 600; display: none;"></span>
+          </div>
+        </div>
+
+        <!-- 存储统计与即时抓取 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 12px; border-radius: 6px;">
+          <div id="storageStatusText" style="font-size: 11.5px; color: #475569; line-height: 1.5; flex: 1; margin-right: 12px;">
+            📊 存储统计：已推送记录 0 条 · 待补看未读 0 条<br><span style="color: #64748B;">⏱ 上次抓取同步: --</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnPollNow" style="padding: 5px 12px; flex-shrink: 0;">
+            🔄 立即抓取一次
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 底部固定保存栏 -->
+  <div class="footer">
+    <button class="btn btn-secondary" id="btnTest">🔔 发送演练测试卡片</button>
+    <button class="btn btn-primary" id="btnSave">💾 保存配置并热生效</button>
+  </div>
+
+  <div class="toast-tip" id="toastTip"></div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const DEFAULT_JIN10_KWS = ['降息', '加息', '非农', 'CPI', '美联储', '央行', '利率', '战争', '制裁', '突发'];
+    const DEFAULT_TOPIC_KWS = ['美联储', '宏观决议', '地缘政治', '降息', '加息', '冲突', '战略', '关税'];
+    const DEFAULT_XUEQIU_KWS = ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破'];
+    const DEFAULT_MAIMAI_KWS = ['裁员', '年终奖', '倒闭', '降薪', '涉案', '调查', '高管变动', '离职', '破产'];
+
+    function parseKeywords(str) {
+      if (!str) return [];
+      if (Array.isArray(str)) return str;
+      return String(str).split(/[,，\n\r]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function showNotice(msg) {
+      const tip = document.getElementById('toastTip');
+      tip.textContent = msg;
+      tip.style.display = 'block';
+      setTimeout(() => { tip.style.display = 'none'; }, 2000);
+    }
+
+    // Tab 切换逻辑
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('data-tab') === tabId);
+      });
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === `pane-${tabId}`);
+      });
+    }
+
+    document.querySelectorAll('.tab-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const tabId = item.getAttribute('data-tab');
+        switchTab(tabId);
+      });
+    });
+
+    ipcRenderer.on('init-settings', (event, payload) => {
+      const cfg = payload.config || payload || {};
+      const stats = payload.stats || {};
+
+      // 存储目录
+      const storage = cfg.storage || {};
+      document.getElementById('dataDirInput').value = storage.data_dir || stats.data_dir || 'D:\\antigravity\\桌面提示小工具\\data';
+      document.getElementById('autoCleanupEnabled').checked = storage.auto_cleanup !== false;
+      document.getElementById('retentionDays').value = storage.retention_days || 3;
+      document.getElementById('maxFileSizeMb').value = storage.max_file_size_mb || 10;
+
+      if (stats && stats.data_dir) {
+        document.getElementById('storageStatusText').innerHTML =
+          `📊 存储统计：已推送记录 <b>${stats.pushed_count || 0}</b> 条 · 待补看未读 <b>${stats.unattended_count || 0}</b> 条<br><span style="color: #64748B;">⏱ 上次抓取同步: ${stats.last_sync_time || '--'}</span>`;
+      }
+
+      const sys = cfg.system || {};
+      document.getElementById('pollInterval').value = sys.poll_interval_sec || 5;
+      document.getElementById('toastDuration').value = sys.toast_duration_sec || 10;
+      const isSoundOn = sys.play_sound !== false;
+      document.getElementById('playSound').checked = isSoundOn;
+      updateSoundBadge(isSoundOn);
+
+      // 开机自启动配置（默认开启）
+      document.getElementById('autoStartEnabled').checked = sys.auto_start !== false;
+
+      const qh = sys.quiet_hours || {};
+      document.getElementById('qhEnabled').checked = !!qh.enabled;
+      document.getElementById('qhStart').value = qh.start_time || '23:00';
+      document.getElementById('qhEnd').value = qh.end_time || '08:00';
+
+      const sources = cfg.sources || {};
+      const jin10 = sources.jin10 || {};
+      document.getElementById('srcJin10').checked = jin10.enabled !== false;
+      if (jin10.only_important !== false) {
+        document.getElementById('jin10ModeImportant').checked = true;
+      } else {
+        document.getElementById('jin10ModeAll').checked = true;
+      }
+      document.getElementById('jin10MinStar').value = String(jin10.min_star || 3);
+      document.getElementById('jin10KwFilterEnabled').checked = !!jin10.keyword_filter_enabled;
+      document.getElementById('jin10Keywords').value = (Array.isArray(jin10.keywords) ? jin10.keywords : DEFAULT_JIN10_KWS).join(', ');
+
+      const topic = sources.jin10_topic || {};
+      document.getElementById('srcTopic').checked = topic.enabled !== false;
+      document.getElementById('topicKwFilterEnabled').checked = !!topic.keyword_filter_enabled;
+      document.getElementById('topicKeywords').value = (Array.isArray(topic.keywords) ? topic.keywords : DEFAULT_TOPIC_KWS).join(', ');
+
+      const xueqiu = sources.xueqiu || {};
+      document.getElementById('srcXueqiu').checked = xueqiu.enabled !== false;
+      if (xueqiu.only_important !== false) {
+        document.getElementById('xqModeImportant').checked = true;
+      } else {
+        document.getElementById('xqModeAll').checked = true;
+      }
+      document.getElementById('xueqiuCookie').value = xueqiu.cookie || '';
+      document.getElementById('xqKwFilterEnabled').checked = !!xueqiu.keyword_filter_enabled;
+      document.getElementById('xueqiuKeywords').value = (Array.isArray(xueqiu.keywords) ? xueqiu.keywords : DEFAULT_XUEQIU_KWS).join(', ');
+
+      const maimai = sources.maimai || {};
+      document.getElementById('srcMaimai').checked = maimai.enabled !== false;
+      document.getElementById('maimaiCookie').value = maimai.cookie || '';
+      document.getElementById('maimaiKwFilterEnabled').checked = !!maimai.keyword_filter_enabled;
+      document.getElementById('maimaiKeywords').value = (Array.isArray(maimai.keywords) ? maimai.keywords : DEFAULT_MAIMAI_KWS).join(', ');
+
+      updateSourceSubStates();
+
+      const rules = cfg.rules || {};
+      document.getElementById('highKws').value = (rules.highlight_keywords || []).join(', ');
+      document.getElementById('exKws').value = (rules.exclude_keywords || []).join(', ');
+
+      const ai = cfg.ai_analysis || {};
+      document.getElementById('aiEnabled').checked = ai.enabled !== false;
+      document.getElementById('deepseekApiKey').value = ai.deepseek_api_key || ai.api_key || '';
+      document.getElementById('zhipuApiKey').value = ai.zhipu_api_key || '';
+      updateAiStatus();
+
+      // 8. 虚拟币行情
+      const cryptoCfg = cfg.crypto_prices || {};
+      document.getElementById('cryptoEnabled').checked = cryptoCfg.enabled !== false;
+      currentSelectedCoins = Array.isArray(cryptoCfg.selected_coins) ? cryptoCfg.selected_coins : ['BTC/USDT', 'SOL/USDT'];
+      customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
+      renderCryptoCoins();
+    });
+
+    function updateAiStatus() {
+      const ds = document.getElementById('deepseekApiKey').value.trim();
+      const zp = document.getElementById('zhipuApiKey').value.trim();
+      const badge = document.getElementById('aiEngineStatus');
+
+      if (ds && zp) {
+        badge.textContent = '⚡ DeepSeek / 智谱 动态双核调度';
+        badge.style.background = '#EFF6FF';
+        badge.style.color = '#1D4ED8';
+      } else if (ds) {
+        badge.textContent = '⚡ DeepSeek 大模型驱动';
+        badge.style.background = '#EFF6FF';
+        badge.style.color = '#1D4ED8';
+      } else if (zp) {
+        badge.textContent = '⚡ 智谱 GLM 大模型驱动';
+        badge.style.background = '#F5F3FF';
+        badge.style.color = '#6D28D9';
+      } else {
+        badge.textContent = '🟢 本地规则默认分析 (免 Key)';
+        badge.style.background = '#DCFCE7';
+        badge.style.color = '#166534';
+      }
+    }
+
+    document.getElementById('deepseekApiKey').addEventListener('input', updateAiStatus);
+    document.getElementById('zhipuApiKey').addEventListener('input', updateAiStatus);
+
+    document.getElementById('btnTestDsKey').addEventListener('click', async () => {
+      const key = document.getElementById('deepseekApiKey').value.trim();
+      const noticeEl = document.getElementById('dsTestNotice');
+      const btn = document.getElementById('btnTestDsKey');
+      if (!key) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = '⚠️ 请先输入 DeepSeek API Key';
+        return;
+      }
+      noticeEl.style.display = 'block';
+      noticeEl.style.color = '#2563EB';
+      noticeEl.textContent = '⏳ 正在连接 DeepSeek 官方服务验证 Key...';
+      btn.disabled = true;
+      try {
+        const res = await ipcRenderer.invoke('test-ai-key', { provider: 'deepseek', key });
+        btn.disabled = false;
+        if (res && res.success) {
+          noticeEl.style.color = '#059669';
+          noticeEl.textContent = `✅ ${res.msg}`;
+        } else {
+          noticeEl.style.color = '#DC2626';
+          noticeEl.textContent = `❌ ${res ? res.msg : '验证未通过'}`;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `❌ 网络连接异常: ${e.message}`;
+      }
+    });
+
+    document.getElementById('btnTestZpKey').addEventListener('click', async () => {
+      const key = document.getElementById('zhipuApiKey').value.trim();
+      const noticeEl = document.getElementById('zpTestNotice');
+      const btn = document.getElementById('btnTestZpKey');
+      if (!key) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = '⚠️ 请先输入 智谱 GLM API Key';
+        return;
+      }
+      noticeEl.style.display = 'block';
+      noticeEl.style.color = '#2563EB';
+      noticeEl.textContent = '⏳ 正在连接 智谱开放平台 验证 Key...';
+      btn.disabled = true;
+      try {
+        const res = await ipcRenderer.invoke('test-ai-key', { provider: 'zhipu', key });
+        btn.disabled = false;
+        if (res && res.success) {
+          noticeEl.style.color = '#059669';
+          noticeEl.textContent = `✅ ${res.msg}`;
+        } else {
+          noticeEl.style.color = '#DC2626';
+          noticeEl.textContent = `❌ ${res ? res.msg : '验证未通过'}`;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `❌ 网络连接异常: ${e.message}`;
+      }
+    });
+
+    // 虚拟币管理逻辑
+    const PRESET_COINS = [
+      'BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BNB/USDT',
+      'DOGE/USDT', 'XRP/USDT', 'SUI/USDT',
+      'BZ/USDT', 'ZEC/USDT', 'CRCL/USDT'
+    ];
+    let customCoinsList = [];
+    let currentSelectedCoins = ['BTC/USDT', 'SOL/USDT'];
+
+    function renderCryptoCoins() {
+      const container = document.getElementById('cryptoCoinsContainer');
+      container.innerHTML = '';
+
+      const allCoins = Array.from(new Set([...PRESET_COINS, ...customCoinsList]));
+      allCoins.forEach(coin => {
+        const isPreset = PRESET_COINS.includes(coin);
+        const isChecked = currentSelectedCoins.includes(coin);
+
+        const itemWrap = document.createElement('div');
+        itemWrap.style.cssText = 'display: inline-flex; align-items: center; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; padding: 4px 8px; gap: 6px;';
+
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; font-size: 12px; user-select: none;';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.name = 'cryptoCoin';
+        cb.value = coin;
+        cb.checked = isChecked;
+        cb.addEventListener('change', () => {
+          handleCoinChange(cb);
+        });
+
+        const span = document.createElement('span');
+        span.innerHTML = `<b>${coin}</b>`;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        itemWrap.appendChild(label);
+
+        if (!isPreset) {
+          const delBtn = document.createElement('span');
+          delBtn.textContent = '✕';
+          delBtn.title = '移除此币种';
+          delBtn.style.cssText = 'cursor: pointer; color: #94A3B8; font-size: 11px; margin-left: 2px; padding: 0 2px; font-weight: bold;';
+          delBtn.onmouseover = () => delBtn.style.color = '#EF4444';
+          delBtn.onmouseout = () => delBtn.style.color = '#94A3B8';
+          delBtn.onclick = (e) => {
+            e.stopPropagation();
+            customCoinsList = customCoinsList.filter(c => c !== coin);
+            currentSelectedCoins = currentSelectedCoins.filter(c => c !== coin);
+            renderCryptoCoins();
+          };
+          itemWrap.appendChild(delBtn);
+        }
+
+        container.appendChild(itemWrap);
+      });
+
+      updateCryptoSelectionLimit();
+    }
+
+    function handleCoinChange(cb) {
+      const checked = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked'));
+      if (checked.length > 3) {
+        cb.checked = false;
+        showNotice('最多只能选择 3 个虚拟币展示！');
+      }
+      currentSelectedCoins = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(c => c.value);
+      updateCryptoSelectionLimit();
+    }
+
+    function updateCryptoSelectionLimit() {
+      const cBoxes = Array.from(document.querySelectorAll('input[name="cryptoCoin"]'));
+      const checkedBoxes = cBoxes.filter(cb => cb.checked);
+      if (checkedBoxes.length >= 3) {
+        cBoxes.forEach(cb => {
+          if (!cb.checked) cb.disabled = true;
+        });
+      } else {
+        cBoxes.forEach(cb => cb.disabled = false);
+      }
+      const names = checkedBoxes.map(cb => cb.value.split('/')[0]).join(', ');
+      document.getElementById('cryptoLimitTip').textContent = `已选: ${names || '无'} (${checkedBoxes.length}/3个)`;
+    }
+
+    // 搜索并添加交易对（通过 OKX 严格校验）
+    async function addCryptoCoin() {
+      const inputEl = document.getElementById('customCoinInput');
+      const noticeEl = document.getElementById('coinAddNotice');
+      const addBtn = document.getElementById('btnAddCoin');
+      const val = inputEl.value.trim();
+
+      if (!val) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#FEE2E2';
+        noticeEl.style.color = '#991B1B';
+        noticeEl.textContent = '⚠️ 请先输入币种代码或交易对（如 ZEC、BZ、CRCL 或 PEPE/USDT）';
+        return;
+      }
+
+      noticeEl.style.display = 'block';
+      noticeEl.style.background = '#EFF6FF';
+      noticeEl.style.color = '#1D4ED8';
+      noticeEl.textContent = `⏳ 正在连接 OKX 校验交易对【${val}】...`;
+      addBtn.disabled = true;
+
+      try {
+        const res = await ipcRenderer.invoke('validate-okx-coin', val);
+        addBtn.disabled = false;
+        if (res && res.success) {
+          const coinPair = res.pair;
+          noticeEl.style.background = '#DCFCE7';
+          noticeEl.style.color = '#166534';
+          noticeEl.textContent = `✅ OKX 校验通过！交易对: ${coinPair} (${res.type}) 最新价: ${res.priceStr}`;
+
+          if (!PRESET_COINS.includes(coinPair) && !customCoinsList.includes(coinPair)) {
+            customCoinsList.push(coinPair);
+          }
+
+          if (!currentSelectedCoins.includes(coinPair)) {
+            if (currentSelectedCoins.length < 3) {
+              currentSelectedCoins.push(coinPair);
+            } else {
+              noticeEl.textContent += '（已加入列表，当前已达3个上限，取消已有勾选后即可展示）';
+            }
+          }
+
+          renderCryptoCoins();
+          inputEl.value = '';
+        } else {
+          noticeEl.style.background = '#FEE2E2';
+          noticeEl.style.color = '#991B1B';
+          noticeEl.textContent = `❌ ${res ? res.msg : 'OKX 校验未通过，请确认代码是否正确'}`;
+        }
+      } catch (err) {
+        addBtn.disabled = false;
+        noticeEl.style.background = '#FEE2E2';
+        noticeEl.style.color = '#991B1B';
+        noticeEl.textContent = `❌ 校验异常: ${err.message}`;
+      }
+    }
+
+    document.getElementById('btnAddCoin').addEventListener('click', addCryptoCoin);
+    document.getElementById('customCoinInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCryptoCoin();
+      }
+    });
+
+    document.getElementById('btnTestCrypto').addEventListener('click', async () => {
+      const checked = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value);
+      if (checked.length === 0) {
+        showNotice('请先至少勾选一个币种');
+        return;
+      }
+      const resEl = document.getElementById('cryptoTestResult');
+      resEl.style.display = 'block';
+      resEl.style.color = '#2563EB';
+      resEl.textContent = '正在连接 OKX 获取最新价格...';
+      try {
+        const str = await ipcRenderer.invoke('test-crypto-price', checked);
+        if (str) {
+          resEl.style.color = '#059669';
+          resEl.textContent = `✅ OKX 实时价格: ${str}`;
+        } else {
+          resEl.style.color = '#DC2626';
+          resEl.textContent = '❌ 未获取到报价，请检查网络或代理';
+        }
+      } catch (e) {
+        resEl.style.color = '#DC2626';
+        resEl.textContent = `❌ 获取失败: ${e.message}`;
+      }
+    });
+
+    // 数据源子项级联联动
+    function updateSourceSubStates() {
+      const j10 = document.getElementById('srcJin10').checked;
+      const j10Sub = document.getElementById('jin10OptionsSub');
+      if (j10Sub) {
+        j10Sub.style.opacity = j10 ? '1' : '0.45';
+        j10Sub.style.pointerEvents = j10 ? 'auto' : 'none';
+      }
+
+      const top = document.getElementById('srcTopic').checked;
+      const topSub = document.getElementById('topicOptionsSub');
+      if (topSub) {
+        topSub.style.opacity = top ? '1' : '0.45';
+        topSub.style.pointerEvents = top ? 'auto' : 'none';
+      }
+
+      const xq = document.getElementById('srcXueqiu').checked;
+      const xqSub = document.getElementById('xqOptionsSub');
+      if (xqSub) {
+        xqSub.style.opacity = xq ? '1' : '0.45';
+        xqSub.style.pointerEvents = xq ? 'auto' : 'none';
+      }
+
+      const mm = document.getElementById('srcMaimai').checked;
+      const mmSub = document.getElementById('maimaiOptionsSub');
+      if (mmSub) {
+        mmSub.style.opacity = mm ? '1' : '0.45';
+        mmSub.style.pointerEvents = mm ? 'auto' : 'none';
+      }
+    }
+
+    document.getElementById('srcJin10').addEventListener('change', updateSourceSubStates);
+    document.getElementById('srcTopic').addEventListener('change', updateSourceSubStates);
+    document.getElementById('srcXueqiu').addEventListener('change', updateSourceSubStates);
+    document.getElementById('srcMaimai').addEventListener('change', updateSourceSubStates);
+
+    // 重置默认关键词
+    document.getElementById('btnResetJin10Kws').addEventListener('click', () => {
+      document.getElementById('jin10Keywords').value = DEFAULT_JIN10_KWS.join(', ');
+      showNotice('已恢复金十默认关键词');
+    });
+    document.getElementById('btnResetTopicKws').addEventListener('click', () => {
+      document.getElementById('topicKeywords').value = DEFAULT_TOPIC_KWS.join(', ');
+      showNotice('已恢复重要事件默认关键词');
+    });
+    document.getElementById('btnResetXqKws').addEventListener('click', () => {
+      document.getElementById('xueqiuKeywords').value = DEFAULT_XUEQIU_KWS.join(', ');
+      showNotice('已恢复雪球默认关键词');
+    });
+    document.getElementById('btnResetMmKws').addEventListener('click', () => {
+      document.getElementById('maimaiKeywords').value = DEFAULT_MAIMAI_KWS.join(', ');
+      showNotice('已恢复脉脉默认关键词');
+    });
+
+    // 目录选择与打开
+    document.getElementById('btnBrowseDir').addEventListener('click', async () => {
+      const selected = await ipcRenderer.invoke('choose-data-dir');
+      if (selected) {
+        document.getElementById('dataDirInput').value = selected;
+      }
+    });
+
+    document.getElementById('btnOpenDir').addEventListener('click', () => {
+      const dir = document.getElementById('dataDirInput').value.trim();
+      ipcRenderer.send('open-data-dir', dir);
+    });
+
+    document.getElementById('btnOpenLog').addEventListener('click', () => {
+      ipcRenderer.send('open-log-dir');
+    });
+
+    // 立即清理数据与日志
+    document.getElementById('btnCleanStorageNow').addEventListener('click', async () => {
+      const btn = document.getElementById('btnCleanStorageNow');
+      const notice = document.getElementById('cleanNoticeText');
+      const retentionDays = parseInt(document.getElementById('retentionDays').value) || 3;
+      const maxFileSizeMb = parseInt(document.getElementById('maxFileSizeMb').value) || 10;
+
+      btn.disabled = true;
+      notice.style.display = 'inline';
+      notice.style.color = '#2563EB';
+      notice.textContent = '⏳ 正在清理历史数据与日志...';
+
+      try {
+        const res = await ipcRenderer.invoke('clean-storage-now', { retentionDays, maxFileSizeMb });
+        btn.disabled = false;
+        notice.style.color = '#059669';
+        notice.textContent = `✅ 清理完成：清理历史记录 ${res.cleanedRecords || 0} 条，释放磁盘约 ${res.freedKb || 0} KB`;
+        if (res.stats) {
+          document.getElementById('storageStatusText').innerHTML =
+            `📊 存储统计：已推送记录 <b>${res.stats.pushed_count || 0}</b> 条 · 待补看未读 <b>${res.stats.unattended_count || 0}</b> 条<br><span style="color: #64748B;">⏱ 上次抓取同步: ${res.stats.last_sync_time || '--'}</span>`;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        notice.style.color = '#DC2626';
+        notice.textContent = `❌ 清理失败: ${e.message}`;
+      }
+    });
+
+    document.getElementById('btnPollNow').addEventListener('click', () => {
+      showNotice('正在执行即时抓取轮询...');
+      ipcRenderer.send('settings-poll-now');
+    });
+
+    ipcRenderer.on('poll-completed', (event, stats) => {
+      showNotice('抓取检查完成！');
+      if (stats) {
+        document.getElementById('storageStatusText').innerHTML =
+          `📊 存储统计：已推送记录 <b>${stats.pushed_count || 0}</b> 条 · 待补看未读 <b>${stats.unattended_count || 0}</b> 条<br><span style="color: #64748B;">⏱ 上次抓取同步: ${stats.last_sync_time || '--'}</span>`;
+      }
+    });
+
+    function updateSoundBadge(enabled) {
+      const badge = document.getElementById('soundStatusBadge');
+      if (!badge) return;
+      if (enabled) {
+        badge.style.background = '#DCFCE7';
+        badge.style.color = '#166534';
+        badge.textContent = '当前：声音开启';
+      } else {
+        badge.style.background = '#FEE2E2';
+        badge.style.color = '#991B1B';
+        badge.textContent = '当前：已彻底静音（关闭声音与语音）';
+      }
+    }
+
+    document.getElementById('playSound').addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      updateSoundBadge(isEnabled);
+      ipcRenderer.send('settings-toggle-sound', isEnabled);
+      showNotice(isEnabled ? '🔔 提示音与语音已开启' : '🔕 提示音与语音已彻底静音关闭');
+    });
+
+    function collectCurrentConfig() {
+      const parseList = (str) => str.split(/[,，\n\s]+/).map(s => s.trim()).filter(Boolean);
+      const dataDirVal = document.getElementById('dataDirInput').value.trim();
+
+      return {
+        system: {
+          auto_start: document.getElementById('autoStartEnabled').checked,
+          poll_interval_sec: Math.max(3, parseInt(document.getElementById('pollInterval').value) || 5),
+          toast_duration_sec: Math.max(5, parseInt(document.getElementById('toastDuration').value) || 10),
+          play_sound: document.getElementById('playSound').checked,
+          quiet_hours: {
+            enabled: document.getElementById('qhEnabled').checked,
+            start_time: document.getElementById('qhStart').value.trim() || '23:00',
+            end_time: document.getElementById('qhEnd').value.trim() || '08:00'
+          }
+        },
+        storage: {
+          data_dir: dataDirVal || 'D:\\antigravity\\桌面提示小工具\\data',
+          auto_cleanup: document.getElementById('autoCleanupEnabled').checked,
+          retention_days: Math.max(1, parseInt(document.getElementById('retentionDays').value) || 3),
+          max_file_size_mb: Math.max(1, parseInt(document.getElementById('maxFileSizeMb').value) || 10)
+        },
+        sources: {
+          jin10: {
+            enabled: document.getElementById('srcJin10').checked,
+            only_important: document.getElementById('jin10ModeImportant').checked,
+            min_star: parseInt(document.getElementById('jin10MinStar').value) || 3,
+            keyword_filter_enabled: document.getElementById('jin10KwFilterEnabled').checked,
+            keywords: parseKeywords(document.getElementById('jin10Keywords').value)
+          },
+          jin10_topic: {
+            enabled: document.getElementById('srcTopic').checked,
+            keyword_filter_enabled: document.getElementById('topicKwFilterEnabled').checked,
+            keywords: parseKeywords(document.getElementById('topicKeywords').value)
+          },
+          xueqiu: {
+            enabled: document.getElementById('srcXueqiu').checked,
+            only_important: document.getElementById('xqModeImportant').checked,
+            cookie: document.getElementById('xueqiuCookie').value.trim(),
+            keyword_filter_enabled: document.getElementById('xqKwFilterEnabled').checked,
+            keywords: parseKeywords(document.getElementById('xueqiuKeywords').value)
+          },
+          maimai: {
+            enabled: document.getElementById('srcMaimai').checked,
+            cookie: document.getElementById('maimaiCookie').value.trim(),
+            keyword_filter_enabled: document.getElementById('maimaiKwFilterEnabled').checked,
+            keywords: parseKeywords(document.getElementById('maimaiKeywords').value)
+          }
+        },
+        rules: {
+          highlight_keywords: parseList(document.getElementById('highKws').value),
+          exclude_keywords: parseList(document.getElementById('exKws').value)
+        },
+        ai_analysis: {
+          enabled: document.getElementById('aiEnabled').checked,
+          deepseek_api_key: document.getElementById('deepseekApiKey').value.trim(),
+          zhipu_api_key: document.getElementById('zhipuApiKey').value.trim(),
+          api_key: document.getElementById('deepseekApiKey').value.trim()
+        },
+        crypto_prices: {
+          enabled: document.getElementById('cryptoEnabled').checked,
+          selected_coins: Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value),
+          custom_coins: customCoinsList
+        }
+      };
+    }
+
+    document.getElementById('btnTest').addEventListener('click', () => {
+      // 自动静默同步并保存当前所有最新配置（包括静音开关状态），确保演练严格以当前配置为准
+      const currentCfg = collectCurrentConfig();
+      ipcRenderer.send('settings-save-config', currentCfg);
+      ipcRenderer.send('settings-trigger-test');
+      showNotice('自检测试卡片已唤起（已自动同步当前配置）！');
+    });
+
+    document.getElementById('btnSave').addEventListener('click', () => {
+      const newCfg = collectCurrentConfig();
+      ipcRenderer.send('settings-save-config', newCfg);
+      showNotice('配置已成功保存并立即生效！');
+    });
+  </script>
+</body>
+</html>
