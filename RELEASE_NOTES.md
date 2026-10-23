@@ -37,9 +37,10 @@
 
 | 平台 | 安装包名称 | 校验与说明 |
 | :--- | :--- | :--- |
-| **Windows** | `kuaixuntong-Setup-1.1.0.exe` | 推荐 Windows 10/11，支持自定义安装路径与桌面快捷方式 |
-| **macOS (Intel/Apple Silicon)** | `kuaixuntong-1.1.0.dmg` | 兼容 macOS 12+，开箱即用，支持拖拽快速安装 |
-| **macOS 便携免安装** | `kuaixuntong-1.1.0.zip` | 绿色解压即用版本 |
+| **Windows (64位)** | `kuaixuntong-Setup-1.1.0.exe` | 推荐 Windows 10/11，支持自定义安装路径与桌面快捷方式 |
+| **macOS (Apple Silicon M系列芯片)** | `kuaixuntong-1.1.0-arm64.dmg` | 适用于 M1/M2/M3/M4 系列芯片 Mac，原生满血运行，开箱即用 |
+| **macOS (Intel 芯片处理器)** | `kuaixuntong-1.1.0-x64.dmg` | 适用于 Intel 处理器老款 Mac，兼容 macOS 12+，开箱即用 |
+| **macOS 免安装便携包** | `kuaixuntong-1.1.0-arm64.zip` / `kuaixuntong-1.1.0-x64.zip` | 对应架构的绿色解压即用版本 |
 
 ---
 
