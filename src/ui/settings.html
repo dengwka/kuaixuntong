@@ -1071,6 +1071,20 @@
         </div>
       </div>
 
+      <!-- 卡片 3: 各平台与芯片架构专属安装包 (支持手动选包/自动推荐) -->
+      <div class="card" id="cardManualAssets" style="display: none; border-left: 3px solid #0EA5E9;">
+        <div class="card-title">
+          <span>📦 各平台与芯片架构安装包 (支持手动选包)</span>
+          <span id="currentMachineTag" style="font-size: 11.5px; background: #E0F2FE; color: #0369A1; padding: 2px 8px; border-radius: 10px; font-weight: 600;"></span>
+        </div>
+        <div style="font-size: 12px; color: #64748B; margin-bottom: 8px;">
+          系统已根据当前硬件自动标注推荐安装包。不同芯片的 Mac 电脑请务必选择对应架构包以确保正常启动：
+        </div>
+        <div id="manualAssetsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- 动态渲染安装包列表 -->
+        </div>
+      </div>
+
       <!-- 卡片 3: 更新策略配置 (上下放置自动更新与手工更新两个选项) -->
       <div class="card" style="border-left: 3px solid #10B981;">
         <div class="card-title">
@@ -2333,18 +2347,26 @@
       const tagDiff = document.getElementById('updateTagDiff');
       const btnStart = document.getElementById('btnStartUpdate');
       const cardNotes = document.getElementById('cardReleaseNotes');
+      const cardAssets = document.getElementById('cardManualAssets');
       const progressBox = document.getElementById('updateProgressBox');
+      const currentMachineTag = document.getElementById('currentMachineTag');
+
+      if (currentMachineTag && res.systemInfo) {
+        currentMachineTag.textContent = `💻 本机硬件: ${res.systemInfo.summary}`;
+      }
 
       if (res.hasUpdate) {
-        // 发现新版本：点亮红点、展示【立即更新】按钮、展示更新说明卡片
+        // 发现新版本：点亮红点、展示【立即更新】按钮、展示更新说明与选包卡片
         if (tabDot) tabDot.style.display = 'inline-block';
         if (btnStart) {
           btnStart.style.display = 'inline-block';
           btnStart.disabled = false;
-          btnStart.textContent = '🚀 立即更新';
+          const archShort = res.systemInfo ? (res.systemInfo.isWin ? 'Windows' : (res.systemInfo.arch === 'arm64' ? 'M芯片专属' : 'Intel专属')) : '';
+          btnStart.textContent = archShort ? `🚀 立即更新 (${archShort})` : '🚀 立即更新';
         }
         if (tagDiff) tagDiff.style.display = 'none';
-        if (cardNotes) cardNotes.style.display = 'block'; // 有新版本时才显示更新内容
+        if (cardNotes) cardNotes.style.display = 'block';
+        if (cardAssets) cardAssets.style.display = 'block';
 
         if (headerBadge) {
           headerBadge.textContent = `🔴 发现新版: ${latestTag}`;
@@ -2357,20 +2379,63 @@
           banner.style.background = '#EFF6FF';
           banner.style.color = '#1E40AF';
           banner.style.border = '1px solid #BFDBFE';
-          banner.innerHTML = `🚀 <b>检测到官方新版本 ${latestTag} 可用！</b> 点击上方【🚀 立即更新】将自动按当前操作系统下载并触发安装。`;
+          const sysText = res.systemInfo ? `<b>${res.systemInfo.summary}</b>` : '当前系统';
+          const pkgText = res.matchedAssetName ? `（安装包: <code>${res.matchedAssetName}</code>）` : '';
+          banner.innerHTML = `🚀 <b>检测到官方新版本 ${latestTag} 可用！</b> 系统已精准识别本机硬件架构为 ${sysText}。点击上方【立即更新】或下方对应专属包即可直接升级${pkgText}。`;
         }
 
-        // 仅在有新版本时渲染更新内容
+        // 渲染更新内容
         const notesContainer = document.getElementById('releaseNotesContainer');
         if (notesContainer) {
           notesContainer.innerHTML = formatReleaseNotes(res.releaseNotes);
         }
+
+        // 渲染多平台与芯片架构专属安装包
+        const assetsContainer = document.getElementById('manualAssetsContainer');
+        if (assetsContainer && Array.isArray(res.assets) && res.assets.length > 0) {
+          assetsContainer.innerHTML = res.assets.map(a => {
+            const isRec = !!a.isRecommended;
+            const borderStyle = isRec ? 'border: 2px solid #10B981; background: #F0FDF4;' : 'border: 1px solid #E2E8F0; background: #FFFFFF;';
+            const recBadge = isRec ? '<span style="background: #10B981; color: #FFFFFF; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">⭐ 推荐当前电脑</span>' : '';
+            
+            let icon = '📦';
+            if (a.targetType === 'win') icon = '🪟';
+            else if (a.targetType === 'mac-arm64') icon = '🍏';
+            else if (a.targetType === 'mac-x64') icon = '🖥️';
+
+            return `
+              <div style="${borderStyle} border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">${icon}</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+                      <span>${a.targetLabel || a.name}</span>
+                      ${recBadge}
+                    </div>
+                    <div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">
+                      <code>${a.name}</code> · <span style="color: #475569; font-weight: 600;">${a.sizeMb}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="startDownloadUpdate('${a.downloadUrl}')" style="padding: 5px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; ${isRec ? 'background: #16A34A; border-color: #15803D;' : ''}">
+                    🚀 一键更新此包
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="ipcRenderer.send('open-download-page', '${a.downloadUrl}')" style="padding: 5px 10px; font-size: 11.5px; cursor: pointer;">
+                    🌐 浏览器直下
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       } else {
-        // 当前为最新版：隐藏红点、隐藏【立即更新】按钮、隐藏更新内容卡片
+        // 当前为最新版：隐藏红点、隐藏更新内容与选包卡片
         if (tabDot) tabDot.style.display = 'none';
         if (btnStart) btnStart.style.display = 'none';
         if (tagDiff) tagDiff.style.display = 'inline-block';
-        if (cardNotes) cardNotes.style.display = 'none'; // 已是最新版时彻底不展示更新内容
+        if (cardNotes) cardNotes.style.display = 'none';
+        if (cardAssets) cardAssets.style.display = 'none';
         if (progressBox) progressBox.style.display = 'none';
 
         if (headerBadge) {
@@ -2429,19 +2494,18 @@
       }
     }
 
-    // 事件绑定：刷新、下载与 Releases
+    // 事件绑定：刷新
     document.getElementById('btnRefreshUpdate').addEventListener('click', () => {
       triggerCheckUpdate(true);
     });
 
-
-
-    // 一键自动下载并触发安装
+    // 核心下载安装函数 (顶部大按钮与列表各包通用)
     let isDownloadingUpdate = false;
-    document.getElementById('btnStartUpdate').addEventListener('click', async () => {
+    async function startDownloadUpdate(targetUrl) {
       if (isDownloadingUpdate) return;
-      if (!currentUpdateData || !currentUpdateData.downloadUrl) {
-        showNotice('⚠️ 未找到当前平台的最新安装包下载地址');
+      const downloadUrl = targetUrl || (currentUpdateData && currentUpdateData.downloadUrl);
+      if (!downloadUrl) {
+        showNotice('⚠️ 未找到当前硬件平台适用的安装包下载地址');
         return;
       }
 
@@ -2453,8 +2517,10 @@
       const progressPercent = document.getElementById('updateProgressPercent');
       const progressDetail = document.getElementById('updateProgressDetail');
 
-      btnStart.disabled = true;
-      btnStart.textContent = '⏳ 正在准备下载...';
+      if (btnStart) {
+        btnStart.disabled = true;
+        btnStart.textContent = '⏳ 正在准备下载...';
+      }
       progressBox.style.display = 'block';
       progressBar.style.width = '0%';
       progressBar.style.background = '#2563EB';
@@ -2463,28 +2529,36 @@
       progressDetail.textContent = '正在连接下载节点...';
 
       try {
-        const result = await ipcRenderer.invoke('download-and-install-update', currentUpdateData.downloadUrl);
+        const result = await ipcRenderer.invoke('download-and-install-update', downloadUrl);
         if (result && result.success) {
-          progressLabel.textContent = '✅ 安装包下载完成！已自动启动安装程序向导。';
+          progressLabel.textContent = '✅ 安装包下载完成！已自动启动安装程序。';
           progressBar.style.width = '100%';
           progressBar.style.background = '#16A34A';
           progressPercent.textContent = '100%';
-          btnStart.textContent = '✅ 已启动安装';
-          showNotice('🎉 安装包下载完成，已为您自动启动安装！');
+          if (btnStart) btnStart.textContent = '✅ 已启动安装';
+          showNotice('🎉 安装包下载完成，已为您自动打开安装程序！');
         } else {
           progressLabel.textContent = `❌ 下载安装失败: ${(result && result.error) || '未知异常'}`;
           progressBar.style.background = '#EF4444';
-          btnStart.disabled = false;
-          btnStart.textContent = '🚀 重新下载更新';
+          if (btnStart) {
+            btnStart.disabled = false;
+            btnStart.textContent = '🚀 重新下载更新';
+          }
         }
       } catch (err) {
         progressLabel.textContent = `❌ 下载安装异常: ${err.message}`;
         progressBar.style.background = '#EF4444';
-        btnStart.disabled = false;
-        btnStart.textContent = '🚀 重新下载更新';
+        if (btnStart) {
+          btnStart.disabled = false;
+          btnStart.textContent = '🚀 重新下载更新';
+        }
       } finally {
         isDownloadingUpdate = false;
       }
+    }
+
+    document.getElementById('btnStartUpdate').addEventListener('click', () => {
+      startDownloadUpdate();
     });
 
     // 监听实时下载进度

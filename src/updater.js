@@ -13,6 +13,48 @@ class UpdateManager {
   }
 
   /**
+   * 准确检测当前操作系统的硬件芯片架构
+   * 特别处理 macOS 场景：精准区分 Apple Silicon (M系列芯片) 与 Intel 芯片 (即便处于 Rosetta 2 转译下亦能穿透识别)
+   */
+  getSystemInfo() {
+    const platform = process.platform;
+    const isWin = platform === 'win32';
+    const isMac = platform === 'darwin';
+    let arch = process.arch; // 'arm64' 或 'x64'
+
+    if (isMac && arch === 'x64') {
+      try {
+        const { execSync } = require('child_process');
+        // sysctl -in sysctl.proc_translated 为 1 表示在 Apple Silicon 芯片上以 Rosetta 2 运行
+        const translated = execSync('sysctl -in sysctl.proc_translated', { timeout: 1000 }).toString().trim();
+        if (translated === '1') {
+          arch = 'arm64';
+        }
+      } catch (e) {}
+    }
+
+    let archName = '未知架构';
+    let platformName = '未知系统';
+    if (isWin) {
+      platformName = 'Windows';
+      archName = 'x64 (64位)';
+    } else if (isMac) {
+      platformName = 'macOS';
+      archName = arch === 'arm64' ? 'Apple Silicon (M系列芯片)' : 'Intel 芯片';
+    }
+
+    return {
+      platform,
+      isWin,
+      isMac,
+      arch, // 'arm64' 或 'x64'
+      archName,
+      platformName,
+      summary: `${platformName} (${archName})`
+    };
+  }
+
+  /**
    * 语义化版本对比：v1 > v2 返回 1，v1 < v2 返回 -1，相等返回 0
    */
   compareVersions(v1, v2) {
@@ -39,6 +81,7 @@ class UpdateManager {
     logger.info(`[Updater] 开始检查版本更新 (当前版本: v${this.currentVersion})...`);
     
     try {
+      const sys = this.getSystemInfo();
       const fetchFn = (typeof net !== 'undefined' && net.fetch) ? net.fetch : fetch;
       const res = await fetchFn(this.apiUrl, {
         headers: {
@@ -58,25 +101,76 @@ class UpdateManager {
       const releasePageUrl = release.html_url || `https://github.com/${this.owner}/${this.repo}/releases/latest`;
       const publishedAt = release.published_at ? new Date(release.published_at).toLocaleString('zh-CN', { hour12: false }) : '';
 
-      // 整理资产列表
-      const assetList = Array.isArray(release.assets) ? release.assets.map(a => ({
-        name: a.name,
-        size: a.size,
-        sizeMb: (a.size / (1024 * 1024)).toFixed(1) + ' MB',
-        downloadUrl: a.browser_download_url
-      })) : [];
+      // 整理资产列表并清晰标注芯片与适用平台
+      const assetList = Array.isArray(release.assets) ? release.assets.map(a => {
+        const name = a.name || '';
+        let targetType = 'other';
+        let targetLabel = '通用附件';
+        let isRecommended = false;
 
-      // 寻找当前操作系统匹配的安装包资产
+        if (name.endsWith('.exe')) {
+          targetType = 'win';
+          targetLabel = 'Windows (64位安装包)';
+          if (sys.isWin) isRecommended = true;
+        } else if (name.endsWith('.dmg')) {
+          if (name.includes('arm64') || name.includes('arm')) {
+            targetType = 'mac-arm64';
+            targetLabel = 'macOS (Apple Silicon M系列芯片专用)';
+            if (sys.isMac && sys.arch === 'arm64') isRecommended = true;
+          } else if (name.includes('x64') || name.includes('intel')) {
+            targetType = 'mac-x64';
+            targetLabel = 'macOS (Intel 处理器芯片专用)';
+            if (sys.isMac && sys.arch === 'x64') isRecommended = true;
+          } else {
+            targetType = 'mac-dmg';
+            targetLabel = 'macOS 磁盘映像 (.dmg)';
+            if (sys.isMac) isRecommended = true;
+          }
+        } else if (name.endsWith('.zip')) {
+          if (name.includes('arm64') || name.includes('arm')) {
+            targetType = 'mac-arm64-zip';
+            targetLabel = 'macOS (Apple Silicon M系列便携包)';
+          } else if (name.includes('x64') || name.includes('intel')) {
+            targetType = 'mac-x64-zip';
+            targetLabel = 'macOS (Intel 芯片便携包)';
+          } else {
+            targetType = 'zip';
+            targetLabel = '压缩包 (.zip)';
+          }
+        }
+
+        return {
+          name: a.name,
+          size: a.size,
+          sizeMb: (a.size / (1024 * 1024)).toFixed(1) + ' MB',
+          downloadUrl: a.browser_download_url,
+          targetType,
+          targetLabel,
+          isRecommended
+        };
+      }) : [];
+
+      // 为当前运行的机器精准匹配专属安装包 (自动更新与一键更新使用)
       let downloadUrl = releasePageUrl;
-      const isWin = process.platform === 'win32';
-      const isMac = process.platform === 'darwin';
+      let matchedAsset = null;
 
       if (Array.isArray(release.assets)) {
-        let matchedAsset = null;
-        if (isWin) {
+        if (sys.isWin) {
           matchedAsset = release.assets.find(a => a.name.endsWith('.exe'));
-        } else if (isMac) {
-          matchedAsset = release.assets.find(a => a.name.endsWith('.dmg') || a.name.endsWith('.zip'));
+        } else if (sys.isMac) {
+          if (sys.arch === 'arm64') {
+            // Apple Silicon M系列芯片：精准匹配 arm64 安装包
+            matchedAsset = release.assets.find(a => a.name.endsWith('.dmg') && (a.name.includes('arm64') || a.name.includes('arm')))
+              || release.assets.find(a => a.name.endsWith('.zip') && (a.name.includes('arm64') || a.name.includes('arm')))
+              || release.assets.find(a => a.name.endsWith('.dmg') && !a.name.includes('x64'))
+              || release.assets.find(a => a.name.endsWith('.dmg'));
+          } else {
+            // Intel 芯片机器：精准匹配 x64 安装包，严格排除 arm64
+            matchedAsset = release.assets.find(a => a.name.endsWith('.dmg') && (a.name.includes('x64') || a.name.includes('x86_64') || a.name.includes('intel')))
+              || release.assets.find(a => a.name.endsWith('.zip') && (a.name.includes('x64') || a.name.includes('x86_64') || a.name.includes('intel')))
+              || release.assets.find(a => a.name.endsWith('.dmg') && !a.name.includes('arm64'))
+              || release.assets.find(a => a.name.endsWith('.dmg'));
+          }
         }
         if (matchedAsset && matchedAsset.browser_download_url) {
           downloadUrl = matchedAsset.browser_download_url;
@@ -94,6 +188,8 @@ class UpdateManager {
         releaseName,
         releaseNotes,
         downloadUrl,
+        matchedAssetName: matchedAsset ? matchedAsset.name : '',
+        systemInfo: sys,
         releasePageUrl,
         publishedAt,
         assets: assetList
