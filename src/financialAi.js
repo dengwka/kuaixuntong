@@ -51,9 +51,54 @@ class FinancialAIEngine {
     }
   }
 
-  async callLlmApi(provider, apiUrl, apiKey, model, text, timeoutSec = 6) {
+  detectWatchlistImpact(text, watchlist) {
+    if (!Array.isArray(watchlist) || watchlist.length === 0 || !text) return null;
+    const t = text.toLowerCase();
+    for (const item of watchlist) {
+      if (!item || !item.name) continue;
+      const rawName = item.name.trim();
+      const shortName = rawName.replace(/(?:控股|股份|集团|科技|有限公司|公司)$/g, '').trim();
+
+      let matched = false;
+      if (t.includes(rawName.toLowerCase())) {
+        matched = true;
+      } else if (shortName.length >= 2 && t.includes(shortName.toLowerCase())) {
+        matched = true;
+      }
+
+      if (matched) {
+        const isBull = ['暴涨', '涨停', '大涨', '盈利', '净利润', '增长', '突破', '利好', '回购', '增持', '上调', '胜诉', '获批', '创新高', '超预期', '订单'].some(w => t.includes(w));
+        const isBear = ['暴跌', '跌停', '大跌', '亏损', '下滑', '立案', '调查', '重罚', '处分', '减持', '做空', '下调', '警告', '被查', '违规', '利空'].some(w => t.includes(w));
+
+        let direction = '持仓关注';
+        let reason = `自选标的【${rawName}】出现重要动态`;
+        if (isBull && !isBear) {
+          direction = '直接利好';
+          reason = `自选标的【${rawName}】迎来正面利好催化`;
+        } else if (isBear && !isBull) {
+          direction = '突发利空';
+          reason = `自选标的【${rawName}】面临突发利空承压`;
+        }
+
+        return {
+          target: rawName,
+          direction,
+          reason
+        };
+      }
+    }
+    return null;
+  }
+
+  async callLlmApi(provider, apiUrl, apiKey, model, text, timeoutSec = 6, watchlistNames = []) {
+    let watchlistHint = '';
+    if (watchlistNames && watchlistNames.length > 0) {
+      watchlistHint = `用户的自选股票池包括: [${watchlistNames.join(', ')}]。如果新闻内容直接涉及这些自选股，请在 JSON 的 "watchlist_impact" 字段中返回 {"target": "股票名", "direction": "直接利好/突发利空/重点关注", "reason": "10字以内原因"}，否则为 null。`;
+    }
+
     const systemPrompt = `你是一名顶级宏观对冲基金的资深首席策略分析师。
 你的任务是针对抓取到的最新突发财经、政经要闻与重要博主推文（如特朗普、白宫、美联储等），给出高度精炼、入木三分的深度AI解读（字数严格控制在30字以内），并结合全球宏观逻辑、“特朗普交易”（如宽松监管对加密货币、关税政策对美元等传导效应），敏锐研判该事件对五大核心资产：【黄金、美元、原油、A股、虚拟币】的传导影响（方向只能在【利好】、【利空】、【中性】三者中选择其一。对于时政大选动员、监管表态或宏观言论，应积极给出前瞻资产倾向，避免全部中性）。
+${watchlistHint}
 你必须严格返回以下 JSON 格式，不要携带任何额外的 Markdown 标记或多余字符：
 {
   "is_pending": false,
@@ -64,7 +109,8 @@ class FinancialAIEngine {
     "oil": {"name": "原油", "direction": "利好或利空或中性"},
     "a_share": {"name": "A股", "direction": "利好或利空或中性"},
     "crypto": {"name": "虚拟币", "direction": "利好或利空或中性"}
-  }
+  },
+  "watchlist_impact": null
 }`;
 
     const controller = new AbortController();
@@ -148,6 +194,8 @@ class FinancialAIEngine {
     const cfg = this.configManager.config;
     const aiCfg = cfg.ai_analysis || {};
     const timeoutSec = aiCfg.timeout_sec || 6;
+    const watchlist = (cfg.watchlist && cfg.watchlist.stocks) || [];
+    const watchlistNames = watchlist.map(s => s.name).filter(Boolean);
 
     // 检查 DeepSeek 与 智谱 API Keys
     const deepseekKey = (aiCfg.deepseek_api_key || aiCfg.api_key || '').trim();
@@ -179,6 +227,8 @@ class FinancialAIEngine {
       });
     }
 
+    let finalResult = null;
+
     // 2. 如果配置了大模型（支持单模型、双模型动态负载均衡/轮询与失败自动切换）
     if (availableProviders.length > 0 && aiCfg.enabled !== false) {
       // 动态选择首选模型（如果都配置了，双向轮流调度）
@@ -190,14 +240,15 @@ class FinancialAIEngine {
       const second = availableProviders.length > 1 ? availableProviders[(primaryIdx + 1) % availableProviders.length] : null;
 
       try {
-        const res = await this.callLlmApi(first.id, first.url, first.key, first.model, text, timeoutSec);
+        const res = await this.callLlmApi(first.id, first.url, first.key, first.model, text, timeoutSec, watchlistNames);
         if (res) {
-          return {
+          finalResult = {
             ai_source: first.name,
             source_type: first.id,
             is_pending: false,
             summary: res.summary,
-            impacts: this.formatImpacts(res.impacts)
+            impacts: this.formatImpacts(res.impacts),
+            watchlist_impact: res.watchlist_impact || null
           };
         }
       } catch (e) {
@@ -205,16 +256,17 @@ class FinancialAIEngine {
       }
 
       // 如果首选失败且配置了第二模型，动态无缝切换至备选模型
-      if (second) {
+      if (!finalResult && second) {
         try {
-          const res2 = await this.callLlmApi(second.id, second.url, second.key, second.model, text, timeoutSec);
+          const res2 = await this.callLlmApi(second.id, second.url, second.key, second.model, text, timeoutSec, watchlistNames);
           if (res2) {
-            return {
+            finalResult = {
               ai_source: second.name,
               source_type: second.id,
               is_pending: false,
               summary: res2.summary,
-              impacts: this.formatImpacts(res2.impacts)
+              impacts: this.formatImpacts(res2.impacts),
+              watchlist_impact: res2.watchlist_impact || null
             };
           }
         } catch (e2) {
@@ -224,10 +276,21 @@ class FinancialAIEngine {
     }
 
     // 3. 都没配置 或 调用均失败时，全自动降级为本地规则默认分析
-    const fallback = this.ruleBasedAnalysis(text);
-    fallback.ai_source = '本地规则默认分析';
-    fallback.source_type = 'rule_engine';
-    return fallback;
+    if (!finalResult) {
+      finalResult = this.ruleBasedAnalysis(text);
+      finalResult.ai_source = '本地规则默认分析';
+      finalResult.source_type = 'rule_engine';
+    }
+
+    // 4. 始终以本地规则引擎做自选股命中兜底，确保 100% 不漏报
+    if (!finalResult.watchlist_impact) {
+      const localWl = this.detectWatchlistImpact(text, watchlist);
+      if (localWl) {
+        finalResult.watchlist_impact = localWl;
+      }
+    }
+
+    return finalResult;
   }
 
   ruleBasedAnalysis(text) {

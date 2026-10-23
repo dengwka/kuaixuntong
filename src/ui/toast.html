@@ -53,6 +53,81 @@
       margin-bottom: 6px;
     }
 
+    /* 👑 黑金 VIP 尊贵卡片设计（导弹袭击、总统遇难等特级黑天鹅重大特报） */
+    .toast-card.is-vip-card {
+      background: linear-gradient(145deg, #18181B 0%, #202024 45%, #181512 100%) !important;
+      border: 2px solid #F59E0B !important;
+      box-shadow: 
+        0 0 30px rgba(245, 158, 11, 0.45), 
+        0 0 10px rgba(234, 179, 8, 0.3), 
+        0 16px 40px rgba(0, 0, 0, 0.6) !important;
+      animation: vipPulseGlow 3s infinite ease-in-out;
+    }
+    @keyframes vipPulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 25px rgba(245, 158, 11, 0.4), 0 16px 40px rgba(0, 0, 0, 0.6);
+        border-color: #F59E0B;
+      }
+      50% {
+        box-shadow: 0 0 42px rgba(251, 191, 36, 0.75), 0 16px 48px rgba(0, 0, 0, 0.7);
+        border-color: #FDE047;
+      }
+    }
+    .is-vip-card .header {
+      background: rgba(24, 24, 27, 0.96) !important;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.35) !important;
+    }
+    .badge-vip {
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+      color: #FFFFFF !important;
+      font-weight: 800 !important;
+      box-shadow: 0 2px 10px rgba(217, 119, 6, 0.5) !important;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .is-vip-card .time-lbl {
+      color: #D4D4D8 !important;
+    }
+    .is-vip-card .icon-btn {
+      color: #FBBF24 !important;
+    }
+    .is-vip-card .icon-btn:hover {
+      color: #FDE047 !important;
+    }
+    .is-vip-card .title-text {
+      color: #FEF08A !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .is-vip-card .body-text {
+      color: #F4F4F5 !important;
+    }
+    .is-vip-card .num-highlight {
+      color: #FBBF24 !important;
+      font-weight: 800;
+    }
+    .is-vip-card .ai-box {
+      background: rgba(39, 39, 42, 0.9) !important;
+      border-top: 1px solid rgba(245, 158, 11, 0.3) !important;
+    }
+    .is-vip-card .ai-summary {
+      color: #E4E4E7 !important;
+    }
+    .is-vip-card .footer {
+      background: rgba(24, 24, 27, 0.98) !important;
+      border-top: 1px solid rgba(245, 158, 11, 0.3) !important;
+    }
+    .is-vip-card .btn-footer-action {
+      background: #27272A !important;
+      border-color: #3F3F46 !important;
+      color: #D4D4D8 !important;
+    }
+    .is-vip-card .btn-footer-action:hover {
+      background: #3F3F46 !important;
+      color: #FFFFFF !important;
+    }
+
     /* Header */
     .header {
       background: #FFFFFF;
@@ -463,6 +538,44 @@
       border-radius: 4px;
       font-size: 11px;
     }
+    .stock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .stock-name {
+      font-weight: 700;
+      color: #0F172A;
+    }
+    .stock-val {
+      font-weight: 600;
+      color: #334155;
+    }
+    .stock-up {
+      font-weight: 700;
+      color: #DC2626;
+    }
+    .stock-down {
+      font-weight: 700;
+      color: #16A34A;
+    }
+    .is-vip-card .stock-pill,
+    .is-vip-card .coin-pill {
+      background: #27272A !important;
+      border-color: #3F3F46 !important;
+    }
+    .is-vip-card .stock-name,
+    .is-vip-card .coin-val {
+      color: #F4F4F5 !important;
+    }
+    .is-vip-card .stock-val {
+      color: #D4D4D8 !important;
+    }
     .coin-sym-btc { color: #D97706; font-weight: 800; }
     .coin-sym-eth { color: #4F46E5; font-weight: 800; }
     .coin-sym-sol { color: #7C3AED; font-weight: 800; }
@@ -578,6 +691,9 @@
 
     <!-- AI Box -->
     <div class="ai-box" id="aiBox">
+      <div id="watchlistBadge" style="display: none; background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E; padding: 4px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700;">
+        🎯 影响你的自选持仓: <span id="watchlistTarget" style="color: #B45309;"></span> (<span id="watchlistBias"></span>) · <span id="watchlistReason" style="font-weight: normal; color: #78350F;"></span>
+      </div>
       <span class="ai-tag-badge" id="aiTagBadge">💡 观点分析（来源：本地规则默认分析）</span>
       <div class="ai-summary" id="aiSummary"></div>
       <div class="chips-row" id="chipsRow"></div>
@@ -700,8 +816,8 @@
 
     function formatCryptoHtml(rawStr) {
       if (!rawStr || !rawStr.trim()) return '';
-      // 提取形如 "BTC $82,071  SOL $105.22  BZ $106.4" 的各个币种与价格
-      const tokens = rawStr.trim().split(/\s{2,}|\s+(?=[A-Za-z0-9]+\s+\$)/);
+      // 提取形如 "腾讯 HK$386.40 +1.05%  京东 $25.68 -0.43%  BTC $82,071  SOL $105.22"
+      const items = rawStr.trim().split(/\s{2,}/);
       const colorMap = {
         'BTC': 'coin-sym-btc',
         'ETH': 'coin-sym-eth',
@@ -715,15 +831,26 @@
         'BNB': 'coin-sym-bnb'
       };
 
-      const htmlArr = tokens.map(t => {
-        const parts = t.trim().split(/\s+/);
+      const htmlArr = items.map(item => {
+        const parts = item.trim().split(/\s+/);
+        // 如果是股票格式：[名称, 价格, 涨跌幅] 例如 ["腾讯", "HK$386.40", "+1.05%"]
+        if (parts.length >= 3 && /^[+-]?\d+(\.\d+)?%$/.test(parts[parts.length - 1])) {
+          const pct = parts[parts.length - 1];
+          const price = parts[parts.length - 2];
+          const name = parts.slice(0, parts.length - 2).join(' ');
+          let pctCls = 'stock-val';
+          if (pct.startsWith('+')) pctCls = 'stock-up';
+          else if (pct.startsWith('-')) pctCls = 'stock-down';
+          return `<span class="stock-pill"><span class="stock-name">${escapeHtml(name)}</span> <span class="stock-val">${escapeHtml(price)}</span> <span class="${pctCls}">${escapeHtml(pct)}</span></span>`;
+        }
+        // 如果是加密货币格式：[BTC, $82,071]
         if (parts.length >= 2) {
           const sym = parts[0].toUpperCase();
           const val = parts.slice(1).join(' ');
           const cls = colorMap[sym] || 'coin-sym-def';
-          return `<span class="coin-pill"><span class="${cls}">${sym}</span><span class="coin-val">${val}</span></span>`;
+          return `<span class="coin-pill"><span class="${cls}">${escapeHtml(sym)}</span><span class="coin-val">${escapeHtml(val)}</span></span>`;
         }
-        return `<span class="coin-pill"><span class="coin-val">${t}</span></span>`;
+        return `<span class="coin-pill"><span class="coin-val">${escapeHtml(item)}</span></span>`;
       });
 
       return htmlArr.join(' ');
@@ -840,30 +967,39 @@
         cryptoEl.style.display = 'none';
       }
 
-      // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉、𝕏 还是 测试演练）
+      // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉、𝕏、金色VIP特报 还是 测试演练）
       const badge = document.getElementById('sourceBadge');
       const srcName = alertData.source || '';
       const isXTwitter = (alertData.source_key === 'x_twitter' || srcName.includes('𝕏') || alertData.source_key === 'x' || !!alertData.author_handle);
+      const isVip = !!alertData.is_vip;
 
-      if (isXTwitter) {
-        const testBadge = isTest ? ' [测试]' : '';
-        badge.textContent = `𝕏 关注动态${testBadge}`;
-        badge.className = 'badge badge-x';
-      } else if (isTest || srcName.includes('测试')) {
-        badge.textContent = '🧪 测试演练';
-        badge.className = 'badge badge-test';
-      } else if (alertData.source_key === 'xueqiu' || srcName.includes('雪球')) {
-        badge.textContent = '❄️ 雪球快讯';
-        badge.className = 'badge badge-xueqiu';
-      } else if (alertData.source_key === 'maimai' || srcName.includes('脉脉')) {
-        badge.textContent = '💼 脉脉职言';
-        badge.className = 'badge badge-maimai';
-      } else if (srcName.includes('重要') || alertData.source_key === 'jin10_topic') {
-        badge.textContent = '🔥 重要事件';
-        badge.className = 'badge badge-important';
+      if (isVip) {
+        card.classList.add('is-vip-card');
+        const kwText = alertData.vip_keyword ? ` · ${alertData.vip_keyword}` : '';
+        badge.textContent = `👑 VIP特报${kwText}`;
+        badge.className = 'badge badge-vip';
       } else {
-        badge.textContent = '⚡ 金十快讯';
-        badge.className = 'badge badge-normal';
+        card.classList.remove('is-vip-card');
+        if (isXTwitter) {
+          const testBadge = isTest ? ' [测试]' : '';
+          badge.textContent = `𝕏 关注动态${testBadge}`;
+          badge.className = 'badge badge-x';
+        } else if (isTest || srcName.includes('测试')) {
+          badge.textContent = '🧪 测试演练';
+          badge.className = 'badge badge-test';
+        } else if (alertData.source_key === 'xueqiu' || srcName.includes('雪球')) {
+          badge.textContent = '❄️ 雪球快讯';
+          badge.className = 'badge badge-xueqiu';
+        } else if (alertData.source_key === 'maimai' || srcName.includes('脉脉')) {
+          badge.textContent = '💼 脉脉职言';
+          badge.className = 'badge badge-maimai';
+        } else if (srcName.includes('重要') || alertData.source_key === 'jin10_topic') {
+          badge.textContent = '🔥 重要事件';
+          badge.className = 'badge badge-important';
+        } else {
+          badge.textContent = '⚡ 金十快讯';
+          badge.className = 'badge badge-normal';
+        }
       }
 
       const pubTime = alertData.pub_time || alertData.time || '';
@@ -1002,58 +1138,80 @@
         contentEl.scrollTop = 0;
       }
 
-      // 5. AI 观点与利多利空分析（仅在消息携带有效 ai_analysis 时展示，普通账号不开启则彻底隐藏）
+      // 5. AI 观点与利多利空分析 & 自选持仓强关联提醒
       const aiBox = document.getElementById('aiBox');
       const aiData = alertData.ai_analysis;
+      const wlEl = document.getElementById('watchlistBadge');
+      const wlImpact = (aiData && aiData.watchlist_impact) || alertData.watchlist_impact;
 
-      if (aiData && (aiData.summary || aiData.impacts)) {
+      if (wlImpact && wlImpact.target) {
+        wlEl.style.display = 'block';
+        document.getElementById('watchlistTarget').textContent = wlImpact.target;
+        document.getElementById('watchlistBias').textContent = wlImpact.direction || '持仓关联';
+        document.getElementById('watchlistReason').textContent = wlImpact.reason || '与自选池标的高频共振';
+      } else {
+        wlEl.style.display = 'none';
+      }
+
+      const hasAiSummary = aiData && (aiData.summary || aiData.impacts);
+      if (hasAiSummary || (wlImpact && wlImpact.target)) {
         aiBox.style.display = 'flex';
         const aiTag = document.getElementById('aiTagBadge');
-        const aiSource = aiData.ai_source || '本地规则默认分析';
-        aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
-
-        if (aiSource.includes('DeepSeek')) {
-          aiTag.className = 'ai-tag-badge ai-tag-deepseek';
-        } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
-          aiTag.className = 'ai-tag-badge ai-tag-zhipu';
-        } else if (isTest) {
-          aiTag.className = 'ai-tag-badge ai-tag-test';
-        } else {
-          aiTag.className = 'ai-tag-badge ai-tag-rule';
-        }
-
-        document.getElementById('aiSummary').textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
-
-        // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性）
+        const aiSummary = document.getElementById('aiSummary');
         const chipsRow = document.getElementById('chipsRow');
-        chipsRow.innerHTML = '';
-        const impacts = aiData.impacts || {};
-        const entries = Object.entries(impacts);
 
-        if (entries.length > 0) {
-          // 智能排序：优先将明确的【利好】和【利空】排在最前，中性排在后方
-          entries.sort((a, b) => {
-            const weight = (d) => (d === '利好' || d === '利空' ? 2 : 1);
-            return weight(b[1]) - weight(a[1]);
-          });
+        if (hasAiSummary) {
+          aiTag.style.display = 'inline-block';
+          aiSummary.style.display = 'block';
+          const aiSource = aiData.ai_source || '本地规则默认分析';
+          aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
 
-          for (const [asset, dir] of entries) {
-            const chip = document.createElement('span');
-            let chipClass = 'chip-neutral';
-            let icon = '⚪';
-            if (dir === '利好') {
-              chipClass = 'chip-bull';
-              icon = '🟢';
-            } else if (dir === '利空') {
-              chipClass = 'chip-bear';
-              icon = '🔴';
-            }
-            chip.className = `chip ${chipClass}`;
-            chip.innerHTML = `<span>${icon}</span> <span>${escapeHtml(asset)}</span> <b>${escapeHtml(dir)}</b>`;
-            chipsRow.appendChild(chip);
+          if (aiSource.includes('DeepSeek')) {
+            aiTag.className = 'ai-tag-badge ai-tag-deepseek';
+          } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
+            aiTag.className = 'ai-tag-badge ai-tag-zhipu';
+          } else if (isTest) {
+            aiTag.className = 'ai-tag-badge ai-tag-test';
+          } else {
+            aiTag.className = 'ai-tag-badge ai-tag-rule';
           }
-          chipsRow.style.display = 'flex';
+
+          aiSummary.textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
+
+          // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性）
+          chipsRow.innerHTML = '';
+          const impacts = aiData.impacts || {};
+          const entries = Object.entries(impacts);
+
+          if (entries.length > 0) {
+            // 智能排序：优先将明确的【利好】和【利空】排在最前，中性排在后方
+            entries.sort((a, b) => {
+              const weight = (d) => (d === '利好' || d === '利空' ? 2 : 1);
+              return weight(b[1]) - weight(a[1]);
+            });
+
+            for (const [asset, dir] of entries) {
+              const chip = document.createElement('span');
+              let chipClass = 'chip-neutral';
+              let icon = '⚪';
+              if (dir === '利好') {
+                chipClass = 'chip-bull';
+                icon = '🟢';
+              } else if (dir === '利空') {
+                chipClass = 'chip-bear';
+                icon = '🔴';
+              }
+              chip.className = `chip ${chipClass}`;
+              chip.innerHTML = `<span>${icon}</span> <span>${escapeHtml(asset)}</span> <b>${escapeHtml(dir)}</b>`;
+              chipsRow.appendChild(chip);
+            }
+            chipsRow.style.display = 'flex';
+          } else {
+            chipsRow.style.display = 'none';
+          }
         } else {
+          aiTag.style.display = 'none';
+          aiSummary.style.display = 'none';
           chipsRow.style.display = 'none';
         }
       } else {

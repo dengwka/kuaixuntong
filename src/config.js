@@ -140,6 +140,17 @@ class ConfigManager {
         ],
         exclude_keywords: [
           '广告', '扫码', '下载App', '领券', '限时特惠'
+        ],
+        // 金色VIP重大特报关键词：命中时触发黑金尊贵流光弹窗与特级高亮提醒
+        vip_keywords: [
+          '导弹袭击', '总统遇难', '宣战', '核打击', '核武器', '军事政变', '特大突发', '宣布破产', '暂停交易', '特大黑天鹅', '重大伤亡'
+        ]
+      },
+      watchlist: {
+        enabled: true,
+        stocks: [
+          { code: '00700', symbol: 'r_hk00700', name: '腾讯控股', market: '港股' },
+          { code: 'JD', symbol: 'usJD', name: '京东', market: '美股' }
         ]
       },
       ai_analysis: {
@@ -200,6 +211,7 @@ class ConfigManager {
             x_twitter: { ...defaults.sources.x_twitter, ...((parsed.sources && parsed.sources.x_twitter) || {}) }
           },
           rules: { ...defaults.rules, ...(parsed.rules || {}) },
+          watchlist: { ...defaults.watchlist, ...(parsed.watchlist || {}) },
           ai_analysis: { ...defaults.ai_analysis, ...(parsed.ai_analysis || {}) },
           crypto_prices: { ...defaults.crypto_prices, ...(parsed.crypto_prices || {}) },
           storage: { ...defaults.storage, ...(parsed.storage || {}) },

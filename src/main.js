@@ -324,6 +324,50 @@ app.whenReady().then(() => {
     return await cryptoPriceManager.validateOkxCoin(input);
   });
 
+  // 股票行情与自选标的搜索 IPC
+  ipcMain.handle('search-stocks', async (event, query) => {
+    const stockQuote = require('./stockQuote');
+    return await stockQuote.searchStock(query);
+  });
+
+  ipcMain.handle('get-stock-quotes', async (event, symbols) => {
+    const stockQuote = require('./stockQuote');
+    return await stockQuote.getQuotes(symbols);
+  });
+
+  ipcMain.handle('test-stock-summary', async (event, stocks) => {
+    const stockQuote = require('./stockQuote');
+    return await stockQuote.getFormattedSummary(stocks);
+  });
+
+  // 测试黑金 VIP 尊贵卡片效果 IPC
+  ipcMain.handle('test-vip-toast', async (event, customVipWord) => {
+    const sampleVip = {
+      id: `test_vip_${Date.now()}`,
+      source: '黑天鹅特级特报',
+      source_key: 'jin10',
+      title: '【特级警报】某战略能源中枢突遭高超音速导弹袭击，全球大宗与避险资产全面暴动',
+      content: '突发外电快讯：核心海峡与炼油枢纽突遭多枚高超音速导弹袭击并引发连环剧烈爆炸，总统紧急发表电视讲话并进入最高战争警戒状态。布伦特原油瞬间暴涨 8.6%，现货黄金秒级突破历史新高，纳斯达克及主要股指期货全线重挫。',
+      pubTime: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      is_test: true,
+      is_vip: true,
+      vip_keyword: customVipWord || '导弹袭击',
+      ai_analysis: {
+        summary: '极端地缘军事危机瞬间爆发，引发全球金融海啸级避险浪潮，大宗能源与黄金暴涨，高风险资产遭遇剧烈冲击。',
+        impacts: [
+          { target: '原油', bias: '利好' },
+          { target: '黄金', bias: '利好' },
+          { target: '美元', bias: '利好' },
+          { target: 'A股', bias: '利空' },
+          { target: '美股', bias: '利空' }
+        ],
+        ai_source: 'DeepSeek 特报引擎'
+      }
+    };
+    toastManager.showToast(sampleVip);
+    return { success: true };
+  });
+
   ipcMain.handle('test-ai-key', async (event, { provider, key }) => {
     return await financialAi.testApiKey(provider, key);
   });

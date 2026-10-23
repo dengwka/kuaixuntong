@@ -773,12 +773,33 @@
           <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。命中后即使普通快讯亦能获得高优先级弹窗关注。</div>
         </div>
 
-        <div>
+        <div style="margin-bottom: 12px;">
           <div style="font-size: 12px; font-weight: 600; color: #DC2626; margin-bottom: 4px;">
             🚫 全局屏蔽黑名单 (一票否决，命中则一律拦截不推送):
           </div>
           <textarea id="exKws" placeholder="广告, 扫码, 领券, 下载App, 限时特惠..."></textarea>
           <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。有效过滤无意义营销信息与低密度垃圾广告。</div>
+        </div>
+
+        <!-- 👑 金色 VIP 重大特报关键词 -->
+        <div style="margin-top: 14px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 12px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: #92400E; display: flex; align-items: center; gap: 6px;">
+              <span>👑 金色 VIP 重大特报关键词 (黑天鹅事件 / 黑金尊贵卡片)</span>
+              <span style="font-size: 11px; background: #FEF3C7; color: #B45309; padding: 1px 6px; border-radius: 4px; border: 1px solid #FDE68A;">金色尊贵背景</span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnPreviewVipToast" style="background: #18181B; color: #F59E0B; border: 1px solid #F59E0B; font-weight: 700; padding: 4px 10px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              👑 预览黑金 VIP 弹窗效果
+            </button>
+          </div>
+          <div style="font-size: 11.5px; color: #78350F; line-height: 1.5; margin-bottom: 6px;">
+            当快讯命中下列关键词时，系统将弹窗升级为【黑金 VIP 尊贵卡片】，具有流金光晕呼吸呼吸边框、金色闪耀 VIP 徽章与重磅音效，确保在重大突发发生时绝对不会错过。
+          </div>
+          <textarea id="vipKws" style="width: 100%; border: 1px solid #FDE68A; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #FFFFFF; outline: none; min-height: 52px; font-family: inherit;" placeholder="导弹袭击, 总统遇难, 宣战, 核打击, 特大黑天鹅, 严重政变, 强烈地震, 紧急撤离, 突发熔断"></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <div class="tip-text" style="color: #92400E;">中英文逗号、空格或换行分隔。</div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetVipKws" style="font-size: 11px; padding: 2px 8px; color: #92400E; border-color: #FCD34D;">恢复默认VIP词库</button>
+          </div>
         </div>
       </div>
     </div>
@@ -860,6 +881,51 @@
           <span>结束:</span>
           <input type="text" id="qhEnd" class="input-sm" value="08:00" placeholder="08:00" />
           <span class="tip-text">(24小时制，自动支持跨午夜计算)</span>
+        </div>
+      </div>
+
+      <!-- 自选持仓股票实时行情与AI强关联 -->
+      <div class="card" style="border-left: 3px solid #E11D48;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span>📈 自选持仓池与股票实时行情 (支持 A股 / 港股 / 美股)</span>
+            <span style="font-size: 11px; background: #FFE4E6; color: #9F1239; padding: 1px 6px; border-radius: 4px; font-weight: 600;">P1 核心功能</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshStockQuotes" style="font-size: 11px; padding: 3px 8px; cursor: pointer;">
+            ⚡ 实时刷新行情
+          </button>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px; line-height: 1.5;">
+          维护自选关注股票。输入股票中文名（如“腾讯”、“京东”、“茅台”、“英伟达”）或代码即可智能搜索并添加。弹窗底栏将实时轮播展示持仓股价与涨跌幅，AI 观点卡片亦将对提及自选股的消息进行定向归因。
+        </div>
+        <div class="form-row" style="margin-bottom: 8px;">
+          <label class="checkbox-row">
+            <input type="checkbox" id="watchlistEnabled" checked />
+            <b style="color: #1E293B;">启用自选持仓监控与弹窗底部股票行情展示</b>
+          </label>
+        </div>
+
+        <!-- 搜索与添加 -->
+        <div style="position: relative; margin-bottom: 8px;">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="stockSearchInput" placeholder="输入股票名称或代码 (例如 腾讯、京东、茅台、英伟达、00700、NVDA...)" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px; border: 1px solid #CBD5E1; border-radius: 6px; outline: none;" autocomplete="off" />
+            <button type="button" class="btn btn-secondary btn-sm" id="btnSearchAddStock" style="flex-shrink: 0; padding: 6px 12px; font-weight: 600;">
+              🔍 智能搜索
+            </button>
+          </div>
+          <!-- 下拉联想列表 -->
+          <div id="stockSuggestDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); max-height: 200px; overflow-y: auto; z-index: 100; margin-top: 3px;">
+          </div>
+        </div>
+        <div id="stockAddNotice" style="font-size: 11.5px; margin-bottom: 8px; padding: 5px 8px; border-radius: 4px; display: none;"></div>
+
+        <!-- 已选股票展示容器 -->
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; min-height: 48px; align-items: center;" id="watchlistContainer">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+          <span id="watchlistSummaryText" style="font-size: 11.5px; color: #475569;">已选持仓: 3只标的</span>
+          <span style="font-size: 11px; color: #94A3B8;">实时行情通道: 腾讯财经 API (35ms 免 Cookie 极速更新)</span>
         </div>
       </div>
 
@@ -1154,6 +1220,7 @@
     const DEFAULT_XUEQIU_KWS = ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破'];
         let xSubscribedAccounts = [];
     let xPendingAccount = null;
+    let currentWatchlist = [];
 
     window.quickFillX = function(handle) {
       const input = document.getElementById('xInputHandle');
@@ -1499,6 +1566,21 @@
       const rules = cfg.rules || {};
       document.getElementById('highKws').value = (rules.highlight_keywords || []).join(', ');
       document.getElementById('exKws').value = (rules.exclude_keywords || []).join(', ');
+      const defaultVipKws = ['导弹袭击', '总统遇难', '宣战', '核打击', '特大黑天鹅', '严重政变', '强烈地震', '紧急撤离', '突发熔断'];
+      document.getElementById('vipKws').value = (rules.vip_keywords && rules.vip_keywords.length > 0 ? rules.vip_keywords : defaultVipKws).join(', ');
+
+      // 自选持仓池初始化
+      const wlCfg = cfg.watchlist || {};
+      document.getElementById('watchlistEnabled').checked = wlCfg.enabled !== false;
+      currentWatchlist = Array.isArray(wlCfg.stocks) && wlCfg.stocks.length > 0
+        ? [...wlCfg.stocks]
+        : [
+            { name: '腾讯控股', code: '00700', symbol: 'r_hk00700', market: '港股' },
+            { name: '京东', code: 'JD', symbol: 'usJD', market: '美股' },
+            { name: '贵州茅台', code: '600519', symbol: 'sh600519', market: '沪A' }
+          ];
+      renderWatchlistUI();
+      fetchWatchlistLiveQuotes();
 
       const ai = cfg.ai_analysis || {};
       document.getElementById('aiEnabled').checked = ai.enabled !== false;
@@ -1778,6 +1860,217 @@
         resEl.textContent = `❌ 获取失败: ${e.message}`;
       }
     });
+
+    // ==================== 自选持仓股票管理 ====================
+    function renderWatchlistUI() {
+      const container = document.getElementById('watchlistContainer');
+      const summaryText = document.getElementById('watchlistSummaryText');
+      if (!container) return;
+
+      if (!currentWatchlist || currentWatchlist.length === 0) {
+        container.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 6px; text-align: center; width: 100%;">暂无自选标的，可在上方输入如“腾讯”、“京东”、“茅台”、“英伟达”搜索添加</div>';
+        if (summaryText) summaryText.textContent = '已选持仓: 0只标的';
+        return;
+      }
+
+      if (summaryText) summaryText.textContent = `已选持仓: ${currentWatchlist.length}只标的 (弹窗底部轮播展示)`;
+
+      container.innerHTML = currentWatchlist.map(s => {
+        const marketColor = s.market && s.market.includes('美') ? '#3B82F6' : (s.market && s.market.includes('港') ? '#8B5CF6' : '#EF4444');
+        return `
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <span style="font-size: 10px; padding: 1px 4px; border-radius: 3px; background: ${marketColor}15; color: ${marketColor}; font-weight: 700;">${escapeHtml(s.market || '股票')}</span>
+            <span style="font-weight: 700; color: #0F172A;">${escapeHtml(s.name)}</span>
+            <span style="color: #64748B; font-size: 11px;">${escapeHtml(s.code)}</span>
+            <span id="quote_val_${escapeHtml(s.symbol)}" style="font-weight: 600; color: #334155; margin-left: 2px;">--</span>
+            <span id="quote_pct_${escapeHtml(s.symbol)}" style="font-weight: 700;">--</span>
+            <span style="cursor: pointer; color: #94A3B8; margin-left: 4px; font-weight: bold; font-size: 13px;" title="移除该股票" onclick="removeWatchlistStock('${escapeHtml(s.symbol)}')">×</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.removeWatchlistStock = function(symbol) {
+      currentWatchlist = currentWatchlist.filter(s => s.symbol !== symbol);
+      renderWatchlistUI();
+      showNotice('已从自选持仓池移除');
+    };
+
+    async function fetchWatchlistLiveQuotes() {
+      if (!currentWatchlist || currentWatchlist.length === 0) return;
+      try {
+        const symbols = currentWatchlist.map(s => s.symbol);
+        const quotes = await ipcRenderer.invoke('get-stock-quotes', symbols);
+        if (Array.isArray(quotes)) {
+          quotes.forEach(q => {
+            const valEl = document.getElementById(`quote_val_${q.symbol}`);
+            const pctEl = document.getElementById(`quote_pct_${q.symbol}`);
+            if (valEl && q.priceStr) {
+              valEl.textContent = q.priceStr;
+            }
+            if (pctEl && q.changePct !== undefined) {
+              const sign = q.changePct > 0 ? '+' : '';
+              pctEl.textContent = `${sign}${q.changePct.toFixed(2)}%`;
+              pctEl.style.color = q.changePct > 0 ? '#DC2626' : (q.changePct < 0 ? '#16A34A' : '#475569');
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('获取持仓实时行情异常:', e);
+      }
+    }
+
+    let stockSearchTimer = null;
+    const stockSearchInput = document.getElementById('stockSearchInput');
+    const stockSuggestDropdown = document.getElementById('stockSuggestDropdown');
+
+    function hideStockDropdown() {
+      if (stockSuggestDropdown) stockSuggestDropdown.style.display = 'none';
+    }
+
+    function showStockDropdown(items) {
+      if (!stockSuggestDropdown) return;
+      if (!items || items.length === 0) {
+        stockSuggestDropdown.innerHTML = '<div style="padding: 10px; color: #94A3B8; font-size: 11.5px; text-align: center;">未匹配到相关股票，请尝试输入纯中文名称或标准代码</div>';
+        stockSuggestDropdown.style.display = 'block';
+        return;
+      }
+
+      stockSuggestDropdown.innerHTML = items.map((item, idx) => {
+        const marketColor = item.market && item.market.includes('美') ? '#3B82F6' : (item.market && item.market.includes('港') ? '#8B5CF6' : '#EF4444');
+        return `
+          <div class="stock-item-row" data-idx="${idx}" style="padding: 7px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px solid #F1F5F9; transition: background 0.1s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 10px; padding: 1px 4px; border-radius: 3px; background: ${marketColor}15; color: ${marketColor}; font-weight: 700;">${escapeHtml(item.market)}</span>
+              <b style="color: #0F172A;">${escapeHtml(item.name)}</b>
+              <span style="color: #64748B; font-size: 11px;">${escapeHtml(item.code)}</span>
+            </div>
+            <span style="color: #2563EB; font-size: 11px; font-weight: 600;">+ 添加持仓</span>
+          </div>
+        `;
+      }).join('');
+
+      stockSuggestDropdown.style.display = 'block';
+
+      stockSuggestDropdown.querySelectorAll('.stock-item-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const idx = parseInt(row.getAttribute('data-idx'));
+          const selected = items[idx];
+          if (selected) {
+            addSelectedStock(selected);
+          }
+        });
+      });
+    }
+
+    function addSelectedStock(stock) {
+      if (currentWatchlist.some(s => s.symbol === stock.symbol)) {
+        showNotice(`【${stock.name}】已在自选持仓池中`);
+        hideStockDropdown();
+        return;
+      }
+      currentWatchlist.push(stock);
+      renderWatchlistUI();
+      hideStockDropdown();
+      if (stockSearchInput) stockSearchInput.value = '';
+      showNotice(`已成功添加【${stock.name}】至自选持仓池`);
+      fetchWatchlistLiveQuotes();
+    }
+
+    if (stockSearchInput) {
+      stockSearchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        clearTimeout(stockSearchTimer);
+        if (!val) {
+          hideStockDropdown();
+          return;
+        }
+        stockSearchTimer = setTimeout(async () => {
+          try {
+            const results = await ipcRenderer.invoke('search-stocks', val);
+            showStockDropdown(results);
+          } catch (err) {
+            console.warn('搜索股票错误:', err);
+          }
+        }, 250);
+      });
+
+      stockSearchInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = stockSearchInput.value.trim();
+          if (!val) return;
+          try {
+            const results = await ipcRenderer.invoke('search-stocks', val);
+            if (results && results.length > 0) {
+              addSelectedStock(results[0]);
+            } else {
+              showNotice(`未找到与“${val}”相关的股票`);
+            }
+          } catch (err) {}
+        } else if (e.key === 'Escape') {
+          hideStockDropdown();
+        }
+      });
+    }
+
+    const btnSearchStockEl = document.getElementById('btnSearchAddStock');
+    if (btnSearchStockEl) {
+      btnSearchStockEl.addEventListener('click', async () => {
+        const val = (stockSearchInput && stockSearchInput.value.trim()) || '';
+        if (!val) {
+          showNotice('请输入要搜索的股票名称或代码');
+          if (stockSearchInput) stockSearchInput.focus();
+          return;
+        }
+        try {
+          const results = await ipcRenderer.invoke('search-stocks', val);
+          if (results && results.length > 0) {
+            showStockDropdown(results);
+          } else {
+            showNotice(`未找到与“${val}”相关的股票`);
+          }
+        } catch (e) {}
+      });
+    }
+
+    const btnRefreshQuotesEl = document.getElementById('btnRefreshStockQuotes');
+    if (btnRefreshQuotesEl) {
+      btnRefreshQuotesEl.addEventListener('click', async () => {
+        showNotice('正在拉取自选股票最新实时行情...');
+        await fetchWatchlistLiveQuotes();
+        showNotice('自选持仓实时行情已刷新！');
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (stockSuggestDropdown && !stockSuggestDropdown.contains(e.target) && e.target !== stockSearchInput) {
+        hideStockDropdown();
+      }
+    });
+
+    // ==================== 金色 VIP 特报按钮交互 ====================
+    const btnResetVipEl = document.getElementById('btnResetVipKws');
+    if (btnResetVipEl) {
+      btnResetVipEl.addEventListener('click', () => {
+        const defaultVipKws = ['导弹袭击', '总统遇难', '宣战', '核打击', '特大黑天鹅', '严重政变', '强烈地震', '紧急撤离', '突发熔断'];
+        document.getElementById('vipKws').value = defaultVipKws.join(', ');
+        showNotice('已恢复默认金色 VIP 特报关键词库');
+      });
+    }
+
+    const btnPreviewVipEl = document.getElementById('btnPreviewVipToast');
+    if (btnPreviewVipEl) {
+      btnPreviewVipEl.addEventListener('click', async () => {
+        try {
+          const customKw = (document.getElementById('vipKws').value.split(/[,，\n\s]+/)[0] || '导弹袭击').trim();
+          await ipcRenderer.invoke('test-vip-toast', customKw);
+          showNotice('👑 黑金 VIP 尊贵卡片演示弹窗已唤起！');
+        } catch (e) {
+          showNotice(`唤起失败: ${e.message}`);
+        }
+      });
+    }
 
     // 数据源子项级联联动
     function updateSourceSubStates() {
@@ -2146,7 +2439,12 @@
         },
         rules: {
           highlight_keywords: parseList(document.getElementById('highKws').value),
-          exclude_keywords: parseList(document.getElementById('exKws').value)
+          exclude_keywords: parseList(document.getElementById('exKws').value),
+          vip_keywords: parseList(document.getElementById('vipKws').value)
+        },
+        watchlist: {
+          enabled: document.getElementById('watchlistEnabled').checked,
+          stocks: currentWatchlist
         },
         ai_analysis: {
           enabled: document.getElementById('aiEnabled').checked,

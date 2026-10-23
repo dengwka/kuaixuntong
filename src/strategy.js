@@ -113,11 +113,31 @@ class StrategyEngine {
       if (!matchedTags.includes(starTag)) matchedTags.push(starTag);
     }
 
-    const matched = score >= minScore;
+    // 检查是否命中金色 VIP 重大特报关键词 (如 导弹袭击、总统遇难、特大黑天鹅等)
+    const vipKws = rules.vip_keywords || ['导弹袭击', '总统遇难', '宣战', '核打击', '核武器', '军事政变', '特大突发', '宣布破产', '暂停交易', '特大黑天鹅'];
+    let isVip = false;
+    let matchedVipTag = '';
+    for (const kw of vipKws) {
+      if (kw && fullText.includes(kw.toLowerCase())) {
+        isVip = true;
+        matchedVipTag = kw;
+        score = 100;
+        matchedTags.unshift(`👑 VIP特报: ${kw}`);
+        break;
+      }
+    }
+
+    const matched = isVip || (score >= minScore);
     return {
       matched,
       score,
-      item: Object.assign({}, alertData, { matched_tags: matchedTags })
+      is_vip: isVip,
+      vip_keyword: matchedVipTag,
+      item: Object.assign({}, alertData, { 
+        matched_tags: matchedTags,
+        is_vip: isVip,
+        vip_keyword: matchedVipTag
+      })
     };
   }
 }

@@ -2,6 +2,7 @@ const { BrowserWindow, screen, ipcMain, shell } = require('electron');
 const path = require('path');
 const historyManager = require('./history');
 const cryptoPriceManager = require('./cryptoPrice');
+const stockQuoteManager = require('./stockQuote');
 
 class ToastManager {
   constructor(configManager, trayManager) {
@@ -131,6 +132,30 @@ class ToastManager {
     return '';
   }
 
+  async getStockPricesText() {
+    try {
+      const cfg = this.configManager.config;
+      const watchCfg = cfg.watchlist || {};
+      if (watchCfg.enabled !== false && Array.isArray(watchCfg.stocks) && watchCfg.stocks.length > 0) {
+        return await stockQuoteManager.getFormattedSummary(watchCfg.stocks);
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  async getAllTickerPricesText() {
+    try {
+      const [stockText, cryptoText] = await Promise.all([
+        this.getStockPricesText(),
+        this.getCryptoPricesText()
+      ]);
+      const list = [stockText, cryptoText].filter(Boolean);
+      return list.join('   ');
+    } catch (e) {
+      return '';
+    }
+  }
+
   /**
    * 优先展示最近的弹窗
    * 如果当前窗口正在展示旧卡片，将旧卡片推入历史未读栈，最新卡片立即抢占置顶展示
@@ -151,7 +176,12 @@ class ToastManager {
       }
 
       this.currentAlertData = alertData;
-      const cryptoSummary = await this.getCryptoPricesText();
+      const [tickerSummary, stockSummary, cryptoSummary] = await Promise.all([
+        this.getAllTickerPricesText(),
+        this.getStockPricesText(),
+        this.getCryptoPricesText()
+      ]);
+
       if (!this.currentToastWin || this.currentToastWin.isDestroyed()) {
         await this.createToastWindow(alertData);
         return;
@@ -160,7 +190,8 @@ class ToastManager {
         alertData,
         config: this.configManager.config,
         unreadCount: this.unreadList.length,
-        cryptoPrices: cryptoSummary
+        cryptoPrices: tickerSummary || cryptoSummary,
+        stockPrices: stockSummary
       });
 
       // 无论此前窗口是否处于不可见状态，均确保重新展现并置顶
@@ -212,12 +243,17 @@ class ToastManager {
 
     toastWin.webContents.once('did-finish-load', async () => {
       if (!toastWin.isDestroyed()) {
-        const cryptoSummary = await this.getCryptoPricesText();
+        const [tickerSummary, stockSummary, cryptoSummary] = await Promise.all([
+          this.getAllTickerPricesText(),
+          this.getStockPricesText(),
+          this.getCryptoPricesText()
+        ]);
         toastWin.webContents.send('init-toast', {
           alertData,
           config: this.configManager.config,
           unreadCount: this.unreadList.length,
-          cryptoPrices: cryptoSummary
+          cryptoPrices: tickerSummary || cryptoSummary,
+          stockPrices: stockSummary
         });
 
         // 强保底机制：如果 150ms 内未收到渲染进程的高度通知，立即强制显示窗口，绝不静默！
