@@ -78,8 +78,8 @@ class Jin10Fetcher {
     const lines = cleanC.split('\n').map(l => l.trim()).filter(Boolean);
     const firstLine = lines[0] || '';
 
-    // 如果第一行适合作为标题（长度在 4 到 40 字之间）
-    if (firstLine.length >= 4 && firstLine.length <= 40 && lines.length > 1) {
+    // 如果第一行适合作为标题（长度在 4 到 70 字之间）
+    if (firstLine.length >= 4 && firstLine.length <= 70 && lines.length > 1) {
       return {
         title: firstLine,
         content: lines.slice(1).join('\n')
@@ -98,10 +98,10 @@ class Jin10Fetcher {
       };
     }
 
-    // 若首句较长，截取前 35 字加省略号作为标题，正文完整保留
-    if (cleanC.length > 35) {
+    // 若首句无标点且较长，保留最长 70 字完整展示，避免生硬切断核心词句
+    if (cleanC.length > 70) {
       return {
-        title: cleanC.substring(0, 35) + '...',
+        title: cleanC.substring(0, 70) + '...',
         content: cleanC
       };
     }

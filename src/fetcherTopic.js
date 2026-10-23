@@ -70,7 +70,7 @@ class Jin10TopicFetcher {
     const lines = cleanC.split('\n').map(l => l.trim()).filter(Boolean);
     const firstLine = lines[0] || '';
 
-    if (firstLine.length >= 4 && firstLine.length <= 40 && lines.length > 1) {
+    if (firstLine.length >= 4 && firstLine.length <= 70 && lines.length > 1) {
       return {
         title: firstLine,
         content: lines.slice(1).join('\n')
@@ -88,9 +88,9 @@ class Jin10TopicFetcher {
       };
     }
 
-    if (cleanC.length > 35) {
+    if (cleanC.length > 70) {
       return {
-        title: cleanC.substring(0, 35) + '...',
+        title: cleanC.substring(0, 70) + '...',
         content: cleanC
       };
     }

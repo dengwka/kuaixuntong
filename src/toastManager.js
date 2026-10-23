@@ -243,8 +243,8 @@ class ToastManager {
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
     const width = this.toastWidth;
-    const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 540;
-    const maxHeight = Math.min(Math.max(540, userMaxHeight), workArea.height - 30);
+    const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 650;
+    const maxHeight = Math.min(Math.max(650, userMaxHeight), workArea.height - 30);
     const targetHeight = Math.min(Math.max(160, Math.ceil(height)), maxHeight);
 
     const isMac = process.platform === 'darwin';

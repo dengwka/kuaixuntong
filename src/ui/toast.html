@@ -156,10 +156,18 @@
       margin-top: 6px;
       width: 100%;
     }
-    .x-media-gallery.grid-1 {
-      display: flex !important;
-      justify-content: center;
+    .x-media-gallery {
+      display: grid;
+      gap: 6px;
+      margin-top: 6px;
+      border-radius: 8px;
       width: 100%;
+      overflow: hidden;
+    }
+    .x-media-gallery.grid-1 {
+      display: block !important;
+      width: 100%;
+      margin-top: 6px;
     }
     .x-media-gallery.grid-2 {
       display: grid !important;
@@ -183,31 +191,36 @@
       cursor: zoom-in !important;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    /* 单图平铺展示：撑满卡片可用宽度，高度自适应上限 380px，彻底消除左右留白，K线图图表饱满清晰 */
     .x-media-gallery.grid-1 .x-media-img {
-      max-width: 100%;
-      max-height: 260px;
-      width: auto;
-      height: auto;
-      object-fit: contain;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      max-height: 380px;
+      object-fit: cover;
+      object-position: top center;
       border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      background: #F8FAFC;
       display: block;
-      margin: 0 auto;
+      margin: 4px 0 2px 0;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
     }
     .x-media-gallery.grid-2 .x-media-img {
-      height: 130px;
+      height: 140px;
       object-fit: cover;
     }
     .x-media-gallery.grid-3 .x-media-img {
-      height: 95px;
+      height: 105px;
       object-fit: cover;
     }
     .x-media-gallery.grid-4 .x-media-img {
-      height: 110px;
+      height: 120px;
       object-fit: cover;
     }
     .x-media-img:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      transform: scale(1.01);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
     }
     .time-lbl {
       font-size: 11.5px;
@@ -239,13 +252,14 @@
 
     /* Content */
     .content-container {
-      padding: 11px 16px 8px 16px;
+      padding: 13px 16px 8px 16px;
       flex: 1 1 auto;
       min-height: 50px;
       overflow-y: auto;
+      overflow-anchor: none; /* 彻底禁止滚动锚定偏移，避免高度计算时向上推挤标题 */
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 8px;
       cursor: pointer;
     }
     .content-container:hover .title-text {
@@ -268,14 +282,14 @@
       border-radius: 3px;
     }
     .title-text {
-      font-size: 14.5px;
+      font-size: 15px;
       font-weight: 700;
       color: #0F172A;
-      line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.5;
+      display: block; /* 标题完整平铺展示，允许自适应换行，绝不生硬截断切顶 */
+      word-break: break-word;
+      margin-top: 1px;
+      padding-top: 2px;
       cursor: pointer;
       transition: color 0.15s ease;
     }
@@ -323,21 +337,24 @@
       font-weight: bold;
     }
     .alert-img {
-      max-width: 100%;
-      max-height: 260px;
-      width: auto;
-      height: auto;
-      object-fit: contain;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      max-height: 380px;
+      object-fit: cover;
+      object-position: top center;
       border-radius: 8px;
-      margin: 6px auto 0 auto;
+      margin: 6px 0 2px 0;
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       display: none;
       cursor: zoom-in !important;
-      transition: transform 0.15s ease;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .alert-img:hover {
-      transform: scale(1.02);
+      transform: scale(1.01);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
     }
 
     /* AI Box */
@@ -665,17 +682,17 @@
         const firstLine = after.split(/[\r\n]+/)[0].replace(/^[1-9][.、]\s*/, '').trim();
         const firstSentence = firstLine.split(/[。！!]/)[0].trim();
         if (firstSentence) {
-          const cleanSentence = firstSentence.length > 38 ? firstSentence.substring(0, 38) + '...' : firstSentence;
+          const cleanSentence = firstSentence.length > 70 ? firstSentence.substring(0, 70) + '...' : firstSentence;
           return `【${tag}】${cleanSentence}`;
         }
         return `【${tag}】重要快讯`;
       }
 
-      // 3. 直接提取第一句话
+      // 3. 直接提取第一句话 (保证核心信息完整展示，不再过早粗暴省略)
       const firstLine = raw.split(/[\r\n]+/)[0].replace(/^[1-9][.、]\s*/, '').trim();
       const firstSentence = firstLine.split(/[。！!]/)[0].trim();
       if (firstSentence && firstSentence.length > 4) {
-        return firstSentence.length > 40 ? firstSentence.substring(0, 40) + '...' : firstSentence;
+        return firstSentence.length > 70 ? firstSentence.substring(0, 70) + '...' : firstSentence;
       }
 
       return '金十宏观突发要闻';
@@ -726,6 +743,10 @@
       const availH = window.innerHeight - padTop - padBottom - mt - mb - 2;
       if (availH > 100) {
         c.style.maxHeight = `${Math.floor(availH)}px`;
+      }
+      const contentEl = document.getElementById('contentArea');
+      if (contentEl) {
+        contentEl.scrollTop = 0;
       }
     }
 
@@ -969,11 +990,16 @@
           };
           galleryEl.appendChild(mImg);
         });
-        galleryEl.style.display = (displayPics.length === 1) ? 'flex' : 'grid';
+        galleryEl.style.display = (displayPics.length === 1) ? 'block' : 'grid';
       } else {
         galleryEl.style.display = 'none';
         galleryEl.innerHTML = '';
         imgEl.style.display = 'none';
+      }
+
+      // 确保渲染完成后滚动条严格归位顶部，彻底防止标题顶部被截断或挤出可视区
+      if (contentEl) {
+        contentEl.scrollTop = 0;
       }
 
       // 5. AI 观点与利多利空分析（仅在消息携带有效 ai_analysis 时展示，普通账号不开启则彻底隐藏）
