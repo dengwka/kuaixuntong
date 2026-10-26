@@ -3,6 +3,7 @@ const path = require('path');
 const historyManager = require('./history');
 const cryptoPriceManager = require('./cryptoPrice');
 const stockQuoteManager = require('./stockQuote');
+const logger = require('./logger');
 
 class ToastManager {
   constructor(configManager, trayManager) {
@@ -17,6 +18,7 @@ class ToastManager {
     this.openSettingsCallback = null;
     this.toastWidth = 500; // 默认基准宽度
     this.currentAdaptiveWidth = 500; // 动态自适应宽度：0~1个标的 400px，2~4个标的 500px，5~14个标的 620px
+    this.toastQueue = Promise.resolve(); // 异步排队任务锁，杜绝并发调用产生多个重叠窗口或孤儿窗口
 
     this.initIpc();
   }
@@ -35,16 +37,23 @@ class ToastManager {
 
   initIpc() {
     ipcMain.on('toast-mark-read', (event, alertId) => {
-      this.markAsRead(alertId);
+      const senderWin = BrowserWindow.fromWebContents(event.sender);
+      this.markAsRead(alertId, senderWin);
     });
 
     ipcMain.on('toast-expired-unread', (event, alertData) => {
       this.onToastExpiredUnread(alertData);
     });
 
-    ipcMain.on('toast-close', () => {
-      if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
+    ipcMain.on('toast-close', (event) => {
+      const senderWin = BrowserWindow.fromWebContents(event.sender);
+      if (senderWin && !senderWin.isDestroyed()) {
+        try { senderWin.close(); } catch (e) {}
+      }
+      if (this.currentToastWin && !this.currentToastWin.isDestroyed() && (this.currentToastWin === senderWin || !senderWin)) {
         try { this.currentToastWin.close(); } catch (e) {}
+        this.currentToastWin = null;
+        this.currentAlertData = null;
       }
     });
 
@@ -59,7 +68,11 @@ class ToastManager {
         historyManager.recordInteraction(this.currentAlertData.id, 'clicked', this.currentAlertData);
       }
       if (url && !this.currentAlertData?.is_test) {
-        shell.openExternal(url);
+        try {
+          shell.openExternal(url);
+        } catch (e) {
+          logger.error('[ToastManager] 打开链接失败:', e.message);
+        }
       }
     });
 
@@ -68,7 +81,7 @@ class ToastManager {
         try {
           shell.openExternal(picUrl);
         } catch (e) {
-          logger.error('[ToastManager] 打开图片失败:', e);
+          logger.error('[ToastManager] 打开图片失败:', e.message);
         }
       }
     });
@@ -78,41 +91,52 @@ class ToastManager {
         try {
           shell.openExternal(url);
         } catch (e) {
-          logger.error('[ToastManager] 打开外部链接失败:', e);
+          logger.error('[ToastManager] 打开外部链接失败:', e.message);
         }
       }
     });
 
     // 单帧完美渲染完成后再统一显示窗口，彻底杜绝闪烁和尺寸跳跃
     ipcMain.on('toast-ready-to-display', (event, { height, width }) => {
-      if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-        this.applyFinalBoundsAndShow(height, width);
+      const win = BrowserWindow.fromWebContents(event.sender) || this.currentToastWin;
+      if (win && !win.isDestroyed()) {
+        this.applyFinalBoundsAndShow(height, width, win);
       }
     });
 
     ipcMain.on('toast-resize-height', (event, targetHeight) => {
-      if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-        this.relayoutToast(targetHeight);
+      const win = BrowserWindow.fromWebContents(event.sender) || this.currentToastWin;
+      if (win && !win.isDestroyed()) {
+        this.relayoutToast(targetHeight, win);
       }
     });
 
     // 翻看上一条未读消息
     ipcMain.on('toast-show-prev-unread', (event, currentAlertId) => {
-      this.showPrevUnreadInPlace(currentAlertId);
+      const senderWin = BrowserWindow.fromWebContents(event.sender);
+      this.showPrevUnreadInPlace(currentAlertId, senderWin);
     });
 
     // 忽略全部历史消息
-    ipcMain.on('toast-ignore-all-history', () => {
-      this.ignoreAllHistory();
+    ipcMain.on('toast-ignore-all-history', (event) => {
+      const senderWin = BrowserWindow.fromWebContents(event.sender);
+      this.ignoreAllHistory(senderWin);
     });
   }
 
-  markAsRead(alertId) {
+  markAsRead(alertId, senderWin) {
     const aid = String(alertId || '');
+    const prevLen = this.unreadList.length;
     this.unreadList = this.unreadList.filter(a => String(a.id || a.item_id || '') !== aid);
     historyManager.recordInteraction(aid, 'hovered');
     if (this.trayManager) {
       this.trayManager.setUnreadCount(this.unreadList.length);
+    }
+    const win = senderWin || this.currentToastWin;
+    if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed() && prevLen !== this.unreadList.length) {
+      try {
+        win.webContents.send('update-unread-count', this.unreadList.length);
+      } catch (e) {}
     }
   }
 
@@ -126,6 +150,31 @@ class ToastManager {
     historyManager.recordInteraction(aid, 'unattended_expired', alertData);
     if (this.trayManager) {
       this.trayManager.setUnreadCount(this.unreadList.length);
+    }
+  }
+
+  /**
+   * 极速同步获取内存缓存中的行情字串（0ms 响应，杜绝网络等待导致卡死弹窗与翻页）
+   */
+  getCachedTickerPayloadSync() {
+    try {
+      const cfg = this.configManager?.config || {};
+      let stockText = '';
+      let cryptoText = '';
+      if (cfg.watchlist?.enabled !== false) {
+        stockText = stockQuoteManager.getCachedSummary(cfg.watchlist?.stocks || []);
+      }
+      if (cfg.crypto_prices?.enabled !== false) {
+        cryptoText = cryptoPriceManager.getCachedSummary(cfg.crypto_prices?.selected_coins || []);
+      }
+      const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
+      return {
+        combinedPrices: list.join('    '),
+        stockPrices: (stockText || '').trim(),
+        cryptoPrices: (cryptoText || '').trim()
+      };
+    } catch (e) {
+      return { combinedPrices: '', stockPrices: '', cryptoPrices: '' };
     }
   }
 
@@ -161,42 +210,63 @@ class ToastManager {
     return '';
   }
 
-  async getAllTickerPricesText() {
+  /**
+   * 异步获取行情（带 600ms 快速超时竞速保护，超时立即回退至本地内存缓存）
+   */
+  async getTickerPayload() {
     try {
-      const [stockText, cryptoText] = await Promise.all([
+      const fetchPromise = Promise.all([
         this.getStockPricesText(),
         this.getCryptoPricesText()
       ]);
-      const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
-      return list.join('    ');
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(['', '']), 600));
+
+      const [stockText, cryptoText] = await Promise.race([fetchPromise, timeoutPromise]);
+      const cached = this.getCachedTickerPayloadSync();
+
+      const finalStock = (stockText && stockText.trim()) || cached.stockPrices;
+      const finalCrypto = (cryptoText && cryptoText.trim()) || cached.cryptoPrices;
+      const list = [finalStock, finalCrypto].map(s => (s || '').trim()).filter(Boolean);
+
+      return {
+        combinedPrices: list.join('    '),
+        stockPrices: finalStock,
+        cryptoPrices: finalCrypto
+      };
     } catch (e) {
-      return '';
+      return this.getCachedTickerPayloadSync();
     }
   }
 
-  async getTickerPayload() {
-    try {
-      const [stockText, cryptoText] = await Promise.all([
-        this.getStockPricesText(),
-        this.getCryptoPricesText()
-      ]);
-      const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
-      const combined = list.join('    ');
-      return {
-        combinedPrices: combined,
-        stockPrices: (stockText || '').trim(),
-        cryptoPrices: (cryptoText || '').trim()
-      };
-    } catch (e) {
-      return { combinedPrices: '', stockPrices: '', cryptoPrices: '' };
-    }
+  /**
+   * 后台非阻塞刷新行情并平滑推送到前端
+   */
+  refreshTickerBackground(targetWin) {
+    const win = targetWin || this.currentToastWin;
+    if (!win || win.isDestroyed()) return;
+
+    this.getTickerPayload().then(payload => {
+      if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+        try {
+          win.webContents.send('update-ticker', payload);
+        } catch (e) {}
+      }
+    }).catch(() => {});
   }
 
   /**
    * 优先展示最近的弹窗
    * 如果当前窗口正在展示旧卡片，将旧卡片推入历史未读栈，最新卡片立即抢占置顶展示
+   * 经过 Promise 队列串行化锁保护，严防并发创建多个独立窗口
    */
   async showToast(alertData) {
+    this.toastQueue = this.toastQueue.then(() => this._doShowToast(alertData)).catch(err => {
+      logger.error('[ToastManager] showToast 处理异常:', err ? err.message : err);
+    });
+    return this.toastQueue;
+  }
+
+  async _doShowToast(alertData) {
     historyManager.recordPushed(alertData, alertData.sync_delay_sec);
 
     if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
@@ -212,41 +282,58 @@ class ToastManager {
       }
 
       this.currentAlertData = alertData;
-      const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+      // 0ms 同步极速载入，杜绝网络异步导致的页面撕裂与崩溃
+      const { combinedPrices, stockPrices, cryptoPrices } = this.getCachedTickerPayloadSync();
       const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
       this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
 
-      if (!this.currentToastWin || this.currentToastWin.isDestroyed()) {
-        await this.createToastWindow(alertData, this.currentAdaptiveWidth);
-        return;
-      }
-      this.currentToastWin.webContents.send('init-toast', {
-        alertData,
-        config: this.configManager.config,
-        unreadCount: this.unreadList.length,
-        cryptoPrices: cryptoPrices || '',
-        stockPrices: stockPrices || '',
-        combinedPrices: combinedPrices || '',
-        targetWidth: this.currentAdaptiveWidth
-      });
+      if (this.currentToastWin && !this.currentToastWin.isDestroyed() && this.currentToastWin.webContents && !this.currentToastWin.webContents.isDestroyed()) {
+        try {
+          this.currentToastWin.webContents.send('init-toast', {
+            alertData,
+            config: this.configManager.config,
+            unreadCount: this.unreadList.length,
+            cryptoPrices: cryptoPrices || '',
+            stockPrices: stockPrices || '',
+            combinedPrices: combinedPrices || '',
+            targetWidth: this.currentAdaptiveWidth
+          });
 
-      // 无论此前窗口是否处于不可见状态，均确保重新展现并置顶
-      if (!this.currentToastWin.isVisible()) {
-        this.currentToastWin.show();
+          // 无论此前窗口是否处于不可见状态，均确保重新展现并置顶
+          if (!this.currentToastWin.isVisible()) {
+            this.currentToastWin.show();
+          }
+          this.currentToastWin.setAlwaysOnTop(true, 'screen-saver');
+          this.currentToastWin.moveTop();
+
+          this.refreshTickerBackground(this.currentToastWin);
+          return;
+        } catch (e) {
+          logger.warn('[ToastManager] 更新已有弹窗失败，将重建窗口:', e.message);
+        }
       }
-      this.currentToastWin.setAlwaysOnTop(true, 'screen-saver');
-      this.currentToastWin.moveTop();
-      return;
     }
 
     this.currentAlertData = alertData;
-    const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+    const { combinedPrices, stockPrices, cryptoPrices } = this.getCachedTickerPayloadSync();
     const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
     this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
     await this.createToastWindow(alertData, this.currentAdaptiveWidth);
   }
 
   async createToastWindow(alertData, initialWidth) {
+    // 彻底销毁任何残留的孤儿 toast 窗口，绝不允许双弹窗重叠
+    try {
+      BrowserWindow.getAllWindows().forEach(w => {
+        if (w !== this.currentToastWin && !w.isDestroyed()) {
+          const u = w.webContents ? w.webContents.getURL() : '';
+          if (u.includes('toast.html')) {
+            try { w.destroy(); } catch (e) {}
+          }
+        }
+      });
+    } catch (e) {}
+
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
     const width = initialWidth || this.currentAdaptiveWidth || 500;
@@ -281,11 +368,15 @@ class ToastManager {
 
     toastWin.loadFile(path.join(__dirname, 'ui', 'toast.html'));
 
-    toastWin.webContents.once('did-finish-load', async () => {
-      if (!toastWin.isDestroyed()) {
-        const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+    toastWin.webContents.once('did-finish-load', () => {
+      try {
+        if (toastWin.isDestroyed() || !toastWin.webContents || toastWin.webContents.isDestroyed()) {
+          return;
+        }
+        const { combinedPrices, stockPrices, cryptoPrices } = this.getCachedTickerPayloadSync();
         const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
         this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
+
         toastWin.webContents.send('init-toast', {
           alertData,
           config: this.configManager.config,
@@ -299,9 +390,13 @@ class ToastManager {
         // 强保底机制：如果 150ms 内未收到渲染进程的高度通知，立即强制显示窗口，绝不静默！
         setTimeout(() => {
           if (toastWin && !toastWin.isDestroyed() && !toastWin.isVisible()) {
-            this.applyFinalBoundsAndShow(260, this.currentAdaptiveWidth);
+            this.applyFinalBoundsAndShow(260, this.currentAdaptiveWidth, toastWin);
           }
         }, 150);
+
+        this.refreshTickerBackground(toastWin);
+      } catch (err) {
+        logger.warn('[ToastManager] did-finish-load 发送数据异常 (安全跳过):', err.message);
       }
     });
 
@@ -313,8 +408,9 @@ class ToastManager {
     });
   }
 
-  applyFinalBoundsAndShow(height, customWidth) {
-    if (!this.currentToastWin || this.currentToastWin.isDestroyed()) return;
+  applyFinalBoundsAndShow(height, customWidth, targetWin) {
+    const win = targetWin || this.currentToastWin;
+    if (!win || win.isDestroyed()) return;
 
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
@@ -329,30 +425,38 @@ class ToastManager {
     const x = workArea.x + workArea.width - width - marginX;
     const y = isMac ? (workArea.y + marginY) : Math.max(workArea.y + 10, workArea.y + workArea.height - targetHeight - marginY);
 
-    this.currentToastWin.setBounds({ x, y, width, height: targetHeight });
+    win.setBounds({ x, y, width, height: targetHeight });
     try {
-      this.currentToastWin.webContents.send('toast-bounds-applied', { targetHeight, maxHeight, targetWidth: width });
+      win.webContents.send('toast-bounds-applied', { targetHeight, maxHeight, targetWidth: width });
     } catch (e) {}
-    this.currentToastWin.showInactive();
-    this.currentToastWin.show();
-    this.currentToastWin.setAlwaysOnTop(true, 'screen-saver');
-    this.currentToastWin.moveTop();
+    win.showInactive();
+    win.show();
+    win.setAlwaysOnTop(true, 'screen-saver');
+    win.moveTop();
   }
 
-  relayoutToast(height) {
-    if (!this.currentToastWin || this.currentToastWin.isDestroyed()) return;
-    this.applyFinalBoundsAndShow(height, this.currentAdaptiveWidth);
+  relayoutToast(height, targetWin) {
+    const win = targetWin || this.currentToastWin;
+    if (!win || win.isDestroyed()) return;
+    this.applyFinalBoundsAndShow(height, this.currentAdaptiveWidth, win);
   }
 
   /**
    * 查看上一条未读消息
    */
-  async showPrevUnreadInPlace(currentAlertId) {
+  async showPrevUnreadInPlace(currentAlertId, senderWin) {
     if (currentAlertId) {
-      this.markAsRead(currentAlertId);
+      this.markAsRead(currentAlertId, senderWin);
     }
 
+    const targetWin = (senderWin && !senderWin.isDestroyed()) ? senderWin : this.currentToastWin;
+
     if (this.unreadList.length === 0) {
+      if (targetWin && !targetWin.isDestroyed() && targetWin.webContents && !targetWin.webContents.isDestroyed()) {
+        try {
+          targetWin.webContents.send('update-unread-count', 0);
+        } catch (e) {}
+      }
       return;
     }
 
@@ -365,12 +469,14 @@ class ToastManager {
 
     this.currentAlertData = prevAlert;
 
-    if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-      const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
-      const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
-      this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
-      if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-        this.currentToastWin.webContents.send('init-toast', {
+    // 0ms 极速切换：使用本地缓存行情，杜绝卡顿
+    const { combinedPrices, stockPrices, cryptoPrices } = this.getCachedTickerPayloadSync();
+    const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
+    this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
+
+    if (targetWin && !targetWin.isDestroyed() && targetWin.webContents && !targetWin.webContents.isDestroyed()) {
+      try {
+        targetWin.webContents.send('init-toast', {
           alertData: prevAlert,
           config: this.configManager.config,
           unreadCount: this.unreadList.length,
@@ -379,20 +485,29 @@ class ToastManager {
           combinedPrices: combinedPrices || '',
           targetWidth: this.currentAdaptiveWidth
         });
-      } else {
-        await this.createToastWindow(prevAlert, this.currentAdaptiveWidth);
+
+        if (!targetWin.isVisible()) {
+          targetWin.show();
+        }
+        targetWin.setAlwaysOnTop(true, 'screen-saver');
+        targetWin.moveTop();
+
+        this.refreshTickerBackground(targetWin);
+        return;
+      } catch (e) {
+        logger.warn('[ToastManager] 切换上一条卡片发送失败，尝试新建窗口:', e.message);
       }
-    } else {
-      await this.createToastWindow(prevAlert);
     }
+
+    await this.createToastWindow(prevAlert, this.currentAdaptiveWidth);
   }
 
   /**
    * 忽略全部历史消息
    */
-  ignoreAllHistory() {
+  ignoreAllHistory(senderWin) {
     if (this.currentAlertData) {
-      this.markAsRead(this.currentAlertData.id);
+      this.markAsRead(this.currentAlertData.id, senderWin);
     }
     for (const a of this.unreadList) {
       historyManager.recordInteraction(a.id, 'ignored_batch', a);
@@ -403,9 +518,27 @@ class ToastManager {
     }
     historyManager.clearAllUnattended();
 
-    if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-      try { this.currentToastWin.close(); } catch (e) {}
-    }
+    const winsToClose = new Set();
+    if (senderWin && !senderWin.isDestroyed()) winsToClose.add(senderWin);
+    if (this.currentToastWin && !this.currentToastWin.isDestroyed()) winsToClose.add(this.currentToastWin);
+
+    try {
+      BrowserWindow.getAllWindows().forEach(w => {
+        if (!w.isDestroyed()) {
+          const u = w.webContents ? w.webContents.getURL() : '';
+          if (u.includes('toast.html')) {
+            winsToClose.add(w);
+          }
+        }
+      });
+    } catch (e) {}
+
+    winsToClose.forEach(w => {
+      try { w.close(); } catch (e) {}
+    });
+
+    this.currentToastWin = null;
+    this.currentAlertData = null;
   }
 
   showNextUnread() {

@@ -195,6 +195,32 @@ class StockQuoteManager {
   }
 
   /**
+   * 极速同步获取内存缓存中的股票行情字串（0ms 响应，绝不卡死弹窗与翻页）
+   */
+  getCachedSummary(stockConfigs) {
+    try {
+      let stocks = (Array.isArray(stockConfigs) && stockConfigs.length > 0) ? stockConfigs : this.defaultStocks;
+      stocks = stocks.slice(0, 7);
+      const symbols = stocks.map(s => s.symbol || s.code).filter(Boolean);
+      if (symbols.length === 0) return '';
+      const quotes = [];
+      for (const sym of symbols) {
+        const cached = this.cache.get(sym.toLowerCase());
+        if (cached && cached.data) {
+          quotes.push(cached.data);
+        }
+      }
+      if (quotes.length === 0) return '';
+      return quotes.map(q => {
+        const shortName = q.name.length > 4 ? q.name.substring(0, 4) : q.name;
+        return `${shortName} ${q.currency}${q.price} ${q.changePercent}`;
+      }).join('  ');
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
    * 格式化底栏显示的股票行情字串
    */
   async getFormattedSummary(stockConfigs) {

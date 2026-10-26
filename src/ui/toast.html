@@ -1798,7 +1798,8 @@
     // 忽略历史消息
     document.getElementById('btnIgnore').addEventListener('click', (e) => {
       e.stopPropagation();
-      ipcRenderer.send('toast-ignore-all-history');
+      try { ipcRenderer.send('toast-ignore-all-history'); } catch (err) {}
+      closeToast();
     });
 
     document.getElementById('btnClose').addEventListener('click', (e) => {
@@ -1821,6 +1822,17 @@
         }
       }, { passive: true });
     }
+
+    // 监听主进程异步推送的平滑行情与未读数更新
+    ipcRenderer.on('update-ticker', (event, payload) => {
+      if (!payload) return;
+      const uCount = document.getElementById('unreadCountSpan')?.textContent;
+      renderTickerAndBacklog(payload.stockPrices, payload.cryptoPrices, Number(uCount) || 0);
+    });
+
+    ipcRenderer.on('update-unread-count', (event, count) => {
+      updateUnreadControls(count);
+    });
 
     function startCountdown() {
       if (countdownInterval) clearInterval(countdownInterval);
@@ -1849,7 +1861,8 @@
 
     function closeToast() {
       if (countdownInterval) clearInterval(countdownInterval);
-      ipcRenderer.send('toast-close');
+      try { ipcRenderer.send('toast-close'); } catch (e) {}
+      try { window.close(); } catch (e) {}
     }
   </script>
 </body>

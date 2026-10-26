@@ -256,6 +256,28 @@ class CryptoPriceManager {
     };
   }
 
+  /**
+   * 极速同步获取内存缓存中的加密货币行情字串（0ms 响应，绝不阻塞弹窗与交互）
+   */
+  getCachedSummary(selectedCoins) {
+    try {
+      let coins = Array.isArray(selectedCoins) ? selectedCoins : this.defaultCoins;
+      if (coins.length === 0) return '';
+      coins = coins.slice(0, 7);
+      const parts = [];
+      for (const c of coins) {
+        const symbol = this.getShortSymbol(c);
+        const cached = this.cache.get(symbol);
+        if (cached && cached.priceStr && cached.priceStr !== '--') {
+          parts.push(`${cached.symbol || symbol} ${cached.priceStr}`);
+        }
+      }
+      return parts.join('  ');
+    } catch (e) {
+      return '';
+    }
+  }
+
   async getFormattedSummary(selectedCoins) {
     let coins = Array.isArray(selectedCoins) ? selectedCoins : this.defaultCoins;
     if (coins.length === 0) return '';
