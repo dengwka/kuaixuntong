@@ -117,6 +117,14 @@
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.35); opacity: 0.85; }
     }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spinning {
+      display: inline-block;
+      animation: spin 0.8s linear infinite;
+    }
     .release-body {
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
@@ -1385,10 +1393,18 @@
               <b style="color: #0F172A;" id="updateLatestVer">--</b>
               <span id="updatePubTime" style="color: #94A3B8; font-size: 11.5px;"></span>
             </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-block; width: 95px; color: #64748B;">上次检测时间:</span>
+              <span id="updateLastCheckTime" style="color: #059669; font-weight: 600;">--</span>
+            </div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <button type="button" class="btn btn-primary btn-sm" id="btnStartUpdate" style="display: none; padding: 7px 18px; font-weight: 700; cursor: pointer; background: #16A34A; border-color: #15803D; font-size: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);">
               🚀 立即更新
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshUpdate" style="padding: 6px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+              <span id="refreshUpdateIcon" style="display: inline-block;">🔄</span>
+              <span id="refreshUpdateText">立即检测更新</span>
             </button>
             <button type="button" class="btn btn-secondary btn-sm" id="btnOpenReleasePage" style="padding: 6px 12px; cursor: pointer;">
               🌐 访问 Releases
@@ -1845,7 +1861,7 @@
       });
       // 用户点击或切换到【检查更新】Tab 时，自动调用检查更新
       if (tabId === 'update') {
-        triggerCheckUpdate(false);
+        triggerCheckUpdate(true);
       }
     }
 
@@ -3342,10 +3358,11 @@
       const currentVer = res.currentVersion || '1.2.0';
       const latestTag = res.latestTag || `v${currentVer}`;
       const publishedAt = res.publishedAt || '--';
+      const buildInfo = (res.buildTime && res.buildTime !== publishedAt) ? ` · 最新构建: ${res.buildTime}` : '';
 
       document.getElementById('updateCurrentVer').textContent = `v${currentVer}`;
       document.getElementById('updateLatestVer').textContent = latestTag;
-      document.getElementById('updatePubTime').textContent = `(发布于: ${publishedAt})`;
+      document.getElementById('updatePubTime').textContent = `(发布于: ${publishedAt}${buildInfo})`;
 
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
@@ -3469,17 +3486,34 @@
       const btnRefresh = document.getElementById('btnRefreshUpdate');
       const refreshIcon = document.getElementById('refreshUpdateIcon');
       const refreshText = document.getElementById('refreshUpdateText');
+      const headerBadge = document.getElementById('updateHeaderBadge');
+      const lastCheckEl = document.getElementById('updateLastCheckTime');
       const btnHeader = document.getElementById('btnCheckUpdate');
       const btnHeaderText = document.getElementById('btnCheckUpdateText');
 
       if (btnRefresh) btnRefresh.disabled = true;
       if (btnHeader) btnHeader.disabled = true;
-      if (refreshText) refreshText.textContent = '检查中...';
+      if (refreshIcon) refreshIcon.classList.add('spinning');
+      if (refreshText) refreshText.textContent = '检测中...';
       if (btnHeaderText) btnHeaderText.textContent = '⏳ 检查中...';
+      if (headerBadge) {
+        headerBadge.textContent = '⏳ 正在联网检测...';
+        headerBadge.style.background = '#FEF3C7';
+        headerBadge.style.color = '#B45309';
+      }
+      if (lastCheckEl) {
+        lastCheckEl.textContent = '正在连接 GitHub 检测最新版本...';
+        lastCheckEl.style.color = '#D97706';
+      }
 
       try {
         const res = await ipcRenderer.invoke('check-for-updates');
+        const nowTimeStr = (res && res.checkTime) || new Date().toLocaleTimeString('zh-CN', { hour12: false });
         if (!res || !res.success) {
+          if (lastCheckEl) {
+            lastCheckEl.textContent = `${nowTimeStr} (检测失败: ${(res && res.error) || '网络连接超时'})`;
+            lastCheckEl.style.color = '#DC2626';
+          }
           if (showNoticeTip) showNotice(`⚠️ 检查更新失败: ${(res && res.error) || '网络连接超时'}`);
           const notesContainer = document.getElementById('releaseNotesContainer');
           if (notesContainer) {
@@ -3487,19 +3521,28 @@
           }
         } else {
           renderUpdateData(res);
+          if (lastCheckEl) {
+            lastCheckEl.textContent = `${nowTimeStr} (刚刚已完成联网核对)`;
+            lastCheckEl.style.color = '#059669';
+          }
           if (showNoticeTip) {
             if (res.hasUpdate) {
               showNotice(`🚀 发现新版本: ${res.latestTag}！可在页面中下载更新。`);
             } else {
-              showNotice(`🎉 当前已是最新版本 (v${res.currentVersion})`);
+              showNotice(`🎉 当前已是最新版本 (v${res.currentVersion})，已核对 GitHub 官方源！`);
             }
           }
         }
       } catch (e) {
+        if (lastCheckEl) {
+          lastCheckEl.textContent = `检测异常: ${e.message}`;
+          lastCheckEl.style.color = '#DC2626';
+        }
         if (showNoticeTip) showNotice(`⚠️ 检查更新异常: ${e.message}`);
       } finally {
         if (btnRefresh) btnRefresh.disabled = false;
         if (btnHeader) btnHeader.disabled = false;
+        if (refreshIcon) refreshIcon.classList.remove('spinning');
         if (refreshText) refreshText.textContent = '立即检测更新';
         if (btnHeaderText) btnHeaderText.textContent = '🔄 检查更新';
       }

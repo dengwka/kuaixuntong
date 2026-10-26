@@ -128,6 +128,38 @@ class XFetcher {
   }
 
   /**
+   * 针对长推文 (Note Tweet / 长图文博文) 进行无损防截断检测与完整展开
+   * 若文本以省略号、序号未完成结尾，或标记为 NoteTweet，通过 FxTwitter 官方通道拉取 100% 完整长文
+   */
+  async ensureCompleteTweetText(tweet, screenName) {
+    if (!tweet || !tweet.id_str) return tweet;
+    const text = tweet.text || '';
+    const isTruncated = text.endsWith('…') ||
+      text.endsWith('...') ||
+      /\d+\.\s*$/.test(text) ||
+      (tweet.is_note_tweet && !tweet.is_expanded && text.length < 300);
+
+    if (isTruncated && screenName) {
+      try {
+        const fxUrl = `https://api.fxtwitter.com/${screenName}/status/${tweet.id_str}`;
+        const fxResp = await this.makeRequest(fxUrl);
+        if (fxResp.statusCode === 200) {
+          const parsed = JSON.parse(fxResp.body);
+          if (parsed && parsed.tweet && parsed.tweet.text && parsed.tweet.text.length > text.length) {
+            tweet.text = this.cleanTweetText(parsed.tweet.text);
+            tweet.raw_text = parsed.tweet.text;
+            tweet.is_expanded = true;
+            logger.info(`[XFetcher] 已成功通过 FxTwitter 展开 NoteTweet 完整长文 (${tweet.text.length} 字符): ${tweet.id_str}`);
+          }
+        }
+      } catch (err) {
+        logger.warn(`[XFetcher] 尝试展开 NoteTweet 失败，维持现有文本:`, err.message);
+      }
+    }
+    return tweet;
+  }
+
+  /**
    * 解析 x.com 官方主页 SSR 注入的实时推文流
    */
   parseTweetsFromXProfileHtml(html) {
@@ -208,61 +240,80 @@ class XFetcher {
     if (!obj || typeof obj !== 'object' || visited.has(obj)) return;
     visited.add(obj);
 
-    if (obj.rest_id && obj.details && obj.details.full_text) {
-      const pics = [];
-      if (Array.isArray(obj.media_entities2)) {
-        for (const m of obj.media_entities2) {
-          if (m && m.media_url_https && !pics.includes(m.media_url_https)) {
-            pics.push(m.media_url_https);
+    if (obj.rest_id && (obj.details || obj.note_tweet)) {
+      let raw = '';
+      let isNoteTweet = false;
+      if (obj.note_tweet?.note_tweet_results?.result?.text) {
+        raw = obj.note_tweet.note_tweet_results.result.text;
+        isNoteTweet = true;
+      } else if (obj.note_tweet?.text) {
+        raw = obj.note_tweet.text;
+        isNoteTweet = true;
+      } else if (obj.details && obj.details.full_text) {
+        raw = obj.details.full_text;
+        if (obj.note_tweet) isNoteTweet = true;
+      }
+
+      if (raw) {
+        const pics = [];
+        if (Array.isArray(obj.media_entities2)) {
+          for (const m of obj.media_entities2) {
+            if (m && m.media_url_https && !pics.includes(m.media_url_https)) {
+              pics.push(m.media_url_https);
+            }
           }
         }
+        const userRes = obj.core?.user_results?.result;
+        const authorName = userRes?.core?.name || '';
+        const authorHandle = userRes?.core?.screen_name || '';
+        let authorAvatar = userRes?.avatar?.image_url || '';
+        if (authorAvatar) authorAvatar = authorAvatar.replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1');
+
+        const isReply = !!(obj.legacy && (obj.legacy.in_reply_to_status_id_str || obj.legacy.in_reply_to_screen_name));
+        const isRetweet = !!(obj.legacy && (obj.legacy.retweeted_status_result || obj.retweeted_status));
+
+        results.push({
+          id_str: obj.rest_id,
+          text: this.cleanTweetText(raw),
+          raw_text: raw,
+          created_at_ms: (obj.details && obj.details.created_at_ms) || Date.now(),
+          created_at: (obj.details && obj.details.created_at_ms) ? new Date(obj.details.created_at_ms).toISOString() : new Date().toISOString(),
+          pics: pics.slice(0, 4),
+          author_name: authorName,
+          author_handle: authorHandle,
+          author_avatar: authorAvatar,
+          is_reply: isReply,
+          is_retweet: isRetweet,
+          is_note_tweet: isNoteTweet
+        });
       }
-      const userRes = obj.core?.user_results?.result;
-      const authorName = userRes?.core?.name || '';
-      const authorHandle = userRes?.core?.screen_name || '';
-      let authorAvatar = userRes?.avatar?.image_url || '';
-      if (authorAvatar) authorAvatar = authorAvatar.replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1');
-
-      const isReply = !!(obj.legacy && (obj.legacy.in_reply_to_status_id_str || obj.legacy.in_reply_to_screen_name));
-      const isRetweet = !!(obj.legacy && (obj.legacy.retweeted_status_result || obj.retweeted_status));
-
-      const raw = obj.details.full_text;
-      results.push({
-        id_str: obj.rest_id,
-        text: this.cleanTweetText(raw),
-        raw_text: raw,
-        created_at_ms: obj.details.created_at_ms || Date.now(),
-        created_at: obj.details.created_at_ms ? new Date(obj.details.created_at_ms).toISOString() : new Date().toISOString(),
-        pics: pics.slice(0, 4),
-        author_name: authorName,
-        author_handle: authorHandle,
-        author_avatar: authorAvatar,
-        is_reply: isReply,
-        is_retweet: isRetweet
-      });
     }
 
     // 兼容可能存在的 legacy 结构
-    if (obj.id_str && obj.full_text && !obj.details) {
-      const pics = [];
-      if (Array.isArray(obj.entities?.media)) {
-        for (const m of obj.entities.media) {
-          if (m.media_url_https && !pics.includes(m.media_url_https)) pics.push(m.media_url_https);
+    if (obj.id_str && (obj.full_text || obj.note_tweet) && !obj.details) {
+      let raw = obj.note_tweet?.note_tweet_results?.result?.text || obj.note_tweet?.text || obj.full_text || '';
+      if (raw) {
+        const pics = [];
+        if (Array.isArray(obj.entities?.media)) {
+          for (const m of obj.entities.media) {
+            if (m.media_url_https && !pics.includes(m.media_url_https)) pics.push(m.media_url_https);
+          }
         }
+        results.push({
+          id_str: obj.id_str,
+          text: this.cleanTweetText(raw),
+          raw_text: raw,
+          created_at_ms: obj.created_at ? new Date(obj.created_at).getTime() : Date.now(),
+          created_at: obj.created_at || new Date().toISOString(),
+          pics: pics.slice(0, 4),
+          author_name: obj.user?.name || '',
+          author_handle: obj.user?.screen_name || '',
+          author_avatar: (obj.user?.profile_image_url_https || '').replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1'),
+          is_reply: !!(obj.in_reply_to_status_id_str || obj.in_reply_to_screen_name),
+          is_retweet: !!obj.retweeted_status,
+          is_note_tweet: !!obj.note_tweet
+        });
       }
-      results.push({
-        id_str: obj.id_str,
-        text: this.cleanTweetText(obj.full_text),
-        raw_text: obj.full_text,
-        created_at_ms: obj.created_at ? new Date(obj.created_at).getTime() : Date.now(),
-        created_at: obj.created_at || new Date().toISOString(),
-        pics: pics.slice(0, 4),
-        author_name: obj.user?.name || '',
-        author_handle: obj.user?.screen_name || '',
-        author_avatar: (obj.user?.profile_image_url_https || '').replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1'),
-        is_reply: !!(obj.in_reply_to_status_id_str || obj.in_reply_to_screen_name),
-        is_retweet: !!obj.retweeted_status
-      });
     }
 
     for (const k of Object.keys(obj)) {
@@ -397,7 +448,13 @@ class XFetcher {
         const tweets = [];
         for (const entry of entries) {
           const tweet = entry?.content?.tweet;
-          if (!tweet || !tweet.id_str || !tweet.text) continue;
+          if (!tweet || !tweet.id_str) continue;
+
+          let rawText = tweet.note_tweet?.note_tweet_results?.result?.text
+            || tweet.note_tweet?.text
+            || tweet.text
+            || '';
+          if (!rawText) continue;
 
           const pics = [];
           if (Array.isArray(tweet.entities?.media)) {
@@ -415,8 +472,8 @@ class XFetcher {
 
           tweets.push({
             id_str: tweet.id_str,
-            text: this.cleanTweetText(tweet.text),
-            raw_text: tweet.text,
+            text: this.cleanTweetText(rawText),
+            raw_text: rawText,
             created_at_ms: tweet.created_at ? new Date(tweet.created_at).getTime() : Date.now(),
             created_at: tweet.created_at || new Date().toISOString(),
             pics: pics.slice(0, 4),
@@ -424,7 +481,8 @@ class XFetcher {
             author_handle: tweet.user?.screen_name || cleanName,
             author_avatar: avatar,
             is_reply: !!(tweet.in_reply_to_status_id_str || tweet.in_reply_to_screen_name),
-            is_retweet: !!tweet.retweeted_status
+            is_retweet: !!tweet.retweeted_status,
+            is_note_tweet: !!tweet.note_tweet
           });
         }
 
@@ -575,6 +633,7 @@ class XFetcher {
     const res = await this.fetchAccountTimeline(screenName, account);
     if (res.success && res.tweets.length > 0) {
       const tweet = res.tweets[0];
+      await this.ensureCompleteTweetText(tweet, screenName);
       return {
         id: tweet.id_str,
         text: tweet.text,
@@ -808,6 +867,7 @@ class XFetcher {
 
     const newItems = [];
     for (const tweet of tweetsToProcess) {
+      await this.ensureCompleteTweetText(tweet, screenName);
       const itemUid = `x_${account.screen_name}_${tweet.id_str}`;
       if (historyManager.isPushed(itemUid)) continue;
 

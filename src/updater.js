@@ -101,6 +101,21 @@ class UpdateManager {
       const releasePageUrl = release.html_url || `https://github.com/${this.owner}/${this.repo}/releases/latest`;
       const publishedAt = release.published_at ? new Date(release.published_at).toLocaleString('zh-CN', { hour12: false }) : '';
 
+      // 获取资产中最新构建上传的时间 (若重新上传构建包，时间会晚于 release.published_at)
+      let latestAssetTime = '';
+      if (Array.isArray(release.assets) && release.assets.length > 0) {
+        let maxMs = 0;
+        for (const a of release.assets) {
+          const t = new Date(a.updated_at || a.created_at || 0).getTime();
+          if (t > maxMs) maxMs = t;
+        }
+        if (maxMs > 0) {
+          latestAssetTime = new Date(maxMs).toLocaleString('zh-CN', { hour12: false });
+        }
+      }
+      const buildTime = latestAssetTime || publishedAt;
+      const checkTime = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+
       // 整理资产列表并清晰标注芯片与适用平台
       const assetList = Array.isArray(release.assets) ? release.assets.map(a => {
         const name = a.name || '';
@@ -192,6 +207,8 @@ class UpdateManager {
         systemInfo: sys,
         releasePageUrl,
         publishedAt,
+        buildTime,
+        checkTime,
         assets: assetList
       };
 
