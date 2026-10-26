@@ -231,29 +231,123 @@ class UpdateManager {
   }
 
   /**
-   * 打开下载或发布页
+   * 获取多源加速下载节点列表 (智能 CDN 镜像加速，国内提速 10~50 倍)
    */
-  openDownloadPage(url) {
-    const targetUrl = url || (this.lastCheckResult && this.lastCheckResult.downloadUrl) || `https://github.com/${this.owner}/${this.repo}/releases/latest`;
+  getAcceleratedDownloadUrls(rawUrl, customNode = 'auto') {
+    if (!rawUrl || typeof rawUrl !== 'string') return [];
+    const cleanRaw = rawUrl.trim();
+    if (!cleanRaw.includes('github.com')) {
+      return [{ url: cleanRaw, name: '直连源' }];
+    }
+
+    const mirrorFast = `https://ghfast.top/${cleanRaw}`;
+    const mirrorProxy = `https://gh-proxy.com/${cleanRaw}`;
+
+    if (customNode === 'ghfast') {
+      return [
+        { url: mirrorFast, name: '⚡ 智能高速镜像 (GHFast CDN)' },
+        { url: mirrorProxy, name: '🚀 国内备用镜像 (GH-Proxy CDN)' },
+        { url: cleanRaw, name: '🌐 GitHub 官方源 (直连)' }
+      ];
+    } else if (customNode === 'ghproxy') {
+      return [
+        { url: mirrorProxy, name: '🚀 国内备用镜像 (GH-Proxy CDN)' },
+        { url: mirrorFast, name: '⚡ 智能高速镜像 (GHFast CDN)' },
+        { url: cleanRaw, name: '🌐 GitHub 官方源 (直连)' }
+      ];
+    } else if (customNode === 'official') {
+      return [
+        { url: cleanRaw, name: '🌐 GitHub 官方源 (直连)' },
+        { url: mirrorFast, name: '⚡ 智能高速镜像 (GHFast CDN)' },
+        { url: mirrorProxy, name: '🚀 国内备用镜像 (GH-Proxy CDN)' }
+      ];
+    } else {
+      // 默认 'auto' 模式：首选高速 CDN 镜像，自动优雅备用兜底
+      return [
+        { url: mirrorFast, name: '⚡ 智能高速镜像 (GHFast CDN)' },
+        { url: mirrorProxy, name: '🚀 国内备用镜像 (GH-Proxy CDN)' },
+        { url: cleanRaw, name: '🌐 GitHub 官方源 (直连)' }
+      ];
+    }
+  }
+
+  /**
+   * 打开下载或发布页 (支持高速镜像模式)
+   */
+  openDownloadPage(url, mode = 'accelerated') {
+    let targetUrl = url || (this.lastCheckResult && this.lastCheckResult.downloadUrl) || `https://github.com/${this.owner}/${this.repo}/releases/latest`;
+    if (mode === 'accelerated' && targetUrl.includes('github.com') && targetUrl.includes('/releases/download/')) {
+      targetUrl = `https://ghfast.top/${targetUrl}`;
+    }
     if (shell) {
       shell.openExternal(targetUrl);
     }
   }
 
   /**
-   * 下载安装包并在完成后自动执行安装
+   * 下载安装包并在完成后自动执行安装 (多源极速加速 + 自动降级兜底)
    */
-  async downloadAndInstallUpdate(url, onProgress) {
+  async downloadAndInstallUpdate(url, onProgress, options = {}) {
     const fetchFn = (typeof net !== 'undefined' && net.fetch) ? net.fetch : fetch;
-    const downloadUrl = url || (this.lastCheckResult && this.lastCheckResult.downloadUrl);
-    if (!downloadUrl) {
+    const rawUrl = url || (this.lastCheckResult && this.lastCheckResult.downloadUrl);
+    if (!rawUrl) {
       throw new Error('未找到可用安装包下载地址');
     }
 
-    logger.info(`[Updater] 开始自动下载最新安装包: ${downloadUrl}`);
-    const res = await fetchFn(downloadUrl, { redirect: 'follow' });
+    const selectedNode = (options && options.node) || this.preferredNode || 'auto';
+    const candidates = this.getAcceleratedDownloadUrls(rawUrl, selectedNode);
+
+    let lastError = null;
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      const isLast = (i === candidates.length - 1);
+      logger.info(`[Updater] 启动极速下载 (第 ${i + 1}/${candidates.length} 节点 [${candidate.name}]): ${candidate.url}`);
+
+      if (typeof onProgress === 'function' && i > 0) {
+        onProgress({
+          percent: 0,
+          receivedMb: '0.0',
+          totalMb: '0.0',
+          speedText: '正在切换备用节点...',
+          remainingText: '',
+          nodeName: candidate.name
+        });
+      }
+
+      try {
+        const result = await this.executeDownload(candidate.url, candidate.name, fetchFn, onProgress);
+        return result;
+      } catch (err) {
+        lastError = err;
+        logger.warn(`[Updater] 节点 [${candidate.name}] 下载受阻: ${err.message}` + (isLast ? '' : '，正在自动切换至下一个镜像节点...'));
+      }
+    }
+
+    throw new Error(`所有镜像与官方节点下载均未完成: ${(lastError && lastError.message) || '网络连接超时'}`);
+  }
+
+  /**
+   * 执行单节点流式下载并实时计算精确下载速度与剩余耗时
+   */
+  async executeDownload(targetUrl, nodeName, fetchFn, onProgress) {
+    const controller = new AbortController();
+    const connectTimer = setTimeout(() => {
+      controller.abort();
+    }, 15000); // 15秒握手超时
+
+    let res;
+    try {
+      res = await fetchFn(targetUrl, {
+        redirect: 'follow',
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(connectTimer);
+    }
+
     if (!res.ok) {
-      throw new Error(`下载请求失败: HTTP ${res.status}`);
+      throw new Error(`HTTP ${res.status}`);
     }
 
     const totalBytes = parseInt(res.headers.get('content-length') || '0', 10);
@@ -267,68 +361,87 @@ class UpdateManager {
 
     const destStream = fs.createWriteStream(destPath);
     let receivedBytes = 0;
+    let lastReportTime = Date.now();
+    let lastReportBytes = 0;
+    let currentSpeedText = '-- MB/s';
 
-    // 采用高可靠 Reader 流式管道读取，严格保障背压与字节完整性，彻底杜绝数据块丢失
-    if (res.body && typeof res.body.getReader === 'function') {
-      const reader = res.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value && value.length > 0) {
-          receivedBytes += value.length;
-          const canContinue = destStream.write(value);
+    const emitProgress = () => {
+      if (typeof onProgress !== 'function') return;
+      const now = Date.now();
+      const deltaSec = (now - lastReportTime) / 1000;
+      if (deltaSec >= 0.25 || (totalBytes > 0 && receivedBytes === totalBytes)) {
+        const deltaBytes = receivedBytes - lastReportBytes;
+        const bytesPerSec = deltaSec > 0 ? (deltaBytes / deltaSec) : 0;
+        const speedMb = (bytesPerSec / (1024 * 1024)).toFixed(1);
+        currentSpeedText = `${speedMb} MB/s`;
+
+        const remainingSec = (bytesPerSec > 0 && totalBytes > receivedBytes)
+          ? Math.ceil((totalBytes - receivedBytes) / bytesPerSec)
+          : 0;
+        const remainingText = remainingSec > 0 ? `剩余约 ${remainingSec} 秒` : '';
+
+        const percent = totalBytes > 0 ? Math.min(100, Math.round((receivedBytes / totalBytes) * 100)) : 0;
+        onProgress({
+          percent,
+          receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
+          totalMb: (totalBytes / (1024 * 1024)).toFixed(1),
+          speedText: currentSpeedText,
+          remainingText,
+          nodeName
+        });
+
+        lastReportTime = now;
+        lastReportBytes = receivedBytes;
+      }
+    };
+
+    try {
+      if (res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value && value.length > 0) {
+            receivedBytes += value.length;
+            const canContinue = destStream.write(value);
+            if (!canContinue) {
+              await new Promise(r => destStream.once('drain', r));
+            }
+            emitProgress();
+          }
+        }
+      } else {
+        for await (const chunk of res.body) {
+          receivedBytes += chunk.length;
+          const canContinue = destStream.write(chunk);
           if (!canContinue) {
             await new Promise(r => destStream.once('drain', r));
           }
-          if (totalBytes > 0 && typeof onProgress === 'function') {
-            const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-            onProgress({
-              percent,
-              receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
-              totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
-            });
-          }
+          emitProgress();
         }
       }
-    } else {
-      // 备用 Node.js Stream 分块读取
-      for await (const chunk of res.body) {
-        receivedBytes += chunk.length;
-        const canContinue = destStream.write(chunk);
-        if (!canContinue) {
-          await new Promise(r => destStream.once('drain', r));
-        }
-        if (totalBytes > 0 && typeof onProgress === 'function') {
-          const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-          onProgress({
-            percent,
-            receivedMb: (receivedBytes / (1024 * 1024)).toFixed(1),
-            totalMb: (totalBytes / (1024 * 1024)).toFixed(1)
-          });
-        }
-      }
+    } catch (streamErr) {
+      destStream.destroy();
+      try { fs.unlinkSync(destPath); } catch (e) {}
+      throw streamErr;
     }
 
-    // 严格等待文件句柄完全关闭且刷盘完成 (close 事件)
     await new Promise((resolve, reject) => {
       destStream.on('close', resolve);
       destStream.on('error', reject);
       destStream.end();
     });
 
-    // 完整性严格校验：文件大小与 Content-Length 比对
     const stat = fs.statSync(destPath);
     if (totalBytes > 0 && stat.size !== totalBytes) {
       try { fs.unlinkSync(destPath); } catch (e) {}
-      throw new Error(`安装包完整性校验未通过: 预期 ${totalBytes} 字节，实际仅接收 ${stat.size} 字节，请检查网络后重试！`);
+      throw new Error(`完整性校验未通过: 预期 ${totalBytes} 字节，实际仅接收 ${stat.size} 字节`);
     }
 
-    logger.info(`[Updater] 安装包已安全下载并验证完成: ${destPath} (${(receivedBytes / (1024 * 1024)).toFixed(1)} MB)，正在启动安装程序...`);
+    logger.info(`[Updater] 安装包已安全下载并校验完成: ${destPath} (${(receivedBytes / (1024 * 1024)).toFixed(1)} MB)，正在启动安装程序...`);
 
-    // 停顿 600ms 确保操作系统与杀毒软件安全检测释放句柄
     await new Promise(r => setTimeout(r, 600));
 
-    // 自动唤起安装包
     if (shell && typeof shell.openPath === 'function') {
       const err = await shell.openPath(destPath);
       if (err) {
@@ -338,7 +451,8 @@ class UpdateManager {
 
     return {
       success: true,
-      filePath: destPath
+      filePath: destPath,
+      nodeName
     };
   }
 

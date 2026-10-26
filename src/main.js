@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const logger = require('./logger');
@@ -248,6 +248,15 @@ function startPolling() {
 }
 
 app.whenReady().then(() => {
+  // 配置全局网络代理 (若用户配置了代理或系统存在 HTTP_PROXY)
+  const proxySetting = configManager.config?.sources?.x_twitter?.proxy || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+  if (proxySetting && session && session.defaultSession) {
+    session.defaultSession.setProxy({ proxyRules: proxySetting }).catch(e => {
+      logger.warn('[App] session.setProxy 提示:', e.message);
+    });
+    logger.info(`[App] 已配置全局网络代理通道: ${proxySetting}`);
+  }
+
   // 1. 初始化系统托盘（常驻状态栏）
   trayManager.init({
     onShowUnread: () => {
@@ -598,14 +607,16 @@ app.whenReady().then(() => {
     return res;
   });
 
-  // 自动下载并执行安装包更新 IPC
-  ipcMain.handle('download-and-install-update', async (event, url) => {
+  // 自动下载并执行安装包更新 IPC (支持多源极速镜像与测速)
+  ipcMain.handle('download-and-install-update', async (event, payload) => {
     try {
+      const url = typeof payload === 'string' ? payload : (payload && payload.url);
+      const options = typeof payload === 'object' ? payload : {};
       const res = await updateManager.downloadAndInstallUpdate(url, (progress) => {
         if (!event.sender.isDestroyed()) {
           event.sender.send('update-download-progress', progress);
         }
-      });
+      }, options);
       return res;
     } catch (e) {
       logger.error('[Updater] 自动下载安装包失败:', e);
@@ -613,8 +624,10 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.on('open-download-page', (event, url) => {
-    updateManager.openDownloadPage(url);
+  ipcMain.on('open-download-page', (event, payload) => {
+    const url = typeof payload === 'string' ? payload : (payload && payload.url);
+    const mode = (payload && payload.mode) || 'accelerated';
+    updateManager.openDownloadPage(url, mode);
   });
 
   if (configManager.config.storage && configManager.config.storage.data_dir) {
