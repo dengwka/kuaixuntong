@@ -273,6 +273,7 @@
       background: #0E0F14 !important;
       border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
       padding: 6px 14px !important;
+      flex-wrap: wrap !important;
     }
     .is-vip-card .stock-pill,
     .is-vip-card .coin-pill {
@@ -721,70 +722,102 @@
       border-color: #CBD5E1;
     }
 
-    /* Footer */
+    /* Footer & Universal Ticker */
     .footer {
       background: #FAFBFD;
-      padding: 6px 14px;
+      padding: 6px 14px 8px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
       border-top: 1px solid #F1F5F9;
-      min-height: 32px;
-      gap: 10px;
+      gap: 6px;
       flex-shrink: 0;
-      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .crypto-prices {
-      font-size: 11.5px;
+    .ticker-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      width: 100%;
+    }
+    .ticker-section {
       display: flex;
       align-items: center;
-      flex-wrap: nowrap;
       gap: 6px;
+      width: 100%;
+      line-height: 1.2;
+    }
+    .ticker-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1.5px 5px;
+      border-radius: 3px;
       white-space: nowrap;
       user-select: none;
+      flex-shrink: 0;
+      line-height: 1.2;
+    }
+    .stock-tag {
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #DBEAFE;
+    }
+    .crypto-tag {
+      background: #FFFBEB;
+      color: #D97706;
+      border: 1px solid #FEF3C7;
+    }
+    .is-vip-card .stock-tag {
+      background: rgba(37, 99, 235, 0.15) !important;
+      color: #60A5FA !important;
+      border-color: rgba(96, 165, 250, 0.25) !important;
+    }
+    .is-vip-card .crypto-tag {
+      background: rgba(217, 119, 6, 0.15) !important;
+      color: #FBBF24 !important;
+      border-color: rgba(251, 191, 36, 0.25) !important;
+    }
+    .ticker-items-wrap {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 6px;
       flex: 1;
       min-width: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
     }
-    .crypto-prices::-webkit-scrollbar {
-      display: none;
-    }
-    .coin-pill {
+    .coin-pill, .stock-pill {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      background: #F1F5F9;
+      gap: 4px;
+      background: #FFFFFF;
       border: 1px solid #E2E8F0;
       padding: 1.5px 6px;
       border-radius: 4px;
       font-size: 11px;
-    }
-    .stock-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      padding: 1.5px 6px;
-      border-radius: 4px;
-      font-size: 11px;
+      white-space: nowrap;
+      line-height: 1.3;
+      user-select: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      box-sizing: border-box;
     }
     .stock-name {
-      font-weight: 700;
+      font-weight: 600;
       color: #0F172A;
     }
     .stock-val {
       font-weight: 600;
       color: #334155;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .stock-up {
       font-weight: 700;
       color: #DC2626;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .stock-down {
       font-weight: 700;
       color: #16A34A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .coin-sym-btc { color: #D97706; font-weight: 800; }
     .coin-sym-eth { color: #4F46E5; font-weight: 800; }
@@ -797,18 +830,53 @@
     .coin-sym-sui { color: #0891B2; font-weight: 800; }
     .coin-sym-bnb { color: #D97706; font-weight: 800; }
     .coin-sym-def { color: #2563EB; font-weight: 800; }
-    .coin-val { color: #0F172A; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .footer-right {
+    .coin-val {
+      color: #0F172A;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* 独立待补看操作底栏（全宽整洁对齐） */
+    .backlog-bar {
       display: flex;
       align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      margin-left: auto;
+      justify-content: space-between;
+      width: 100%;
+      padding-top: 5px;
+      margin-top: 2px;
+      border-top: 1px dashed #E2E8F0;
+      box-sizing: border-box;
+    }
+    .is-vip-card .backlog-bar {
+      border-top-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .backlog-info {
+      font-size: 11px;
+      color: #64748B;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+    }
+    .is-vip-card .backlog-info {
+      color: #94A3B8 !important;
+    }
+    .backlog-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #2563EB;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    .is-vip-card .backlog-dot {
+      background: #DFBA73 !important;
+      box-shadow: 0 0 0 2px rgba(223, 186, 115, 0.25) !important;
     }
     .backlog-btns {
       display: flex;
       align-items: center;
       gap: 6px;
+      margin-left: auto;
     }
     .btn-footer-action {
       background: #FFFFFF;
@@ -816,7 +884,7 @@
       color: #334155;
       font-size: 11px;
       font-weight: 600;
-      padding: 2.5px 8px;
+      padding: 2.5px 9px;
       border-radius: 4px;
       cursor: pointer;
       display: inline-flex;
@@ -826,6 +894,11 @@
       transition: all 0.15s ease;
       user-select: none;
       outline: none;
+    }
+    .btn-footer-action:hover {
+      background: #F8FAFC;
+      border-color: #94A3B8;
+      color: #0F172A;
     }
     .btn-prev {
       background: #EFF6FF;
@@ -883,7 +956,7 @@
     <div class="content-container" id="contentArea">
       <!-- 𝕏 专属博主发布信息 (自然融合无割裂感) -->
       <div class="x-author-card" id="xAuthorCard" style="display: none;">
-        <img class="x-author-avatar" id="xAuthorAvatar" src="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23E2E8F0\'/></svg>'" />
+        <img class="x-author-avatar" id="xAuthorAvatar" src="" onerror="window.handleToastAvatarError(this)" />
         <div class="x-author-info">
           <div class="x-author-name-row">
             <span class="x-author-name" id="xAuthorName">--</span>
@@ -910,12 +983,30 @@
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-      <div class="crypto-prices" id="cryptoPricesText" style="display: none;"></div>
-      <div class="footer-right" id="footerRight">
-        <div class="backlog-btns" id="backlogBtns" style="display: none;">
+    <div class="footer" id="toastFooter">
+      <!-- 行情主展区（占满整行宽度，股票与虚拟币分行呈现） -->
+      <div class="ticker-zone" id="tickerZone" style="display: none;">
+        <!-- 股票自选持仓行 -->
+        <div class="ticker-section stock-section" id="stockTickerSection" style="display: none;">
+          <span class="ticker-tag stock-tag">📈 持仓</span>
+          <div class="ticker-items-wrap" id="stockPricesContainer"></div>
+        </div>
+        <!-- 虚拟币实时行情行 -->
+        <div class="ticker-section crypto-section" id="cryptoTickerSection" style="display: none;">
+          <span class="ticker-tag crypto-tag">🪙 行情</span>
+          <div class="ticker-items-wrap" id="cryptoPricesContainer"></div>
+        </div>
+      </div>
+
+      <!-- 历史待补看未读操作栏（独立底栏，100% 宽度，自适应整洁对齐） -->
+      <div class="backlog-bar" id="backlogBar" style="display: none;">
+        <div class="backlog-info">
+          <span class="backlog-dot"></span>
+          <span>待补看历史消息：剩余 <b id="unreadCountSpan" style="color: #2563EB;">0</b> 条</span>
+        </div>
+        <div class="backlog-btns" id="backlogBtns">
           <button type="button" class="btn-footer-action btn-prev" id="btnPrev" title="查看上一条未读消息">
-            上一条（剩<span id="unreadCountSpan">0</span>条未读）
+            上一条
           </button>
           <button type="button" class="btn-footer-action btn-ignore" id="btnIgnore" title="清空全部历史未读">
             忽略历史消息
@@ -968,6 +1059,41 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    function getFallbackAvatar(nameOrHandle, size = 38) {
+      const str = String(nameOrHandle || 'X').trim();
+      const initial = (str.charAt(0) || 'X').toUpperCase();
+      const colors = [
+        ['#3B82F6', '#1D4ED8'],
+        ['#8B5CF6', '#6D28D9'],
+        ['#EC4899', '#BE185D'],
+        ['#F59E0B', '#B45309'],
+        ['#10B981', '#047857'],
+        ['#06B6D4', '#0E7490']
+      ];
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+      }
+      const [c1, c2] = colors[Math.abs(hash) % colors.length];
+      const half = size / 2;
+      const fontSize = Math.round(size * 0.46);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><linearGradient id="g_${Math.abs(hash)}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><circle cx="${half}" cy="${half}" r="${half}" fill="url(#g_${Math.abs(hash)})"/><text x="${half}" y="${half}" font-size="${fontSize}" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${initial}</text></svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    window.handleToastAvatarError = function(img) {
+      if (!img) return;
+      const currentSrc = img.src || '';
+      if (currentSrc.includes('twimg.com') && !img.dataset.proxyTried) {
+        img.dataset.proxyTried = 'true';
+        img.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}&w=200&h=200&fit=cover`;
+        return;
+      }
+      img.onerror = null;
+      const name = img.dataset.authorName || img.dataset.authorHandle || 'X';
+      img.src = getFallbackAvatar(name, 38);
+    };
 
     function highlightNumbers(text) {
       if (!text) return '';
@@ -1024,26 +1150,52 @@
       return '金十宏观突发要闻';
     }
 
-    function formatCryptoHtml(rawStr) {
-      if (!rawStr || !rawStr.trim()) return '';
-      // 提取形如 "腾讯 HK$386.40 +1.05%  京东 $25.68 -0.43%  BTC $82,071  SOL $105.22"
-      const items = rawStr.trim().split(/\s{2,}/);
-      const colorMap = {
-        'BTC': 'coin-sym-btc',
-        'ETH': 'coin-sym-eth',
-        'SOL': 'coin-sym-sol',
-        'BZ': 'coin-sym-bz',
-        'ZEC': 'coin-sym-zec',
-        'CRCL': 'coin-sym-crcl',
-        'DOGE': 'coin-sym-doge',
-        'XRP': 'coin-sym-xrp',
-        'SUI': 'coin-sym-sui',
-        'BNB': 'coin-sym-bnb'
-      };
+    const COIN_COLOR_MAP = {
+      'BTC': 'coin-sym-btc',
+      'ETH': 'coin-sym-eth',
+      'SOL': 'coin-sym-sol',
+      'BZ': 'coin-sym-bz',
+      'ZEC': 'coin-sym-zec',
+      'CRCL': 'coin-sym-crcl',
+      'DOGE': 'coin-sym-doge',
+      'XRP': 'coin-sym-xrp',
+      'SUI': 'coin-sym-sui',
+      'BNB': 'coin-sym-bnb'
+    };
 
-      const htmlArr = items.map(item => {
+    function categorizeQuotes(stockPrices, cryptoPrices) {
+      const stockItems = [];
+      const cryptoItems = [];
+
+      const rawStockList = (stockPrices || '').trim().split(/\s{2,}/).filter(Boolean);
+      const rawCryptoList = (cryptoPrices || '').trim().split(/\s{2,}/).filter(Boolean);
+
+      const all = [...rawStockList, ...rawCryptoList];
+      const seen = new Set();
+
+      for (const item of all) {
+        const trimmed = item.trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+
+        const parts = trimmed.split(/\s+/);
+        const lastPart = parts[parts.length - 1];
+        // 凡是末尾为百分比涨跌幅的（如 +0.52%, -1.25%, 0.00%），准确归为股票自选持仓
+        if (parts.length >= 3 && /^[+-]?\d+(\.\d+)?%$/.test(lastPart)) {
+          stockItems.push(trimmed);
+        } else {
+          // 否则归为虚拟币实时行情
+          cryptoItems.push(trimmed);
+        }
+      }
+
+      return { stockItems, cryptoItems };
+    }
+
+    function renderStockPills(items) {
+      if (!items || items.length === 0) return '';
+      return items.map(item => {
         const parts = item.trim().split(/\s+/);
-        // 如果是股票格式：[名称, 价格, 涨跌幅] 例如 ["腾讯", "HK$386.40", "+1.05%"]
         if (parts.length >= 3 && /^[+-]?\d+(\.\d+)?%$/.test(parts[parts.length - 1])) {
           const pct = parts[parts.length - 1];
           const price = parts[parts.length - 2];
@@ -1053,17 +1205,79 @@
           else if (pct.startsWith('-')) pctCls = 'stock-down';
           return `<span class="stock-pill"><span class="stock-name">${escapeHtml(name)}</span> <span class="stock-val">${escapeHtml(price)}</span> <span class="${pctCls}">${escapeHtml(pct)}</span></span>`;
         }
-        // 如果是加密货币格式：[BTC, $82,071]
+        return `<span class="stock-pill"><span class="stock-val">${escapeHtml(item)}</span></span>`;
+      }).join('');
+    }
+
+    function renderCryptoPills(items) {
+      if (!items || items.length === 0) return '';
+      return items.map(item => {
+        const parts = item.trim().split(/\s+/);
         if (parts.length >= 2) {
           const sym = parts[0].toUpperCase();
           const val = parts.slice(1).join(' ');
-          const cls = colorMap[sym] || 'coin-sym-def';
-          return `<span class="coin-pill"><span class="${cls}">${escapeHtml(sym)}</span><span class="coin-val">${escapeHtml(val)}</span></span>`;
+          const cls = COIN_COLOR_MAP[sym] || 'coin-sym-def';
+          return `<span class="coin-pill"><span class="${cls}">${escapeHtml(sym)}</span> <span class="coin-val">${escapeHtml(val)}</span></span>`;
         }
         return `<span class="coin-pill"><span class="coin-val">${escapeHtml(item)}</span></span>`;
-      });
+      }).join('');
+    }
 
-      return htmlArr.join(' ');
+    function renderTickerAndBacklog(stockPrices, cryptoPrices, unreadCount) {
+      const { stockItems, cryptoItems } = categorizeQuotes(stockPrices, cryptoPrices);
+
+      const stockSec = document.getElementById('stockTickerSection');
+      const stockWrap = document.getElementById('stockPricesContainer');
+      const cryptoSec = document.getElementById('cryptoTickerSection');
+      const cryptoWrap = document.getElementById('cryptoPricesContainer');
+      const tickerZone = document.getElementById('tickerZone');
+      const backlogBar = document.getElementById('backlogBar');
+      const unreadSpan = document.getElementById('unreadCountSpan');
+      const footerEl = document.getElementById('toastFooter') || document.querySelector('.footer');
+
+      const hasStocks = stockItems.length > 0;
+      const hasCryptos = cryptoItems.length > 0;
+      const hasQuotes = hasStocks || hasCryptos;
+
+      const uCount = Number(unreadCount) || 0;
+      const hasBacklog = uCount > 0;
+
+      if (stockSec && stockWrap) {
+        if (hasStocks) {
+          stockWrap.innerHTML = renderStockPills(stockItems);
+          stockSec.style.display = 'flex';
+        } else {
+          stockSec.style.display = 'none';
+        }
+      }
+
+      if (cryptoSec && cryptoWrap) {
+        if (hasCryptos) {
+          cryptoWrap.innerHTML = renderCryptoPills(cryptoItems);
+          cryptoSec.style.display = 'flex';
+        } else {
+          cryptoSec.style.display = 'none';
+        }
+      }
+
+      if (tickerZone) {
+        tickerZone.style.display = hasQuotes ? 'flex' : 'none';
+      }
+
+      if (backlogBar) {
+        if (hasBacklog) {
+          if (unreadSpan) unreadSpan.textContent = String(uCount);
+          backlogBar.style.display = 'flex';
+          card.classList.add('is-stacked');
+        } else {
+          backlogBar.style.display = 'none';
+          card.classList.remove('is-stacked');
+        }
+      }
+
+      if (footerEl) {
+        footerEl.style.display = (hasQuotes || hasBacklog) ? 'flex' : 'none';
+      }
     }
 
     function adjustLayoutToWindow() {
@@ -1090,6 +1304,8 @@
     window.addEventListener('resize', adjustLayoutToWindow);
     ipcRenderer.on('toast-bounds-applied', () => adjustLayoutToWindow());
 
+    let currentAdaptiveWidth = 500;
+
     function notifyReady() {
       const doSend = () => {
         const c = document.getElementById('cardContainer') || card;
@@ -1112,7 +1328,7 @@
         const totalNeededH = Math.ceil(rect.height + mb + mt + padTop + padBottom);
         const exactH = Math.max(160, totalNeededH);
 
-        ipcRenderer.send('toast-ready-to-display', { height: exactH });
+        ipcRenderer.send('toast-ready-to-display', { height: exactH, width: currentAdaptiveWidth });
       };
       // 立即触发与微延迟二次测量，彻底解决 requestAnimationFrame 在隐藏窗口被 Chromium 挂起的问题
       doSend();
@@ -1131,10 +1347,13 @@
       return sys.play_sound === true || sys.play_sound === 'true' || sys.play_sound === 1;
     }
 
-    ipcRenderer.on('init-toast', (event, { alertData, config, unreadCount, cryptoPrices }) => {
+    ipcRenderer.on('init-toast', (event, { alertData, config, unreadCount, cryptoPrices, stockPrices, targetWidth }) => {
       currentAlert = alertData;
       currentConfig = config;
       isRead = false;
+      if (targetWidth) {
+        currentAdaptiveWidth = targetWidth;
+      }
 
       // 关键修复：检查鼠标是否仍停留在弹窗内（例如点击“上一条”时鼠标依然悬停在窗口上）
       // 切勿直接重置 isHovered 为 false，确保倒计时进度条立即保持暂停
@@ -1169,14 +1388,8 @@
         bodyEl.style.cursor = 'pointer';
       }
 
-      // 2. 虚拟币实时价格（多币种独立彩色药丸气泡展示，左右分离不挤压）
-      const cryptoEl = document.getElementById('cryptoPricesText');
-      if (cryptoPrices && cryptoPrices.trim()) {
-        cryptoEl.innerHTML = formatCryptoHtml(cryptoPrices.trim());
-        cryptoEl.style.display = 'inline-flex';
-      } else {
-        cryptoEl.style.display = 'none';
-      }
+      // 2. 股票自选持仓与虚拟币实时价格呈现（分类独立行与整洁排版）
+      renderTickerAndBacklog(stockPrices, cryptoPrices, unreadCount);
 
       // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉、𝕏、金色VIP特报 还是 测试演练）
       const badge = document.getElementById('sourceBadge');
@@ -1248,7 +1461,14 @@
         if (xAuthorCard) {
           xAuthorCard.style.display = 'flex';
           const avatarUrl = alertData.author_avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-          document.getElementById('xAuthorAvatar').src = avatarUrl;
+          const avatarEl = document.getElementById('xAuthorAvatar');
+          if (avatarEl) {
+            avatarEl.dataset.authorName = alertData.author_name || '';
+            avatarEl.dataset.authorHandle = alertData.author_handle || '';
+            delete avatarEl.dataset.proxyTried;
+            avatarEl.onerror = () => window.handleToastAvatarError(avatarEl);
+            avatarEl.src = avatarUrl;
+          }
           document.getElementById('xAuthorName').textContent = alertData.author_name || alertData.author_handle || '博主';
           document.getElementById('xAuthorHandle').textContent = `@${alertData.author_handle || ''}`;
           const pubTime = alertData.pub_time || alertData.time || '';
@@ -1472,18 +1692,25 @@
 
     function updateUnreadControls(unreadCount) {
       const u = Number(unreadCount) || 0;
-      const backlogBtns = document.getElementById('backlogBtns');
+      const backlogBar = document.getElementById('backlogBar');
       const unreadSpan = document.getElementById('unreadCountSpan');
+      const footerEl = document.getElementById('toastFooter') || document.querySelector('.footer');
+      const tickerZone = document.getElementById('tickerZone');
+      const hasQuotes = tickerZone && tickerZone.style.display !== 'none';
 
       if (u > 0) {
-        // 如果有未看记录：显示【上一条（剩N条未读）】和【忽略历史消息】
-        backlogBtns.style.display = 'flex';
-        unreadSpan.textContent = u;
+        // 如果有未看记录：显示独立整洁的【待补看消息操作底栏】
+        if (backlogBar) backlogBar.style.display = 'flex';
+        if (unreadSpan) unreadSpan.textContent = u;
         card.classList.add('is-stacked');
+        if (footerEl) footerEl.style.display = 'flex';
       } else {
-        // 已经是最后一条未读或无积压：两个按钮完全不显示
-        backlogBtns.style.display = 'none';
+        // 已经是最后一条未读或无积压：底栏操作行隐藏
+        if (backlogBar) backlogBar.style.display = 'none';
         card.classList.remove('is-stacked');
+        if (footerEl && !hasQuotes) {
+          footerEl.style.display = 'none';
+        }
       }
     }
 
@@ -1584,6 +1811,16 @@
       e.stopPropagation();
       ipcRenderer.send('toast-open-settings');
     });
+
+    // 允许在行情条容器上使用滚轮横向微调滚动
+    const tickerZoneEl = document.getElementById('tickerZone');
+    if (tickerZoneEl) {
+      tickerZoneEl.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          tickerZoneEl.scrollLeft += e.deltaY;
+        }
+      }, { passive: true });
+    }
 
     function startCountdown() {
       if (countdownInterval) clearInterval(countdownInterval);

@@ -37,3 +37,17 @@
   - **L2 公开镜像/网关冗余 (Secondary Mirror/RSS Gateway)**: 当 L1 遭遇区域性 CDN 拦截时，无缝切换至公共/备用 RSSHub 协议探活。
   - **L3 私有凭据深潜扩展 (Tertiary Auth-Token Slot)**: 可选槽位，允许高级用户填入个人 `auth_token` Cookie 切换为官方 Web GraphQL 原生高限额通道。
 * **单账号故障域隔离 (Account-level Fault Domain Isolation)**: 每一个被订阅账号拥有独立的健康度状态机与退避计时器，单个账号被限流绝不波及其他账号的实时轮询。
+
+### 6. 通用行情底栏与弹性自适应系统 (Universal Ticker & Tiered Adaptive Layout)
+* **通用行情底栏 (Universal Ticker Bar)**: 独立于各类消息正文内容的底部实时报价容器，统一支持股票药丸 (`.stock-pill`) 与代币药丸 (`.coin-pill`) 混合渲染，具备 15 秒毫秒级内存缓存与快速超时兜底能力。
+* **分级弹性卡片宽度 (Tiered Adaptive Card Width)**: 根据当前实际启用的行情标的总数动态匹配的窗口物理尺寸体系：
+  - **紧凑档 (Compact Tier, 400px)**: 适用于 0~1 个标的，消除空洞留白；
+  - **标准档 (Standard Tier, 500px)**: 适用于 2~4 个标的，保障正文与药丸平衡排布；
+  - **宽屏档 (Wide Tier, 620px)**: 适用于 5~14 个标的，提供充足横向展示面。
+* **弹性多行撑高 (Flex-Wrap Natural Expansion)**: 当标的较多（如同时配置 7 支股票或全选标的）超出单行宽度时，底栏自动折行双排排列，卡片测量引擎自动实时测量自然所需总高度并无闪烁重绘窗口，杜绝内容截断与内部滚动条。
+
+### 7. 头像高可用容灾与矢量字母自愈系统 (Avatar Resiliency & Monogram Fallback System)
+* **动态多源代理重试 (Multi-CDN Mirror Retry)**: 当官方 Twitter 头像 CDN 发生网络阻塞或 404 失效时，前端通过 Cloudflare 高速反向代理 (`wsrv.nl`) 自动重发一次高可用请求。
+* **矢量渐变字母兜底 (Dynamic Monogram Fallback)**: 若双 CDN 均无法拉取，动态为该博主生成带专属渐变色系与大写首字母的轻量 SVG 矢量圆形徽标，杜绝死板灰色方框。
+* **本地旧版路径自动纠正 (Config Avatar Self-Healing)**: 启动读取本地历史配置时，自动检测并替换因官方更替而失效的过时旧版博主头像链接。
+

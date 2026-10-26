@@ -15,13 +15,22 @@ class ToastManager {
       this.unreadList = [...historyManager.unattendedAlerts];
     }
     this.openSettingsCallback = null;
-    this.toastWidth = 600; // 宽裕宽度，确保左右操作按钮与虚拟币价格完全单行容纳不换行
+    this.toastWidth = 500; // 默认基准宽度
+    this.currentAdaptiveWidth = 500; // 动态自适应宽度：0~1个标的 400px，2~4个标的 500px，5~14个标的 620px
 
     this.initIpc();
   }
 
   setOpenSettingsCallback(cb) {
     this.openSettingsCallback = cb;
+  }
+
+  calculateAdaptiveWidth(quoteText) {
+    if (!quoteText || !quoteText.trim()) return 400; // 0个标的：紧凑 400px，杜绝大片留白
+    const count = quoteText.trim().split(/\s{2,}/).filter(Boolean).length;
+    if (count <= 1) return 400; // 1个标的：紧凑 400px，杜绝大片留白
+    if (count <= 4) return 500; // 2~4个标的：标准 500px，优雅均衡
+    return 620; // 5~14个标的：宽屏 620px，提供充裕横向展布空间
   }
 
   initIpc() {
@@ -75,9 +84,9 @@ class ToastManager {
     });
 
     // 单帧完美渲染完成后再统一显示窗口，彻底杜绝闪烁和尺寸跳跃
-    ipcMain.on('toast-ready-to-display', (event, { height }) => {
+    ipcMain.on('toast-ready-to-display', (event, { height, width }) => {
       if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-        this.applyFinalBoundsAndShow(height);
+        this.applyFinalBoundsAndShow(height, width);
       }
     });
 
@@ -125,10 +134,14 @@ class ToastManager {
       const cfg = this.configManager.config;
       const cryptoCfg = cfg.crypto_prices || {};
       if (cryptoCfg.enabled !== false) {
-        const coins = cryptoCfg.selected_coins || ['BTC/USDT', 'SOL/USDT', 'BZ/USDT'];
+        const coins = (Array.isArray(cryptoCfg.selected_coins) && cryptoCfg.selected_coins.length > 0)
+          ? cryptoCfg.selected_coins
+          : cryptoPriceManager.defaultCoins;
         return await cryptoPriceManager.getFormattedSummary(coins);
       }
-    } catch (e) {}
+    } catch (e) {
+      logger.error('[ToastManager] 获取加密货币行情异常:', e.message);
+    }
     return '';
   }
 
@@ -136,10 +149,15 @@ class ToastManager {
     try {
       const cfg = this.configManager.config;
       const watchCfg = cfg.watchlist || {};
-      if (watchCfg.enabled !== false && Array.isArray(watchCfg.stocks) && watchCfg.stocks.length > 0) {
-        return await stockQuoteManager.getFormattedSummary(watchCfg.stocks);
+      if (watchCfg.enabled !== false) {
+        const stocks = (Array.isArray(watchCfg.stocks) && watchCfg.stocks.length > 0)
+          ? watchCfg.stocks
+          : stockQuoteManager.defaultStocks;
+        return await stockQuoteManager.getFormattedSummary(stocks);
       }
-    } catch (e) {}
+    } catch (e) {
+      logger.error('[ToastManager] 获取股票行情异常:', e.message);
+    }
     return '';
   }
 
@@ -149,10 +167,28 @@ class ToastManager {
         this.getStockPricesText(),
         this.getCryptoPricesText()
       ]);
-      const list = [stockText, cryptoText].filter(Boolean);
-      return list.join('   ');
+      const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
+      return list.join('    ');
     } catch (e) {
       return '';
+    }
+  }
+
+  async getTickerPayload() {
+    try {
+      const [stockText, cryptoText] = await Promise.all([
+        this.getStockPricesText(),
+        this.getCryptoPricesText()
+      ]);
+      const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
+      const combined = list.join('    ');
+      return {
+        combinedPrices: combined,
+        stockPrices: (stockText || '').trim(),
+        cryptoPrices: (cryptoText || '').trim()
+      };
+    } catch (e) {
+      return { combinedPrices: '', stockPrices: '', cryptoPrices: '' };
     }
   }
 
@@ -176,22 +212,22 @@ class ToastManager {
       }
 
       this.currentAlertData = alertData;
-      const [tickerSummary, stockSummary, cryptoSummary] = await Promise.all([
-        this.getAllTickerPricesText(),
-        this.getStockPricesText(),
-        this.getCryptoPricesText()
-      ]);
+      const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+      const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
+      this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
 
       if (!this.currentToastWin || this.currentToastWin.isDestroyed()) {
-        await this.createToastWindow(alertData);
+        await this.createToastWindow(alertData, this.currentAdaptiveWidth);
         return;
       }
       this.currentToastWin.webContents.send('init-toast', {
         alertData,
         config: this.configManager.config,
         unreadCount: this.unreadList.length,
-        cryptoPrices: tickerSummary || cryptoSummary,
-        stockPrices: stockSummary
+        cryptoPrices: cryptoPrices || '',
+        stockPrices: stockPrices || '',
+        combinedPrices: combinedPrices || '',
+        targetWidth: this.currentAdaptiveWidth
       });
 
       // 无论此前窗口是否处于不可见状态，均确保重新展现并置顶
@@ -204,13 +240,17 @@ class ToastManager {
     }
 
     this.currentAlertData = alertData;
-    await this.createToastWindow(alertData);
+    const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+    const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
+    this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
+    await this.createToastWindow(alertData, this.currentAdaptiveWidth);
   }
 
-  async createToastWindow(alertData) {
+  async createToastWindow(alertData, initialWidth) {
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
-    const width = this.toastWidth;
+    const width = initialWidth || this.currentAdaptiveWidth || 500;
+    this.currentAdaptiveWidth = width;
     const isMac = process.platform === 'darwin';
     const marginX = 12;
     const marginY = 8;
@@ -243,23 +283,23 @@ class ToastManager {
 
     toastWin.webContents.once('did-finish-load', async () => {
       if (!toastWin.isDestroyed()) {
-        const [tickerSummary, stockSummary, cryptoSummary] = await Promise.all([
-          this.getAllTickerPricesText(),
-          this.getStockPricesText(),
-          this.getCryptoPricesText()
-        ]);
+        const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+        const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
+        this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
         toastWin.webContents.send('init-toast', {
           alertData,
           config: this.configManager.config,
           unreadCount: this.unreadList.length,
-          cryptoPrices: tickerSummary || cryptoSummary,
-          stockPrices: stockSummary
+          cryptoPrices: cryptoPrices || '',
+          stockPrices: stockPrices || '',
+          combinedPrices: combinedPrices || '',
+          targetWidth: this.currentAdaptiveWidth
         });
 
         // 强保底机制：如果 150ms 内未收到渲染进程的高度通知，立即强制显示窗口，绝不静默！
         setTimeout(() => {
           if (toastWin && !toastWin.isDestroyed() && !toastWin.isVisible()) {
-            this.applyFinalBoundsAndShow(260);
+            this.applyFinalBoundsAndShow(260, this.currentAdaptiveWidth);
           }
         }, 150);
       }
@@ -273,12 +313,12 @@ class ToastManager {
     });
   }
 
-  applyFinalBoundsAndShow(height) {
+  applyFinalBoundsAndShow(height, customWidth) {
     if (!this.currentToastWin || this.currentToastWin.isDestroyed()) return;
 
     const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) || screen.getPrimaryDisplay();
     const workArea = activeDisplay.workArea;
-    const width = this.toastWidth;
+    const width = customWidth || this.currentAdaptiveWidth || 500;
     const userMaxHeight = (this.configManager && this.configManager.config?.system?.content_view_height) || 650;
     const maxHeight = Math.min(Math.max(650, userMaxHeight), workArea.height - 30);
     const targetHeight = Math.min(Math.max(160, Math.ceil(height)), maxHeight);
@@ -291,7 +331,7 @@ class ToastManager {
 
     this.currentToastWin.setBounds({ x, y, width, height: targetHeight });
     try {
-      this.currentToastWin.webContents.send('toast-bounds-applied', { targetHeight, maxHeight });
+      this.currentToastWin.webContents.send('toast-bounds-applied', { targetHeight, maxHeight, targetWidth: width });
     } catch (e) {}
     this.currentToastWin.showInactive();
     this.currentToastWin.show();
@@ -301,7 +341,7 @@ class ToastManager {
 
   relayoutToast(height) {
     if (!this.currentToastWin || this.currentToastWin.isDestroyed()) return;
-    this.applyFinalBoundsAndShow(height);
+    this.applyFinalBoundsAndShow(height, this.currentAdaptiveWidth);
   }
 
   /**
@@ -326,16 +366,21 @@ class ToastManager {
     this.currentAlertData = prevAlert;
 
     if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
-      const cryptoSummary = await this.getCryptoPricesText();
+      const { combinedPrices, stockPrices, cryptoPrices } = await this.getTickerPayload();
+      const allQuotes = combinedPrices || [stockPrices, cryptoPrices].filter(Boolean).join('    ');
+      this.currentAdaptiveWidth = this.calculateAdaptiveWidth(allQuotes);
       if (this.currentToastWin && !this.currentToastWin.isDestroyed()) {
         this.currentToastWin.webContents.send('init-toast', {
           alertData: prevAlert,
           config: this.configManager.config,
           unreadCount: this.unreadList.length,
-          cryptoPrices: cryptoSummary
+          cryptoPrices: cryptoPrices || '',
+          stockPrices: stockPrices || '',
+          combinedPrices: combinedPrices || '',
+          targetWidth: this.currentAdaptiveWidth
         });
       } else {
-        await this.createToastWindow(prevAlert);
+        await this.createToastWindow(prevAlert, this.currentAdaptiveWidth);
       }
     } else {
       await this.createToastWindow(prevAlert);

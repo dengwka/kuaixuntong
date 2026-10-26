@@ -10,7 +10,7 @@ const DEFAULT_X_ACCOUNTS = [
     id: 'realdonaldtrump',
     screen_name: 'realDonaldTrump',
     name: 'Donald J. Trump',
-    avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUphPerform_200x200.jpg',
+    avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg',
     enabled: true,
     include_replies: false,
     ai_analysis_enabled: true,
@@ -20,7 +20,7 @@ const DEFAULT_X_ACCOUNTS = [
     id: 'whitehouse',
     screen_name: 'WhiteHouse',
     name: 'The White House',
-    avatar: 'https://pbs.twimg.com/profile_images/1349887752674394112/Zz3t0xW1_200x200.jpg',
+    avatar: 'https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_200x200.jpg',
     enabled: true,
     include_replies: false,
     ai_analysis_enabled: true,
@@ -301,7 +301,7 @@ class ConfigManager {
               id: 'realdonaldtrump',
               screen_name: 'realDonaldTrump',
               name: 'Donald J. Trump',
-              avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUphPerform_200x200.jpg',
+              avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg',
               enabled: true,
               include_replies: false,
               ai_analysis_enabled: true,
@@ -311,7 +311,7 @@ class ConfigManager {
               id: 'whitehouse',
               screen_name: 'WhiteHouse',
               name: 'The White House',
-              avatar: 'https://pbs.twimg.com/profile_images/1349887752674394112/Zz3t0xW1_200x200.jpg',
+              avatar: 'https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_200x200.jpg',
               enabled: true,
               include_replies: false,
               ai_analysis_enabled: true,
@@ -514,6 +514,19 @@ class ConfigManager {
           if (!merged.sources.x_twitter.accounts || merged.sources.x_twitter.accounts.length === 0) {
             merged.sources.x_twitter.accounts = JSON.parse(JSON.stringify(DEFAULT_X_ACCOUNTS));
           }
+        }
+
+        // 自动巡检并自愈已知失效/404的官方博主头像链接
+        if (merged.sources && merged.sources.x_twitter && Array.isArray(merged.sources.x_twitter.accounts)) {
+          merged.sources.x_twitter.accounts.forEach(acc => {
+            const sn = (acc.screen_name || '').toLowerCase();
+            if (sn === 'realdonaldtrump' && (!acc.avatar || acc.avatar.includes('kUphPerform'))) {
+              acc.avatar = 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg';
+            }
+            if (sn === 'whitehouse' && (!acc.avatar || acc.avatar.includes('Zz3t0xW1'))) {
+              acc.avatar = 'https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_200x200.jpg';
+            }
+          });
         }
 
         // 关键恢复 2：自选股票容灾自愈

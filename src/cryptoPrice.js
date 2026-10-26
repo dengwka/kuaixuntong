@@ -259,8 +259,8 @@ class CryptoPriceManager {
   async getFormattedSummary(selectedCoins) {
     let coins = Array.isArray(selectedCoins) ? selectedCoins : this.defaultCoins;
     if (coins.length === 0) return '';
-    // 严格限制最多取前 3 个币种
-    coins = coins.slice(0, 3);
+    // 最多支持展示 7 个自选币种
+    coins = coins.slice(0, 7);
 
     const promises = coins.map(c => this.getCoinPrice(c));
     const results = await Promise.allSettled(promises);

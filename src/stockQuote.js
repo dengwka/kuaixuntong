@@ -1,10 +1,20 @@
+let electronNet = null;
+try {
+  const electron = require('electron');
+  electronNet = electron.net;
+} catch (e) {}
+
 const { URL } = require('url');
 const logger = require('./logger');
 
 class StockQuoteManager {
   constructor() {
-    this.cache = new Map(); // symbol -> { data, timestamp }
-    this.cacheTtlMs = 10000; // 10秒缓存
+    this.cache = new Map(); // symbol.toLowerCase() -> { data, timestamp }
+    this.cacheTtlMs = 15000; // 15秒缓存
+    this.defaultStocks = [
+      { code: '00700', symbol: 'r_hk00700', name: '腾讯控股', market: '港股' },
+      { code: 'JD', symbol: 'usJD', name: '京东', market: '美股' }
+    ];
   }
 
   /**
@@ -75,18 +85,47 @@ class StockQuoteManager {
    * @param {Array<string>} symbols - 形如 ['r_hk00700', 'usJD', 'sh600519']
    */
   async getQuotes(symbols = []) {
-    if (!Array.isArray(symbols) || symbols.length === 0) return [];
-    const cleanSymbols = symbols.filter(Boolean);
-    if (cleanSymbols.length === 0) return [];
+    let cleanSymbols = Array.isArray(symbols) ? symbols.filter(Boolean) : [];
+    if (cleanSymbols.length === 0) {
+      cleanSymbols = this.defaultStocks.map(s => s.symbol);
+    }
+
+    const now = Date.now();
+    const needFetchSymbols = [];
+    const cachedQuotes = [];
+
+    for (const sym of cleanSymbols) {
+      const cached = this.cache.get(sym.toLowerCase());
+      if (cached && (now - cached.timestamp < this.cacheTtlMs)) {
+        cachedQuotes.push(cached.data);
+      } else {
+        needFetchSymbols.push(sym);
+      }
+    }
+
+    // 全部在 15s 缓存内，立即返回缓存（0延迟，杜绝弹窗卡顿）
+    if (needFetchSymbols.length === 0 && cachedQuotes.length > 0) {
+      return cachedQuotes;
+    }
 
     try {
+      const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+
       const url = `https://qt.gtimg.cn/q=${cleanSymbols.join(',')}`;
-      const res = await fetch(url, {
+      const res = await fetchFn(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        },
+        signal: controller.signal
       });
-      if (!res.ok) return [];
+      clearTimeout(timer);
+      if (!res.ok) {
+        // 请求失败，尝试返回已有缓存兜底
+        const fallback = cleanSymbols.map(s => this.cache.get(s.toLowerCase())?.data).filter(Boolean);
+        return fallback.length > 0 ? fallback : cachedQuotes;
+      }
 
       const buf = await res.arrayBuffer();
       const text = new TextDecoder('gbk').decode(buf);
@@ -120,7 +159,7 @@ class StockQuoteManager {
             mkt = '美股';
           }
 
-          quotes.push({
+          const qObj = {
             symbol: matchedReqSymbol,
             rawSymbol: cleanId,
             code,
@@ -131,22 +170,38 @@ class StockQuoteManager {
             changePercent: changePercent >= 0 ? `+${changePercent.toFixed(2)}%` : `${changePercent.toFixed(2)}%`,
             isUp: changePercent >= 0,
             currency
-          });
+          };
+
+          quotes.push(qObj);
+          this.cache.set(matchedReqSymbol.toLowerCase(), { data: qObj, timestamp: now });
+          this.cache.set(cleanId.toLowerCase(), { data: qObj, timestamp: now });
         }
       }
+
+      // 如果个别 symbol 响应中缺失，用已有缓存补全
+      for (const sym of cleanSymbols) {
+        if (!quotes.some(q => q.symbol.toLowerCase() === sym.toLowerCase() || q.rawSymbol.toLowerCase() === sym.toLowerCase())) {
+          const cached = this.cache.get(sym.toLowerCase());
+          if (cached && cached.data) quotes.push(cached.data);
+        }
+      }
+
       return quotes;
     } catch (e) {
       logger.error('[StockQuote] 获取股票行情异常:', e.message);
-      return [];
+      const fallback = cleanSymbols.map(s => this.cache.get(s.toLowerCase())?.data).filter(Boolean);
+      return fallback.length > 0 ? fallback : cachedQuotes;
     }
   }
 
   /**
    * 格式化底栏显示的股票行情字串
    */
-  async getFormattedSummary(stockConfigs = []) {
-    if (!Array.isArray(stockConfigs) || stockConfigs.length === 0) return '';
-    const symbols = stockConfigs.map(s => s.symbol || s.code).filter(Boolean);
+  async getFormattedSummary(stockConfigs) {
+    let stocks = (Array.isArray(stockConfigs) && stockConfigs.length > 0) ? stockConfigs : this.defaultStocks;
+    stocks = stocks.slice(0, 7); // 最多展示 7 支股票
+    const symbols = stocks.map(s => s.symbol || s.code).filter(Boolean);
+    if (symbols.length === 0) return '';
     const quotes = await this.getQuotes(symbols);
     if (!quotes || quotes.length === 0) return '';
 

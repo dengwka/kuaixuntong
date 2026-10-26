@@ -1210,7 +1210,7 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-          <span id="watchlistSummaryText" style="font-size: 11.5px; color: #475569;">已选持仓: 3只标的</span>
+          <span id="watchlistSummaryText" style="font-size: 11.5px; color: #475569;">已选持仓: 2/7支标的</span>
           <span style="font-size: 11px; color: #94A3B8;">实时行情通道: 腾讯财经 API (35ms 免 Cookie 极速更新)</span>
         </div>
       </div>
@@ -1221,7 +1221,7 @@
           <span>🪙 主流虚拟币实时价格 (优先 OKX 报价)</span>
         </div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px;">
-          弹窗弹出时实时获取所选币种的最新报价，展示在卡片底部居中位置。最多勾选 3 个币种。
+          弹窗弹出时实时获取所选币种的最新报价，展示在卡片底部居中位置。最多勾选 7 个币种。
         </div>
         <div class="form-row" style="margin-bottom: 8px;">
           <label class="checkbox-row">
@@ -1241,7 +1241,7 @@
         <div style="display: flex; flex-wrap: wrap; gap: 8px 10px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;" id="cryptoCoinsContainer"></div>
 
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span id="cryptoLimitTip" style="font-size: 11.5px; color: #475569;">已选: BTC, SOL (2/3个)</span>
+          <span id="cryptoLimitTip" style="font-size: 11.5px; color: #475569;">已选: BTC, SOL (2/7个)</span>
           <button type="button" class="btn btn-secondary btn-sm" id="btnTestCrypto">⚡ 实时测试获取 OKX 报价</button>
         </div>
         <div id="cryptoTestResult" style="font-size: 11.5px; font-weight: 600; margin-top: 6px; display: none;"></div>
@@ -1510,7 +1510,7 @@
         id: 'realdonaldtrump',
         screen_name: 'realDonaldTrump',
         name: 'Donald J. Trump',
-        avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUphPerform_200x200.jpg',
+        avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg',
         enabled: true,
         include_replies: false,
         ai_analysis_enabled: true,
@@ -1520,7 +1520,7 @@
         id: 'whitehouse',
         screen_name: 'WhiteHouse',
         name: 'The White House',
-        avatar: 'https://pbs.twimg.com/profile_images/1349887752674394112/Zz3t0xW1_200x200.jpg',
+        avatar: 'https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_200x200.jpg',
         enabled: true,
         include_replies: false,
         ai_analysis_enabled: true,
@@ -1558,9 +1558,12 @@
       }
     ];
 
-    let xSubscribedAccounts = [];
+    let xSubscribedAccounts = JSON.parse(JSON.stringify(DEFAULT_X_ACCOUNTS));
     let xPendingAccount = null;
-    let currentWatchlist = [];
+    let currentWatchlist = [
+      { name: '腾讯控股', code: '00700', symbol: 'r_hk00700', market: '港股' },
+      { name: '京东', code: 'JD', symbol: 'usJD', market: '美股' }
+    ];
 
     window.quickFillX = function(handle) {
       const input = document.getElementById('xInputHandle');
@@ -1672,6 +1675,42 @@
       }
     }
 
+    function getFallbackAvatar(nameOrHandle, size = 32) {
+      const str = String(nameOrHandle || 'X').trim();
+      const initial = (str.charAt(0) || 'X').toUpperCase();
+      const colors = [
+        ['#3B82F6', '#1D4ED8'],
+        ['#8B5CF6', '#6D28D9'],
+        ['#EC4899', '#BE185D'],
+        ['#F59E0B', '#B45309'],
+        ['#10B981', '#047857'],
+        ['#06B6D4', '#0E7490']
+      ];
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+      }
+      const [c1, c2] = colors[Math.abs(hash) % colors.length];
+      const half = size / 2;
+      const fontSize = Math.round(size * 0.46);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><linearGradient id="g_${Math.abs(hash)}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><circle cx="${half}" cy="${half}" r="${half}" fill="url(#g_${Math.abs(hash)})"/><text x="${half}" y="${half}" font-size="${fontSize}" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${initial}</text></svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    window.handleAvatarError = function(img, screenName, name) {
+      if (!img) return;
+      const currentSrc = img.src || '';
+      // 第一次加载失败：先尝试通过高速公共 CDN 镜像源代理重试
+      if (currentSrc.includes('twimg.com') && !img.dataset.proxyTried) {
+        img.dataset.proxyTried = 'true';
+        img.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}&w=200&h=200&fit=cover`;
+        return;
+      }
+      // 降级兜底：高品质渐变字母头像，坚决告别死板空白灰圈
+      img.onerror = null;
+      img.src = getFallbackAvatar(name || screenName || 'X', 32);
+    };
+
     async function renderXAccountsList() {
       const listEl = document.getElementById('xAccountsList');
       const countEl = document.getElementById('xSubscribedCount');
@@ -1709,7 +1748,7 @@
         html += `
           <div class="x-account-card">
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-              <img class="x-account-avatar" src="${avatarUrl}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'32\\' height=\\'32\\' fill=\\'%23E2E8F0\\'/></svg>'" />
+              <img class="x-account-avatar" src="${avatarUrl}" onerror="window.handleAvatarError(this, '${escapeHtml(sn)}', '${escapeHtml(acc.name || '')}')" />
               <div style="min-width: 0; flex: 1;">
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <b style="color: #0F172A; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.name || acc.screen_name)}</b>
@@ -1817,7 +1856,8 @@
       });
     });
 
-    ipcRenderer.on('init-settings', (event, payload) => {
+    function applySettingsPayload(payload) {
+      if (!payload) return;
       const cfg = payload.config || payload || {};
       const stats = payload.stats || {};
 
@@ -1918,7 +1958,17 @@
       document.getElementById('xCustomProxy').value = xTwitter.proxy || '';
       document.getElementById('xPrivateCookie').value = xTwitter.cookie || '';
       if (Array.isArray(xTwitter.accounts) && xTwitter.accounts.length > 0) {
-        xSubscribedAccounts = [...xTwitter.accounts];
+        xSubscribedAccounts = xTwitter.accounts.map(acc => {
+          const item = { ...acc };
+          const sn = (item.screen_name || '').toLowerCase();
+          if (sn === 'realdonaldtrump' && (!item.avatar || item.avatar.includes('kUphPerform'))) {
+            item.avatar = 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg';
+          }
+          if (sn === 'whitehouse' && (!item.avatar || item.avatar.includes('Zz3t0xW1'))) {
+            item.avatar = 'https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_200x200.jpg';
+          }
+          return item;
+        });
       } else if (xTwitter.accounts_cleared) {
         xSubscribedAccounts = [];
       } else {
@@ -1969,12 +2019,11 @@
       // 自选持仓池初始化
       const wlCfg = cfg.watchlist || {};
       document.getElementById('watchlistEnabled').checked = wlCfg.enabled !== false;
-      currentWatchlist = Array.isArray(wlCfg.stocks) && wlCfg.stocks.length > 0
+      currentWatchlist = (Array.isArray(wlCfg.stocks) && wlCfg.stocks.length > 0)
         ? [...wlCfg.stocks]
         : [
             { name: '腾讯控股', code: '00700', symbol: 'r_hk00700', market: '港股' },
-            { name: '京东', code: 'JD', symbol: 'usJD', market: '美股' },
-            { name: '贵州茅台', code: '600519', symbol: 'sh600519', market: '沪A' }
+            { name: '京东', code: 'JD', symbol: 'usJD', market: '美股' }
           ];
       renderWatchlistUI();
       fetchWatchlistLiveQuotes();
@@ -1992,7 +2041,30 @@
       currentSelectedCoins = Array.isArray(cryptoCfg.selected_coins) ? cryptoCfg.selected_coins : ['BTC/USDT', 'SOL/USDT'];
       customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
       renderCryptoCoins();
+    }
+
+    // 监听主进程下发的配置推送
+    ipcRenderer.on('init-settings', (event, payload) => {
+      applySettingsPayload(payload);
     });
+
+    // 主动式主动拉取：页面加载就绪时直接向主进程获取，杜绝偶发丢包竞态
+    async function loadInitialSettings() {
+      try {
+        const payload = await ipcRenderer.invoke('get-settings-payload');
+        if (payload) {
+          applySettingsPayload(payload);
+        }
+      } catch (e) {
+        console.warn('主动拉取配置 payload 失败:', e);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadInitialSettings);
+    } else {
+      loadInitialSettings();
+    }
 
     function updateAiStatus() {
       const ds = document.getElementById('deepseekApiKey').value.trim();
@@ -2152,9 +2224,9 @@
 
     function handleCoinChange(cb) {
       const checked = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked'));
-      if (checked.length > 3) {
+      if (checked.length > 7) {
         cb.checked = false;
-        showNotice('最多只能选择 3 个虚拟币展示！');
+        showNotice('最多只能选择 7 个展示币种！');
       }
       currentSelectedCoins = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(c => c.value);
       updateCryptoSelectionLimit();
@@ -2163,7 +2235,7 @@
     function updateCryptoSelectionLimit() {
       const cBoxes = Array.from(document.querySelectorAll('input[name="cryptoCoin"]'));
       const checkedBoxes = cBoxes.filter(cb => cb.checked);
-      if (checkedBoxes.length >= 3) {
+      if (checkedBoxes.length >= 7) {
         cBoxes.forEach(cb => {
           if (!cb.checked) cb.disabled = true;
         });
@@ -2171,7 +2243,7 @@
         cBoxes.forEach(cb => cb.disabled = false);
       }
       const names = checkedBoxes.map(cb => cb.value.split('/')[0]).join(', ');
-      document.getElementById('cryptoLimitTip').textContent = `已选: ${names || '无'} (${checkedBoxes.length}/3个)`;
+      document.getElementById('cryptoLimitTip').textContent = `已选: ${names || '无'} (${checkedBoxes.length}/7个)`;
     }
 
     // 搜索并添加交易对（通过 OKX 严格校验）
@@ -2209,10 +2281,10 @@
           }
 
           if (!currentSelectedCoins.includes(coinPair)) {
-            if (currentSelectedCoins.length < 3) {
+            if (currentSelectedCoins.length < 7) {
               currentSelectedCoins.push(coinPair);
             } else {
-              noticeEl.textContent += '（已加入列表，当前已达3个上限，取消已有勾选后即可展示）';
+              noticeEl.textContent += '（已加入列表，当前已达7个上限，取消已有勾选后即可展示）';
             }
           }
 
@@ -2275,12 +2347,12 @@
       if (!container) return;
 
       if (!currentWatchlist || currentWatchlist.length === 0) {
-        container.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 6px; text-align: center; width: 100%;">暂无自选标的，可在上方输入如“腾讯”、“京东”、“茅台”、“英伟达”搜索添加</div>';
-        if (summaryText) summaryText.textContent = '已选持仓: 0只标的';
+        container.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 6px; text-align: center; width: 100%;">暂无自选标的，可在上方输入如“腾讯”、“京东”、“茅台”、“英伟达”搜索添加（最多7支）</div>';
+        if (summaryText) summaryText.textContent = '已选持仓: 0/7支标的';
         return;
       }
 
-      if (summaryText) summaryText.textContent = `已选持仓: ${currentWatchlist.length}只标的 (弹窗底部轮播展示)`;
+      if (summaryText) summaryText.textContent = `已选持仓: ${currentWatchlist.length}/7支标的 (弹窗底部通用展示)`;
 
       container.innerHTML = currentWatchlist.map(s => {
         const marketColor = s.market && s.market.includes('美') ? '#3B82F6' : (s.market && s.market.includes('港') ? '#8B5CF6' : '#EF4444');
@@ -2374,6 +2446,11 @@
     }
 
     function addSelectedStock(stock) {
+      if (currentWatchlist.length >= 7) {
+        showNotice('自选持仓池已达 7 支上限，请先移除部分标的');
+        hideStockDropdown();
+        return;
+      }
       if (currentWatchlist.some(s => s.symbol === stock.symbol)) {
         showNotice(`【${stock.name}】已在自选持仓池中`);
         hideStockDropdown();
@@ -2387,7 +2464,7 @@
       renderWatchlistUI(stock.symbol);
       hideStockDropdown();
       if (stockSearchInput) stockSearchInput.value = '';
-      showNotice(`已成功添加【${stock.name}】至自选持仓池`);
+      showNotice(`已成功添加【${stock.name}】至自选持仓池 (${currentWatchlist.length}/7支)`);
       fetchWatchlistLiveQuotes();
       const newPill = document.getElementById(`stock_pill_${stock.symbol}`);
       if (newPill) {
@@ -3524,6 +3601,21 @@
     ipcRenderer.on('update-status-changed', (event, updateInfo) => {
       if (updateInfo) renderUpdateData(updateInfo);
     });
+
+    // 立即执行同步初始预渲染（先于 IPC 响应），杜绝界面出现空态白框或白屏
+    try {
+      if (!currentWatchlist || currentWatchlist.length === 0) {
+        currentWatchlist = [
+          { name: '腾讯控股', code: '00700', symbol: 'r_hk00700', market: '港股' },
+          { name: '京东', code: 'JD', symbol: 'usJD', market: '美股' }
+        ];
+      }
+      renderCryptoCoins();
+      renderWatchlistUI();
+      renderXAccountsList();
+    } catch (e) {
+      console.warn('初始同步预渲染失败:', e);
+    }
   </script>
 </body>
 </html>

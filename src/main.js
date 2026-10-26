@@ -43,6 +43,18 @@ sourceHealthManager.setConfigProvider(() => configManager.config);
 let pollTimer = null;
 let pollCount = 0;
 
+function getSettingsPayload(targetTab = null) {
+  return {
+    config: configManager.config,
+    stats: historyManager.getStorageStats(),
+    targetTab: targetTab || null,
+    updateInfo: updateManager.lastCheckResult || null,
+    appVersion: app.getVersion(),
+    defaultDataDir: configManager.getDefaultDataDir(),
+    sourcesHealth: sourceHealthManager.getHealthReport(configManager.config)
+  };
+}
+
 function openSettingsWindow(targetTab = null) {
   if (settingsWin && !settingsWin.isDestroyed()) {
     try {
@@ -51,6 +63,8 @@ function openSettingsWindow(targetTab = null) {
       settingsWin.focus();
       settingsWin.setAlwaysOnTop(true);
       settingsWin.setAlwaysOnTop(false);
+      // 窗口再次打开或唤起时，主动推送最新配置数据，消除状态陈旧或未初始化
+      settingsWin.webContents.send('init-settings', getSettingsPayload(targetTab));
       if (targetTab) {
         settingsWin.webContents.send('switch-tab', targetTab);
       }
@@ -78,17 +92,18 @@ function openSettingsWindow(targetTab = null) {
 
   win.loadFile(path.join(__dirname, 'ui', 'settings.html'));
 
-  win.once('ready-to-show', () => {
+  const sendInit = () => {
     if (!win.isDestroyed() && win.webContents) {
-      win.webContents.send('init-settings', {
-        config: configManager.config,
-        stats: historyManager.getStorageStats(),
-        targetTab: targetTab || null,
-        updateInfo: updateManager.lastCheckResult || null,
-        appVersion: app.getVersion(),
-        defaultDataDir: configManager.getDefaultDataDir(),
-        sourcesHealth: sourceHealthManager.getHealthReport(configManager.config)
-      });
+      win.webContents.send('init-settings', getSettingsPayload(targetTab));
+    }
+  };
+
+  // 双保险机制：页面加载完毕和首帧就绪均触发初始化，杜绝单点竞态丢消息
+  win.webContents.once('did-finish-load', sendInit);
+
+  win.once('ready-to-show', () => {
+    sendInit();
+    if (!win.isDestroyed()) {
       win.show();
       win.focus();
       win.setAlwaysOnTop(true);
@@ -310,6 +325,10 @@ app.whenReady().then(() => {
     logger.info('[ManualPoll] 用户点击立即检查更新...');
     await pollCycle();
     event.reply('poll-completed', historyManager.getStorageStats());
+  });
+
+  ipcMain.handle('get-settings-payload', (event, targetTab) => {
+    return getSettingsPayload(targetTab);
   });
 
   ipcMain.handle('choose-data-dir', async () => {
