@@ -37,6 +37,9 @@ let xFetcher = null;
 let translator = null;
 let strategyEngine = null;
 let financialAi = null;
+const sourceHealthManager = require('./sourceHealthManager');
+sourceHealthManager.setConfigProvider(() => configManager.config);
+
 let pollTimer = null;
 let pollCount = 0;
 
@@ -57,9 +60,9 @@ function openSettingsWindow(targetTab = null) {
 
   const win = new BrowserWindow({
     show: false,
-    width: 780,
+    width: 940,
     height: 800,
-    minWidth: 700,
+    minWidth: 800,
     minHeight: 620,
     center: true,
     title: '快讯通 · 常驻服务与管理配置中心',
@@ -82,7 +85,9 @@ function openSettingsWindow(targetTab = null) {
         stats: historyManager.getStorageStats(),
         targetTab: targetTab || null,
         updateInfo: updateManager.lastCheckResult || null,
-        appVersion: app.getVersion()
+        appVersion: app.getVersion(),
+        defaultDataDir: configManager.getDefaultDataDir(),
+        sourcesHealth: sourceHealthManager.getHealthReport(configManager.config)
       });
       win.show();
       win.focus();
@@ -90,6 +95,12 @@ function openSettingsWindow(targetTab = null) {
       win.setAlwaysOnTop(false);
     }
   });
+
+  sourceHealthManager.onStatusChanged = (report) => {
+    if (settingsWin && !settingsWin.isDestroyed() && settingsWin.webContents) {
+      settingsWin.webContents.send('sources-health-updated', report);
+    }
+  };
 
   win.on('closed', () => {
     if (settingsWin === win) {
@@ -133,12 +144,42 @@ async function pollCycle() {
   }
 
   pollCount++;
+  sourceHealthManager.totalPollCycles = pollCount;
+  sourceHealthManager.lastPollTime = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+
+  // 周期性探测外网连通性
+  if (pollCount % 4 === 1) {
+    sourceHealthManager.checkNetworkHealth().catch(() => {});
+  }
+
   try {
-    const flashItems = await jin10Fetcher.fetch();
-    const topicItems = await topicFetcher.fetch();
-    const xueqiuItems = await xueqiuFetcher.fetch();
-    const maimaiItems = await maimaiFetcher.fetch();
-    const xItems = (xFetcher ? await xFetcher.fetch() : []);
+    const cfgSources = configManager.config.sources || {};
+
+    const fetchWithHealth = async (key, isEnabled, fetcherFn) => {
+      if (!isEnabled) {
+        sourceHealthManager.markDisabled(key);
+        return [];
+      }
+      sourceHealthManager.markFetching(key);
+      const t0 = Date.now();
+      try {
+        const items = await fetcherFn();
+        const latency = Date.now() - t0;
+        sourceHealthManager.recordSuccess(key, latency, items.length);
+        return items;
+      } catch (err) {
+        const latency = Date.now() - t0;
+        sourceHealthManager.recordError(key, latency, err.message);
+        logger.error(`[Worker] ${key} 抓取异常:`, err.message);
+        return [];
+      }
+    };
+
+    const flashItems = await fetchWithHealth('jin10', cfgSources.jin10?.enabled !== false, () => jin10Fetcher.fetch());
+    const topicItems = await fetchWithHealth('jin10_topic', cfgSources.jin10_topic?.enabled !== false, () => topicFetcher.fetch());
+    const xueqiuItems = await fetchWithHealth('xueqiu', cfgSources.xueqiu?.enabled !== false, () => xueqiuFetcher.fetch());
+    const maimaiItems = await fetchWithHealth('maimai', cfgSources.maimai?.enabled !== false, () => maimaiFetcher.fetch());
+    const xItems = await fetchWithHealth('x_twitter', cfgSources.x_twitter?.enabled === true, () => (xFetcher ? xFetcher.fetch() : []));
     const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems];
 
     let newCount = 0;
@@ -253,6 +294,7 @@ app.whenReady().then(() => {
       }
     }
     startPolling();
+    sourceHealthManager.notifyChanged();
   });
 
   ipcMain.on('settings-toggle-sound', (event, isEnabled) => {
@@ -340,27 +382,40 @@ app.whenReady().then(() => {
     return await stockQuote.getFormattedSummary(stocks);
   });
 
+  // P0: 数据源健康诊断与网络指标 IPC
+  ipcMain.handle('get-sources-health', () => {
+    return sourceHealthManager.getHealthReport(configManager.config);
+  });
+
+  ipcMain.handle('diagnose-sources-now', async () => {
+    await sourceHealthManager.checkNetworkHealth();
+    await pollCycle();
+    return sourceHealthManager.getHealthReport(configManager.config);
+  });
+
   // 测试黑金 VIP 尊贵卡片效果 IPC
   ipcMain.handle('test-vip-toast', async (event, customVipWord) => {
+    const timeStr = new Date().toLocaleTimeString('zh-CN', { hour12: false });
     const sampleVip = {
       id: `test_vip_${Date.now()}`,
       source: '黑天鹅特级特报',
       source_key: 'jin10',
       title: '【特级警报】某战略能源中枢突遭高超音速导弹袭击，全球大宗与避险资产全面暴动',
       content: '突发外电快讯：核心海峡与炼油枢纽突遭多枚高超音速导弹袭击并引发连环剧烈爆炸，总统紧急发表电视讲话并进入最高战争警戒状态。布伦特原油瞬间暴涨 8.6%，现货黄金秒级突破历史新高，纳斯达克及主要股指期货全线重挫。',
-      pubTime: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      pub_time: timeStr,
+      pubTime: timeStr,
       is_test: true,
       is_vip: true,
       vip_keyword: customVipWord || '导弹袭击',
       ai_analysis: {
         summary: '极端地缘军事危机瞬间爆发，引发全球金融海啸级避险浪潮，大宗能源与黄金暴涨，高风险资产遭遇剧烈冲击。',
-        impacts: [
-          { target: '原油', bias: '利好' },
-          { target: '黄金', bias: '利好' },
-          { target: '美元', bias: '利好' },
-          { target: 'A股', bias: '利空' },
-          { target: '美股', bias: '利空' }
-        ],
+        impacts: {
+          '原油': '利好',
+          '黄金': '利好',
+          '美元': '利好',
+          'A股': '利空',
+          '美股': '利空'
+        },
         ai_source: 'DeepSeek 特报引擎'
       }
     };
@@ -398,13 +453,27 @@ app.whenReady().then(() => {
     return { success: true };
   });
 
-  ipcMain.handle('x:save-accounts', async (event, accounts) => {
+  ipcMain.handle('x:save-accounts', async (event, accounts, isCleared) => {
     const cfg = configManager.config;
     if (!cfg.sources) cfg.sources = {};
     if (!cfg.sources.x_twitter) cfg.sources.x_twitter = {};
     cfg.sources.x_twitter.accounts = accounts;
+    if (typeof isCleared === 'boolean') {
+      cfg.sources.x_twitter.accounts_cleared = isCleared;
+    }
     configManager.saveConfig(cfg);
     return { success: true };
+  });
+
+  ipcMain.handle('x:restore-defaults', async () => {
+    const defaultAccounts = configManager.getDefaultConfig().sources.x_twitter.accounts;
+    const cfg = configManager.config;
+    if (!cfg.sources) cfg.sources = {};
+    if (!cfg.sources.x_twitter) cfg.sources.x_twitter = {};
+    cfg.sources.x_twitter.accounts = JSON.parse(JSON.stringify(defaultAccounts));
+    cfg.sources.x_twitter.accounts_cleared = false;
+    configManager.saveConfig(cfg);
+    return { success: true, accounts: cfg.sources.x_twitter.accounts };
   });
 
   ipcMain.on('open-external-url', (event, url) => {

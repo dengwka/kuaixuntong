@@ -465,6 +465,206 @@
       display: none;
       z-index: 999;
     }
+
+    /* 新增项目 3 秒高亮呼吸闪烁动画 */
+    @keyframes newlyAddedGlow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.9), 0 0 14px rgba(37, 99, 235, 0.7);
+        border-color: #2563EB !important;
+        background-color: #DBEAFE !important;
+        transform: scale(1.08);
+      }
+      20% {
+        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0), 0 0 18px rgba(37, 99, 235, 0.8);
+        border-color: #3B82F6 !important;
+        background-color: #EFF6FF !important;
+        transform: scale(1.03);
+      }
+      40% {
+        box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.5), 0 0 14px rgba(37, 99, 235, 0.6);
+        border-color: #2563EB !important;
+        background-color: #DBEAFE !important;
+        transform: scale(1.07);
+      }
+      60% {
+        box-shadow: 0 0 0 10px rgba(37, 99, 235, 0), 0 0 18px rgba(37, 99, 235, 0.6);
+        border-color: #3B82F6 !important;
+        background-color: #EFF6FF !important;
+        transform: scale(1.03);
+      }
+      80% {
+        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.4);
+        border-color: #2563EB !important;
+        background-color: #DBEAFE !important;
+        transform: scale(1.05);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+        border-color: #CBD5E1 !important;
+        background-color: #FFFFFF !important;
+        transform: scale(1);
+      }
+    }
+    .newly-added-item {
+      animation: newlyAddedGlow 3s ease-in-out forwards !important;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* P0: 数据源健康诊断与 Master-Detail 工作台布局 */
+    .source-health-radar {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .radar-net-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      white-space: nowrap;
+    }
+    .status-indicator-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-online {
+      background: #16A34A;
+      box-shadow: 0 0 0 2px #DCFCE7;
+    }
+    .dot-offline {
+      background: #DC2626;
+      box-shadow: 0 0 0 2px #FEE2E2;
+    }
+    .radar-summary-text {
+      font-size: 11.5px;
+      color: #64748B;
+      flex: 1;
+      text-align: center;
+    }
+    .sources-workspace-layout {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      min-height: 520px;
+    }
+    .sources-sidebar-menu {
+      width: 260px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .source-nav-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      user-select: none;
+    }
+    .source-nav-card:hover {
+      border-color: #CBD5E1;
+      background: #F8FAFC;
+    }
+    .source-nav-card.active {
+      background: #EFF6FF !important;
+      border-color: #3B82F6 !important;
+      box-shadow: 0 0 0 1.5px #3B82F6;
+    }
+    .snc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .snc-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+    .snc-sub {
+      font-size: 11px;
+      color: #64748B;
+      padding-left: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .health-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    .health-pill-ok {
+      background: #DCFCE7;
+      color: #166534;
+      border: 1px solid #BBF7D0;
+    }
+    .health-pill-fetching {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+      animation: pulse-dot 1.2s infinite ease-in-out;
+    }
+    .health-pill-error {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 1px solid #FECACA;
+    }
+    .health-pill-disabled {
+      background: #F1F5F9;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
+    }
+    .health-pill-offline {
+      background: #FEE2E2;
+      color: #B91C1C;
+      border: 1px solid #FCA5A5;
+    }
+    .sources-detail-pane {
+      flex: 1;
+      min-width: 0;
+    }
+    .source-detail-panel {
+      display: none;
+    }
+    .source-detail-panel.active {
+      display: block;
+    }
+    .source-panel-banner {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      color: #475569;
+    }
   </style>
 </head>
 <body>
@@ -475,7 +675,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.1.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.2.0 · 运行中</span>
     </div>
   </div>
 
@@ -496,261 +696,341 @@
   <!-- 内容滚动容器 -->
   <div class="scroll-body">
 
-    <!-- ==================== TAB 1: 监控数据源 (最重要功能放最前面) ==================== -->
+    <!-- ==================== TAB 1: 监控数据源 (P0 数据源健康诊断与左右分栏工作台) ==================== -->
     <div class="tab-pane active" id="pane-sources">
-      <div class="card" style="border-left: 3px solid #0284C7;">
-        <div class="card-title">
-          <span>📡 聚合数据源设置 (金十 / 雪球 / Twitter / 脉脉)</span>
+      <!-- 📡 全局网络与健康监控雷达总览条 -->
+      <div class="source-health-radar">
+        <div class="radar-net-status" id="radarNetStatus">
+          <span id="radarNetDot" class="status-indicator-dot dot-online"></span>
+          <span id="radarNetText" style="color: #166534; font-weight: 700;">🟢 互联网连接畅通 (<span id="radarNetPing">--</span>ms)</span>
         </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
-          多通道聚合监听，支持官方重点快讯过滤、宏观星级指标并集推送与各通道独立关键词拦截。
+        <div class="radar-summary-text" id="radarSummaryText">
+          📡 已启用 <b id="radarEnabledCount" style="color: #0284C7;">--</b>/5 个数据源 · 累计轮询心跳 <b id="radarCyclesCount" style="color: #0F172A;">--</b> 次 · 上次同步: <span id="radarLastPollTime">--</span>
         </div>
+      </div>
 
-        <!-- A. 金十实时突发快讯流 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
-          <div class="form-row" style="margin-bottom: 6px;">
-            <label class="checkbox-row">
-              <input type="checkbox" id="srcJin10" checked />
-              <b style="color: #1E293B;">⚡ 启用金十实时突发快讯流</b>
-            </label>
+      <!-- 主体左右分栏布局：左侧监控树导航 + 右侧专属详细配置 -->
+      <div class="sources-workspace-layout">
+        <!-- 左侧：数据源监控状态树菜单 (一览无余：谁在抓、谁健康、谁延迟高、勾选状态) -->
+        <div class="sources-sidebar-menu" id="sourcesSidebarMenu">
+          <!-- 1. 金十快讯 -->
+          <div class="source-nav-card active" data-source="jin10" onclick="switchSourcePanel('jin10')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_jin10" checked onchange="syncNavSourceCheck('jin10', this.checked)" />
+                <span class="snc-title">⚡ 金十快讯</span>
+              </label>
+              <span class="health-pill health-pill-ok" id="pill_jin10">🟢 正常 --ms</span>
+            </div>
+            <div class="snc-sub" id="sub_jin10">等待就绪 · 官方快讯专线</div>
           </div>
-          <div id="jin10OptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="radio" name="jin10FilterMode" id="jin10ModeImportant" value="important" checked />
-                <span style="color: #DC2626; font-weight: 600;">【重要】快讯</span>
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="radio" name="jin10FilterMode" id="jin10ModeAll" value="all" />
-                <span style="color: #475569;">全部快讯</span>
-              </label>
-            </div>
-            <!-- 宏观指标星级过滤配置 -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
-              <span style="color: #475569; font-size: 12px; font-weight: 600;">📊 宏观指标推送:</span>
-              <select id="jin10MinStar" style="border: 1px solid #CBD5E1; border-radius: 6px; padding: 3px 8px; font-size: 12px; background: #FFFFFF; outline: none; cursor: pointer;">
-                <option value="1">1星（含）以上全部指标 (全量)</option>
-                <option value="2">2星（含）以上中重磅指标</option>
-                <option value="3" selected>3星（含）以上重磅指标 (默认推荐)</option>
-                <option value="4">4星（含）以上重大指标</option>
-                <option value="5">仅 5星 极重磅指标 (决议/非农/CPI)</option>
-              </select>
-              <span class="tip-text">(与下方关键词取并集，达标星级宏观指标均确保推送)</span>
-            </div>
-            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
-              <label class="checkbox-row" style="font-size: 12px;">
-                <input type="checkbox" id="jin10KwFilterEnabled" />
-                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
-              </label>
-              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
-                <input type="text" id="jin10Keywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="降息, 加息, 非农, CPI, 美联储, 央行, 利率, 战争, 制裁, 突发" />
-                <button type="button" class="btn btn-secondary btn-sm" id="btnResetJin10Kws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复金十默认关键词">重置默认</button>
-              </div>
-              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词（与星级宏观指标取并集）。</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- B. 金十重要事件专栏 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
-          <div class="form-row">
-            <label class="checkbox-row">
-              <input type="checkbox" id="srcTopic" checked />
-              <b style="color: #059669;">🔥 启用金十【重要事件】专栏 (精选宏观深度分析)</b>
-            </label>
-          </div>
-          <div id="topicOptionsSub" style="margin-left: 22px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px; font-size: 12px;">
-            <label class="checkbox-row" style="font-size: 12px;">
-              <input type="checkbox" id="topicKwFilterEnabled" />
-              <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
-            </label>
-            <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
-              <input type="text" id="topicKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="美联储, 宏观决议, 地缘政治, 降息, 加息, 冲突, 战略, 关税" />
-              <button type="button" class="btn btn-secondary btn-sm" id="btnResetTopicKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复专栏默认关键词">重置默认</button>
+          <!-- 2. 重要事件专栏 -->
+          <div class="source-nav-card" data-source="jin10_topic" onclick="switchSourcePanel('jin10_topic')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_jin10_topic" checked onchange="syncNavSourceCheck('jin10_topic', this.checked)" />
+                <span class="snc-title">🔥 重要事件</span>
+              </label>
+              <span class="health-pill health-pill-ok" id="pill_jin10_topic">🟢 正常 --ms</span>
             </div>
-            <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+            <div class="snc-sub" id="sub_jin10_topic">等待就绪 · 深度宏观专栏</div>
           </div>
-        </div>
 
-        <!-- C. 雪球 7x24 快讯流 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
-          <div class="form-row" style="margin-bottom: 6px;">
-            <label class="checkbox-row">
-              <input type="checkbox" id="srcXueqiu" checked />
-              <b style="color: #0284C7;">❄️ 启用雪球 7×24 快讯流</b>
-            </label>
+          <!-- 3. 雪球快讯 -->
+          <div class="source-nav-card" data-source="xueqiu" onclick="switchSourcePanel('xueqiu')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_xueqiu" checked onchange="syncNavSourceCheck('xueqiu', this.checked)" />
+                <span class="snc-title">❄️ 雪球快讯</span>
+              </label>
+              <span class="health-pill health-pill-ok" id="pill_xueqiu">🟢 正常 --ms</span>
+            </div>
+            <div class="snc-sub" id="sub_xueqiu">等待就绪 · 7x24股市行情流</div>
           </div>
-          <div id="xqOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="radio" name="xqFilterMode" id="xqModeImportant" value="important" checked />
-                <span style="color: #0284C7; font-weight: 600;">【重点】快讯</span>
+
+          <!-- 4. Twitter 关注 -->
+          <div class="source-nav-card" data-source="x_twitter" onclick="switchSourcePanel('x_twitter')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_x_twitter" onchange="syncNavSourceCheck('x_twitter', this.checked)" />
+                <span class="snc-title">𝕏 顶流关注</span>
               </label>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="radio" name="xqFilterMode" id="xqModeAll" value="all" />
-                <span style="color: #475569;">全部快讯</span>
+              <span class="health-pill health-pill-disabled" id="pill_x_twitter">⚪ 未启用</span>
+            </div>
+            <div class="snc-sub" id="sub_x_twitter"><span id="x_sidebar_sub">多博主 Syndication 监听</span></div>
+          </div>
+
+          <!-- 5. 脉脉职言 -->
+          <div class="source-nav-card" data-source="maimai" onclick="switchSourcePanel('maimai')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_maimai" checked onchange="syncNavSourceCheck('maimai', this.checked)" />
+                <span class="snc-title">💼 脉脉职言</span>
               </label>
+              <span class="health-pill health-pill-ok" id="pill_maimai">🟢 正常 --ms</span>
             </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
-              <span style="color: #64748B; font-size: 11px; white-space: nowrap;">雪球 Cookie (可选):</span>
-              <input type="text" id="xueqiuCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="xq_a_token=... (留空自动走敏捷财经快讯专线)" />
-            </div>
-            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
-              <label class="checkbox-row" style="font-size: 12px;">
-                <input type="checkbox" id="xqKwFilterEnabled" />
-                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
-              </label>
-              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
-                <input type="text" id="xueqiuKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="涨停, 跌停, 财报, 业绩, 减持, 增持, 重组, 违约, 证监会, 突破" />
-                <button type="button" class="btn btn-secondary btn-sm" id="btnResetXqKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复雪球默认关键词">重置默认</button>
-              </div>
-              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
-            </div>
+            <div class="snc-sub" id="sub_maimai">等待就绪 · 企业爆料商业情报</div>
+          </div>
+
+          <!-- ⚡ 下方：一键存活诊断操作按钮 -->
+          <div style="margin-top: 10px;">
+            <button type="button" class="btn btn-secondary" id="btnDiagnoseSources" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 9px 12px; cursor: pointer; border: 1px solid #CBD5E1; background: #FFFFFF; border-radius: 8px; color: #0F172A; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.15s ease;">
+              <span id="diagnoseIcon">⚡</span> <span>一键存活诊断</span>
+            </button>
           </div>
         </div>
 
-        <!-- E. 𝕏 (Twitter) 实时订阅监控 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-top: 10px; margin-bottom: 14px;">
-          <div class="form-row" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <label class="checkbox-row">
-              <input type="checkbox" id="srcXTwitter" />
-              <b style="color: #0F172A; font-size: 13px;">𝕏 开启Twitter订阅</b>
-            </label>
-            <span class="status-badge" style="background:#F1F5F9; color:#0F172A; font-size:11px;">免登录 Syndication 协议</span>
-          </div>
-
-          <div id="xTwitterOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
-            <!-- 热门推荐标签 -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div style="color: #64748B; font-size: 11px;">🔥 快捷精选推荐（点击自动填入验证）：</div>
-                <button type="button" id="btnTogglePresetChips" onclick="togglePresetChips()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #2563EB; font-size: 11px; font-weight: 600; cursor: pointer; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">
-                  <span id="presetChipsToggleText">展开更多</span>
-                  <span id="presetChipsToggleIcon" style="font-size: 9px;">▼</span>
-                </button>
+        <!-- 右侧：选中数据源的专属配置面板 -->
+        <div class="sources-detail-pane">
+          <!-- A. 金十快讯面板 -->
+          <div class="source-detail-panel active" id="detail-panel-jin10">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title">⚡ 金十实时突发快讯流</div>
+              <div class="source-panel-banner">
+                <span>📡 官方接口: <code>https://flash-api.jin10.com/get_flash_list</code></span>
               </div>
-              <div class="preset-chips-container collapsed" id="xPresetChips">
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('realDonaldTrump')">Donald J. Trump (特朗普)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('WhiteHouse')">White House (美国白宫)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('PressSec')">PressSec (白宫新闻办公室)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('elonmusk')">Elon Musk (马斯克)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('sama')">Sam Altman (OpenAI)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('star_okx')">Star_OKX (徐明星)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('luckybibiw1p')">超级幸运星 (luckybibiw1p)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('cz_binance')">CZ (币安创始人)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('FederalReserve')">Federal Reserve (美联储)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('vitalikbuterin')">Vitalik Buterin (V神)</button>
-              </div>
-            </div>
-
-            <!-- 添加新订阅输入框 -->
-            <div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <div style="position: relative; flex: 1;">
-                  <span style="position: absolute; left: 8px; top: 7px; color: #94A3B8; font-weight: 700; pointer-events: none; user-select: none;">@</span>
-                  <input type="text" id="xInputHandle" style="width: 100%; padding-left: 24px; padding-right: 8px; height: 32px; font-size: 12.5px; border: 1px solid #CBD5E1; border-radius: 6px; user-select: text !important; -webkit-user-select: text !important; pointer-events: auto !important;" placeholder="输入 X 用户名 (如 realDonaldTrump 或 WhiteHouse)" autocomplete="off" spellcheck="false" />
-                </div>
-                <button type="button" class="btn btn-primary" id="btnLookupX" style="height: 32px; padding: 0 14px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                  <span id="lookupXSpinner" style="display:none;">⏳</span>
-                  <span>🔍 验证博主</span>
-                </button>
-              </div>
-              <div id="xLookupNotice" style="display: none; margin-top: 6px; font-size: 11.5px; padding: 5px 10px; border-radius: 6px;"></div>
-            </div>
-
-            <!-- 验证成功的预览卡片 -->
-            <div id="xPreviewCard" style="display: none; background: #FFFFFF; border: 1px solid #38BDF8; border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 8px rgba(56,189,248,0.15);">
-              <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <img id="xPreviewAvatar" src="" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #E2E8F0;" />
-                  <div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                      <span style="font-weight: 700; color: #0F172A; font-size: 13px;" id="xPreviewName">--</span>
-                      <span id="xPreviewSubBadge" style="display: none; font-size: 10.5px; background: #DCFCE7; color: #166534; font-weight: 600; padding: 1px 6px; border-radius: 4px;">✓ 已订阅</span>
-                    </div>
-                    <div style="color: #64748B; font-size: 11.5px;" id="xPreviewHandle">@--</div>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-sm" id="btnConfirmAddX" style="padding: 5px 16px; background: #0EA5E9; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='#0284C7'" onmouseout="this.style.background='#0EA5E9'">订阅</button>
-              </div>
-              <div id="xPreviewTweet" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #E2E8F0; font-size: 11.5px; color: #475569; font-style: italic;">
-                最新推文预览加载中...
-              </div>
-              <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
-                <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 11.5px;" title="开启后，该博主发布的推文将通过大模型或金十金融规则进行观点总结与利好利空分析">
-                  <input type="checkbox" id="xPreviewAiEnabled" />
-                  <span style="color: #0284C7; font-weight: 600;">🧠 开启该博主推文的 AI 观点与利多利空研判 (金十/大模型分析)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- 已订阅账号列表 -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <span style="font-weight: 600; color: #334155;">📋 已订阅监听账号列表 (<span id="xSubscribedCount">0</span> 个)：</span>
-                <span style="color: #94A3B8; font-size: 11px;">平滑交错轮询 · 毫秒级抗频控抖动</span>
-              </div>
-              <div id="xAccountsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
-                <!-- 动态渲染各博主卡片 -->
-              </div>
-            </div>
-
-            <!-- 高级风控与网络选项 (可折叠) -->
-            <div style="border-top: 1px dashed #E2E8F0; padding-top: 8px; margin-top: 4px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="xAdvToggleHeader">
-                <span style="font-size: 11.5px; font-weight: 600; color: #64748B;">⚙️ 高级配置 (轮询频次 / 自动翻译 / 网络代理 / 私有Cookie)</span>
-                <span id="xAdvChevron" style="color: #94A3B8; font-size: 11px;">▼ 展开</span>
-              </div>
-              <div id="xAdvancedBody" style="display: none; margin-top: 8px; flex-direction: column; gap: 8px; background: #FFFFFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <label class="checkbox-row" style="font-size: 12px;">
-                    <input type="checkbox" id="xAutoTranslate" checked />
-                    <span style="font-weight: 600;">外文推文自动翻译为中文 (优先大模型语义翻译，兜底轻量机翻)</span>
+              <div id="jin10OptionsSub" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; margin-top: 6px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="jin10FilterMode" id="jin10ModeImportant" value="important" checked />
+                    <span style="color: #DC2626; font-weight: 600;">【重要】快讯 (默认推荐)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="jin10FilterMode" id="jin10ModeAll" value="all" />
+                    <span style="color: #475569;">全部快讯 (全量推送)</span>
                   </label>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">单账号轮询基准间隔:</span>
-                  <input type="number" id="xPollInterval" min="15" max="300" style="width: 70px; padding: 3px 6px; font-size: 12px;" value="30" />
-                  <span class="tip-text">秒 (建议 30 秒，系统自动注入 ±15% 随机抖动防风控)</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #475569; font-weight: 600;">📊 宏观指标推送:</span>
+                  <select id="jin10MinStar" style="border: 1px solid #CBD5E1; border-radius: 6px; padding: 3px 8px; font-size: 12px; background: #FFFFFF; outline: none; cursor: pointer;">
+                    <option value="1">1星（含）以上全部指标 (全量)</option>
+                    <option value="2">2星（含）以上中重磅指标</option>
+                    <option value="3" selected>3星（含）以上重磅指标 (推荐)</option>
+                    <option value="4">4星（含）以上重大指标</option>
+                    <option value="5">仅 5星 极重磅指标 (决议/非农/CPI)</option>
+                  </select>
+                  <span class="tip-text">(与下方关键词取并集)</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">网络代理 (可选):</span>
-                  <input type="text" id="xCustomProxy" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空自动走系统代理或默认 http://127.0.0.1:7892" />
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">私有 Cookie (auth_token，可选):</span>
-                  <input type="password" id="xPrivateCookie" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空默认免登录走官方 Syndication 管道，填入解锁原生高额度" />
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+                  <label class="checkbox-row" style="font-size: 12px;">
+                    <input type="checkbox" id="jin10KwFilterEnabled" />
+                    <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                    <input type="text" id="jin10Keywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="降息, 加息, 非农, CPI, 美联储, 央行, 利率, 战争, 制裁, 突发" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnResetJin10Kws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复金十默认关键词">重置默认</button>
+                  </div>
+                  <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词（与星级宏观指标取并集）。</span>
                 </div>
               </div>
             </div>
-
           </div>
-        </div>
 
-
-        <!-- D. 脉脉职言 / 商业爆料 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px;">
-          <div class="form-row" style="margin-bottom: 6px;">
-            <label class="checkbox-row">
-              <input type="checkbox" id="srcMaimai" checked />
-              <b style="color: #0D9488;">💼 启用脉脉职言 / 企业商业情报爆料</b>
-            </label>
-          </div>
-          <div id="maimaiOptionsSub" style="margin-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #64748B; font-size: 11px; white-space: nowrap;">脉脉 Cookie (可选):</span>
-              <input type="text" id="maimaiCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="Cookie 字符串 (留空自动走商业企业精选热榜通道)" />
-            </div>
-            <div style="margin-top: 5px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
-              <label class="checkbox-row" style="font-size: 12px;">
-                <input type="checkbox" id="maimaiKwFilterEnabled" />
-                <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
-              </label>
-              <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
-                <input type="text" id="maimaiKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="裁员, 年终奖, 倒闭, 降薪, 涉案, 调查, 高管变动, 离职, 破产" />
-                <button type="button" class="btn btn-secondary btn-sm" id="btnResetMmKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复脉脉默认关键词">重置默认</button>
+          <!-- B. 重要事件专栏面板 -->
+          <div class="source-detail-panel" id="detail-panel-jin10_topic">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title">🔥 金十【重要事件】专栏</div>
+              <div class="source-panel-banner">
+                <span>📡 官方接口: <code>https://*.z3c.jin10.com/top/flashsByTime</code></span>
               </div>
-              <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+              <div id="topicOptionsSub" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; margin-top: 6px;">
+                <label class="checkbox-row" style="font-size: 12px;">
+                  <input type="checkbox" id="topicKwFilterEnabled" />
+                  <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+                </label>
+                <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                  <input type="text" id="topicKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="美联储, 宏观决议, 地缘政治, 降息, 加息, 冲突, 战略, 关税" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnResetTopicKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复专栏默认关键词">重置默认</button>
+                </div>
+                <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- C. 雪球快讯面板 -->
+          <div class="source-detail-panel" id="detail-panel-xueqiu">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title">❄️ 雪球 7×24 快讯流</div>
+              <div class="source-panel-banner">
+                <span>📡 官方接口: <code>https://xueqiu.com/statuses/livenews</code></span>
+              </div>
+              <div id="xqOptionsSub" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; margin-top: 6px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="xqFilterMode" id="xqModeImportant" value="important" checked />
+                    <span style="color: #0284C7; font-weight: 600;">【重点】快讯 (默认推荐)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="xqFilterMode" id="xqModeAll" value="all" />
+                    <span style="color: #475569;">全部快讯</span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #64748B; font-size: 11px; white-space: nowrap;">雪球 Cookie (可选):</span>
+                  <input type="text" id="xueqiuCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="xq_a_token=... (留空自动走敏捷财经快讯专线)" />
+                </div>
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+                  <label class="checkbox-row" style="font-size: 12px;">
+                    <input type="checkbox" id="xqKwFilterEnabled" />
+                    <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                    <input type="text" id="xueqiuKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="涨停, 跌停, 财报, 业绩, 减持, 增持, 重组, 违约, 证监会, 突破" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnResetXqKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复雪球默认关键词">重置默认</button>
+                  </div>
+                  <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- D. 𝕏 (Twitter) 面板 -->
+          <div class="source-detail-panel" id="detail-panel-x_twitter">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>𝕏 顶流博主推文实时监控</span>
+                <span class="status-badge" style="background:#F1F5F9; color:#0F172A; font-size:11px;">免登录 Syndication 协议</span>
+              </div>
+              <div class="source-panel-banner">
+                <span>📡 官方接口: <code>https://cdn.syndication.twimg.com</code></span>
+              </div>
+              <div id="xTwitterOptionsSub" style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; margin-top: 6px;">
+                <!-- 热门推荐标签 -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="color: #64748B; font-size: 11px;">🔥 快捷精选推荐（点击自动填入验证）：</div>
+                    <button type="button" id="btnTogglePresetChips" onclick="togglePresetChips()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #2563EB; font-size: 11px; font-weight: 600; cursor: pointer; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">
+                      <span id="presetChipsToggleText">展开更多</span>
+                      <span id="presetChipsToggleIcon" style="font-size: 9px;">▼</span>
+                    </button>
+                  </div>
+                  <div class="preset-chips-container collapsed" id="xPresetChips">
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('realDonaldTrump')">Donald J. Trump (特朗普)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('WhiteHouse')">White House (美国白宫)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('PressSec')">PressSec (白宫新闻办公室)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('elonmusk')">Elon Musk (马斯克)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('sama')">Sam Altman (OpenAI)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('star_okx')">Star_OKX (徐明星)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('luckybibiw1p')">超级幸运星 (luckybibiw1p)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('cz_binance')">CZ (币安创始人)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('FederalReserve')">Federal Reserve (美联储)</button>
+                    <button type="button" class="btn btn-secondary btn-sm preset-chip-btn" onclick="quickFillX('vitalikbuterin')">Vitalik Buterin (V神)</button>
+                  </div>
+                </div>
+
+                <!-- 添加新订阅输入框 -->
+                <div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="position: relative; flex: 1;">
+                      <span style="position: absolute; left: 8px; top: 7px; color: #94A3B8; font-weight: 700; pointer-events: none; user-select: none;">@</span>
+                      <input type="text" id="xInputHandle" style="width: 100%; padding-left: 24px; padding-right: 28px; height: 32px; font-size: 12.5px; border: 1px solid #CBD5E1; border-radius: 6px;" placeholder="输入 X 用户名 (如 realDonaldTrump 或 WhiteHouse)" autocomplete="off" spellcheck="false" />
+                      <span id="btnClearXInput" style="display: none; position: absolute; right: 8px; top: 7px; color: #94A3B8; font-size: 13px; cursor: pointer; padding: 0 4px; user-select: none;" title="清空输入并重置结果">✕</span>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btnLookupX" style="height: 32px; padding: 0 14px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                      <span id="lookupXSpinner" style="display:none;">⏳</span>
+                      <span>🔍 验证博主</span>
+                    </button>
+                  </div>
+                  <div id="xLookupNotice" style="display: none; margin-top: 6px; font-size: 11.5px; padding: 5px 10px; border-radius: 6px;"></div>
+                </div>
+
+                <!-- 验证成功的预览卡片 (与下方已关注列表保持充裕舒展的视觉间距) -->
+                <div id="xPreviewCard" style="display: none; background: #FFFFFF; border: 1.5px solid #0EA5E9; border-radius: 8px; padding: 12px 14px; margin: 12px 0 18px 0; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.12);">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <img id="xPreviewAvatar" src="" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #E2E8F0;" />
+                      <div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <span style="font-weight: 700; color: #0F172A; font-size: 13px;" id="xPreviewName">--</span>
+                          <span id="xPreviewSubBadge" style="display: none; font-size: 10.5px; background: #DCFCE7; color: #166534; font-weight: 600; padding: 1px 6px; border-radius: 4px;">✓ 已订阅</span>
+                        </div>
+                        <div style="color: #64748B; font-size: 11.5px;" id="xPreviewHandle">@--</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm" id="btnConfirmAddX" style="padding: 5px 16px; background: #0EA5E9; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">订阅</button>
+                  </div>
+                  <div id="xPreviewTweet" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #E2E8F0; font-size: 11.5px; color: #475569; font-style: italic;">
+                    最新推文预览加载中...
+                  </div>
+                  <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 11.5px;" title="开启后，该博主发布的推文将通过大模型或金十金融规则进行观点总结与利好利空分析">
+                      <input type="checkbox" id="xPreviewAiEnabled" />
+                      <span style="color: #0284C7; font-weight: 600;">🧠 开启该博主推文的 AI 观点与利多利空研判 (金十/大模型分析)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 已订阅账号列表 (清晰分割区，默认展现 5 个高度) -->
+                <div style="margin-top: 14px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #1E293B; font-size: 12.5px;">📋 已订阅监听账号列表 (<span id="xSubscribedCount" style="color: #0284C7;">0</span> 个)：</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="btnRestoreDefaultX" style="font-size: 11px; padding: 2px 8px; font-weight: 600;">🔄 恢复默认博主</button>
+                      <span style="color: #94A3B8; font-size: 11px;">平滑交错轮询 · 毫秒级抗频控抖动</span>
+                    </div>
+                  </div>
+                  <div id="xAccountsList" style="display: flex; flex-direction: column; gap: 7px; max-height: 350px; overflow-y: auto; padding-right: 4px;">
+                    <!-- 动态渲染各博主卡片 -->
+                  </div>
+                </div>
+
+                <!-- 高级风控与网络选项 (可折叠) -->
+                <div style="border-top: 1px dashed #E2E8F0; padding-top: 8px; margin-top: 4px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="xAdvToggleHeader">
+                    <span style="font-size: 11.5px; font-weight: 600; color: #64748B;">⚙️ 高级配置 (轮询频次 / 自动翻译 / 网络代理 / 私有Cookie)</span>
+                    <span id="xAdvChevron" style="color: #94A3B8; font-size: 11px;">▼ 展开</span>
+                  </div>
+                  <div id="xAdvancedBody" style="display: none; margin-top: 8px; flex-direction: column; gap: 8px; background: #FFFFFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <label class="checkbox-row" style="font-size: 12px;">
+                        <input type="checkbox" id="xAutoTranslate" checked />
+                        <span style="font-weight: 600;">外文推文自动翻译为中文 (优先大模型语义翻译，兜底轻量机翻)</span>
+                      </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">单账号轮询基准间隔:</span>
+                      <input type="number" id="xPollInterval" min="15" max="300" style="width: 70px; padding: 3px 6px; font-size: 12px;" value="30" />
+                      <span class="tip-text">秒 (建议 30 秒，系统自动注入 ±15% 随机抖动防风控)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">网络代理 (可选):</span>
+                      <input type="text" id="xCustomProxy" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空自动走系统代理或默认 http://127.0.0.1:7892" />
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="color: #475569; font-size: 11.5px; white-space: nowrap;">私有 Cookie (auth_token，可选):</span>
+                      <input type="password" id="xPrivateCookie" style="flex: 1; padding: 4px 8px; font-size: 11.5px;" placeholder="留空默认免登录走官方 Syndication 管道，填入解锁原生高额度" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- E. 脉脉职言面板 -->
+          <div class="source-detail-panel" id="detail-panel-maimai">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title">💼 脉脉职言 / 企业商业情报爆料</div>
+              <div class="source-panel-banner">
+                <span>📡 官方通道: <code>脉脉职言热帖 / 36Kr商业快讯兜底</code></span>
+              </div>
+              <div id="maimaiOptionsSub" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; margin-top: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #64748B; font-size: 11px; white-space: nowrap;">脉脉 Cookie (可选):</span>
+                  <input type="text" id="maimaiCookie" style="flex: 1; min-width: 0; font-size: 11px; padding: 4px 6px;" placeholder="Cookie 字符串 (留空自动走商业企业精选热榜通道)" />
+                </div>
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 4px;">
+                  <label class="checkbox-row" style="font-size: 12px;">
+                    <input type="checkbox" id="maimaiKwFilterEnabled" />
+                    <b style="color: #334155;">🎯 仅当命中指定关键词时才推送 (默认不勾选)</b>
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                    <input type="text" id="maimaiKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 5px 8px;" placeholder="裁员, 年终奖, 倒闭, 降薪, 涉案, 调查, 高管变动, 离职, 破产" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnResetMmKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复脉脉默认关键词">重置默认</button>
+                  </div>
+                  <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -759,46 +1039,52 @@
 
     <!-- ==================== TAB 2: 关键词规则 ==================== -->
     <div class="tab-pane" id="pane-keywords">
-      <div class="card" style="border-left: 3px solid #8B5CF6;">
+      <div class="card">
         <div class="card-title">🎯 全局关键词规则与过滤策略</div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
           设置跨所有通道的全局加分标签与一票否决黑名单。黑名单命中则绝对不推送。
         </div>
 
         <div style="margin-bottom: 12px;">
-          <div style="font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px;">
-            🌟 全局高亮优先关键词 (命中增加权重，并直接在卡片展示高亮徽章):
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-size: 12px; font-weight: 600; color: #334155;">
+              🌟 全局高亮优先关键词 (命中增加权重，并直接在卡片展示高亮徽章):
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetHighKws" style="font-size: 11px; padding: 2px 8px; cursor: pointer;" title="恢复默认高亮关键词">恢复默认高亮词</button>
           </div>
-          <textarea id="highKws" placeholder="突发, 降息, 加息, 非农, CPI, 原油, 黄金, 违约..."></textarea>
+          <textarea id="highKws" placeholder="突发, 降息, 加息, 非农, CPI, 原油, 黄金, 违约, 爆炸, 战争, 袭击, 制裁">突发, 降息, 加息, 非农, CPI, 原油, 黄金, 美联储, 违约, 爆炸, 战争, 袭击, 制裁</textarea>
           <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。命中后即使普通快讯亦能获得高优先级弹窗关注。</div>
         </div>
 
         <div style="margin-bottom: 12px;">
-          <div style="font-size: 12px; font-weight: 600; color: #DC2626; margin-bottom: 4px;">
-            🚫 全局屏蔽黑名单 (一票否决，命中则一律拦截不推送):
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-size: 12px; font-weight: 600; color: #DC2626;">
+              🚫 全局屏蔽黑名单 (一票否决，命中则一律拦截不推送):
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetExKws" style="font-size: 11px; padding: 2px 8px; cursor: pointer;" title="恢复默认黑名单词">恢复默认黑名单</button>
           </div>
-          <textarea id="exKws" placeholder="广告, 扫码, 领券, 下载App, 限时特惠..."></textarea>
+          <textarea id="exKws" placeholder="广告, 扫码, 领券, 下载App, 限时特惠">广告, 扫码, 领券, 下载App, 限时特惠</textarea>
           <div class="tip-text" style="margin-top: 3px;">支持逗号或空格分隔。有效过滤无意义营销信息与低密度垃圾广告。</div>
         </div>
 
-        <!-- 👑 金色 VIP 重大特报关键词 -->
-        <div style="margin-top: 14px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 12px 14px;">
+        <!-- 👑 支付宝黑金/QQ会员级 VIP 重大特报关键词 -->
+        <div style="margin-top: 14px; background: #161720; border: 1px solid rgba(223, 186, 115, 0.35); border-radius: 8px; padding: 12px 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
-            <div style="font-size: 12.5px; font-weight: 700; color: #92400E; display: flex; align-items: center; gap: 6px;">
-              <span>👑 金色 VIP 重大特报关键词 (黑天鹅事件 / 黑金尊贵卡片)</span>
-              <span style="font-size: 11px; background: #FEF3C7; color: #B45309; padding: 1px 6px; border-radius: 4px; border: 1px solid #FDE68A;">金色尊贵背景</span>
+            <div style="font-size: 12.5px; font-weight: 700; color: #F7E5B5; display: flex; align-items: center; gap: 6px;">
+              <span>👑 尊贵黑金VIP重大特报</span>
+              <span style="font-size: 11px; background: rgba(223, 186, 115, 0.15); color: #DFBA73; padding: 1px 7px; border-radius: 4px; border: 1px solid rgba(223, 186, 115, 0.35);">限时赠送</span>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnPreviewVipToast" style="background: #18181B; color: #F59E0B; border: 1px solid #F59E0B; font-weight: 700; padding: 4px 10px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-              👑 预览黑金 VIP 弹窗效果
+            <button type="button" class="btn btn-secondary btn-sm" id="btnPreviewVipToast" style="background: linear-gradient(135deg, rgba(223, 186, 115, 0.16) 0%, rgba(184, 139, 56, 0.08) 100%); color: #F7E5B5; border: 1px solid rgba(223, 186, 115, 0.45); font-weight: 700; padding: 4px 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; border-radius: 6px; transition: all 0.2s;">
+              👑 预览黑金尊贵卡片效果
             </button>
           </div>
-          <div style="font-size: 11.5px; color: #78350F; line-height: 1.5; margin-bottom: 6px;">
-            当快讯命中下列关键词时，系统将弹窗升级为【黑金 VIP 尊贵卡片】，具有流金光晕呼吸呼吸边框、金色闪耀 VIP 徽章与重磅音效，确保在重大突发发生时绝对不会错过。
+          <div style="font-size: 11.5px; color: #9BA4B5; line-height: 1.5; margin-bottom: 6px;">
+            当快讯命中下列关键词时，系统将弹窗升级为【黑曜钛金微光尊贵卡片】（参考支付宝黑金/QQ会员设计语言），具有 1px 雅金发丝镶边、呼吸微光光晕、钛金芯片徽章与清亮钛灰排版，高贵沉稳且绝不刺眼。
           </div>
-          <textarea id="vipKws" style="width: 100%; border: 1px solid #FDE68A; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #FFFFFF; outline: none; min-height: 52px; font-family: inherit;" placeholder="导弹袭击, 总统遇难, 宣战, 核打击, 特大黑天鹅, 严重政变, 强烈地震, 紧急撤离, 突发熔断"></textarea>
+          <textarea id="vipKws" style="width: 100%; border: 1px solid rgba(223, 186, 115, 0.25); border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #0F1015; color: #E2E8F0; outline: none; min-height: 52px; font-family: inherit;" placeholder="导弹袭击, 总统遇难, 宣战, 核打击, 特大黑天鹅, 严重政变, 强烈地震, 紧急撤离, 突发熔断"></textarea>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-            <div class="tip-text" style="color: #92400E;">中英文逗号、空格或换行分隔。</div>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnResetVipKws" style="font-size: 11px; padding: 2px 8px; color: #92400E; border-color: #FCD34D;">恢复默认VIP词库</button>
+            <div class="tip-text" style="color: #7E8696;">中英文逗号、空格或换行分隔。</div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetVipKws" style="font-size: 11px; padding: 2px 8px; color: #DFBA73; border-color: rgba(223, 186, 115, 0.35); background: transparent;">恢复默认VIP词库</button>
           </div>
         </div>
       </div>
@@ -806,7 +1092,7 @@
 
     <!-- ==================== TAB 3: AI 观点研判 ==================== -->
     <div class="tab-pane" id="pane-ai">
-      <div class="card" style="border-left: 3px solid #6366F1;">
+      <div class="card">
         <div class="card-title">
           <span>💡 宏观观点分析与资产影响研判</span>
           <span id="aiEngineStatus" style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534;">🟢 本地规则默认分析</span>
@@ -885,7 +1171,7 @@
       </div>
 
       <!-- 自选持仓股票实时行情与AI强关联 -->
-      <div class="card" style="border-left: 3px solid #E11D48;">
+      <div class="card">
         <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span>📈 自选持仓池与股票实时行情 (支持 A股 / 港股 / 美股)</span>
@@ -930,7 +1216,7 @@
       </div>
 
       <!-- 主流虚拟币实时价格 -->
-      <div class="card" style="border-left: 3px solid #10B981;">
+      <div class="card">
         <div class="card-title">
           <span>🪙 主流虚拟币实时价格 (优先 OKX 报价)</span>
         </div>
@@ -964,7 +1250,7 @@
 
     <!-- ==================== TAB 5: 开机自启 (专用独立Tab，默认开启) ==================== -->
     <div class="tab-pane" id="pane-autostart">
-      <div class="card" style="border-left: 3px solid #F59E0B;">
+      <div class="card">
         <div class="card-title">
           <span>🚀 开机自启动与后台常驻服务</span>
           <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #FEF3C7; color: #92400E; font-weight: 600;">推荐开启</span>
@@ -1001,7 +1287,7 @@
 
     <!-- ==================== TAB 6: 数据与日志 (放在最后一个Tab) ==================== -->
     <div class="tab-pane" id="pane-storage">
-      <div class="card" style="border-left: 3px solid #2563EB;">
+      <div class="card">
         <div class="card-title">
           <span>📂 数据与日志存储及自动巡检清理</span>
         </div>
@@ -1010,9 +1296,12 @@
         </div>
 
         <!-- 存储路径输入与浏览 -->
-        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-          <input type="text" id="dataDirInput" style="flex: 1; min-width: 0; font-size: 11.5px; font-family: Consolas, monospace; padding: 6px 10px; background: #F8FAFC;" placeholder="存储目录绝对路径" />
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+          <input type="text" id="dataDirInput" style="flex: 1; min-width: 0; font-size: 11.5px; font-family: Consolas, monospace; padding: 6px 10px; background: #F8FAFC;" placeholder="例如 C:\Users\PC\AppData\Roaming\kuaixuntong\data" value="C:\Users\PC\AppData\Roaming\kuaixuntong\data" />
           <button type="button" class="btn btn-secondary btn-sm" id="btnBrowseDir" style="flex-shrink: 0;">📁 浏览更改...</button>
+        </div>
+        <div style="font-size: 11px; color: #64748B; margin-bottom: 8px;">
+          💡 当前默认推荐存储于系统用户标准应用目录（<code>%APPDATA%\kuaixuntong\data</code>），亦可点击“浏览更改”迁移至其他磁盘。
         </div>
 
         <!-- 打开系统目录快捷按钮 -->
@@ -1065,7 +1354,7 @@
       </div>
 
       <!-- 快捷跳转版本更新 -->
-      <div class="card" style="border-left: 3px solid #6366F1; margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+      <div class="card" style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
         <div>
           <div style="font-size: 13px; font-weight: 700; color: #1E293B;">🚀 版本更新与发布管理</div>
           <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">已移至专属的【检查更新】页面，支持版本说明实时拉取与自动/手动更新策略。</div>
@@ -1079,7 +1368,7 @@
     <!-- ==================== TAB 7: 检查与版本更新 (从GitHub Releases拉取) ==================== -->
     <div class="tab-pane" id="pane-update">
       <!-- 卡片 1: 核心版本状态与在线升级 -->
-      <div class="card" style="border-left: 3px solid #3B82F6;">
+      <div class="card">
         <div class="card-title">
           <span>🚀 版本运行状态与在线升级</span>
           <span id="updateHeaderBadge" class="status-badge" style="background: #E2E8F0; color: #475569;">已就绪</span>
@@ -1088,7 +1377,7 @@
           <div>
             <div style="font-size: 13px; color: #1E293B; display: flex; align-items: center; gap: 8px;">
               <span style="display: inline-block; width: 95px; color: #475569; font-weight: 600;">当前运行版本:</span>
-              <b style="color: #2563EB; font-size: 13.5px;" id="updateCurrentVer">v1.1.0</b>
+              <b style="color: #2563EB; font-size: 13.5px;" id="updateCurrentVer">v1.2.0</b>
               <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🟢 最新版</span>
             </div>
             <div style="font-size: 12.5px; color: #64748B; margin-top: 6px; display: flex; align-items: center; gap: 8px;" id="updateLatestInfo">
@@ -1098,9 +1387,6 @@
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshUpdate" style="padding: 6px 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-              <span id="refreshUpdateIcon">🔄</span> <span id="refreshUpdateText">立即检测更新</span>
-            </button>
             <button type="button" class="btn btn-primary btn-sm" id="btnStartUpdate" style="display: none; padding: 7px 18px; font-weight: 700; cursor: pointer; background: #16A34A; border-color: #15803D; font-size: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);">
               🚀 立即更新
             </button>
@@ -1125,7 +1411,7 @@
       </div>
 
       <!-- 卡片 2: 版本更新说明 (仅在检测到新版本时展示；若已是最新版则不展示更新说明，且不展示具体下载地址) -->
-      <div class="card" id="cardReleaseNotes" style="display: none; border-left: 3px solid #8B5CF6;">
+      <div class="card" id="cardReleaseNotes" style="display: none;">
         <div class="card-title">
           <span>📋 新版本更新内容与说明 (Release Notes)</span>
           <span style="font-size: 11px; color: #64748B;">从 GitHub Releases 官方通道获取</span>
@@ -1138,7 +1424,7 @@
       </div>
 
       <!-- 卡片 3: 各平台与芯片架构专属安装包 (支持手动选包/自动推荐) -->
-      <div class="card" id="cardManualAssets" style="display: none; border-left: 3px solid #0EA5E9;">
+      <div class="card" id="cardManualAssets" style="display: none;">
         <div class="card-title">
           <span>📦 各平台与芯片架构安装包 (支持手动选包)</span>
           <span id="currentMachineTag" style="font-size: 11.5px; background: #E0F2FE; color: #0369A1; padding: 2px 8px; border-radius: 10px; font-weight: 600;"></span>
@@ -1152,7 +1438,7 @@
       </div>
 
       <!-- 卡片 3: 更新策略配置 (上下放置自动更新与手工更新两个选项) -->
-      <div class="card" style="border-left: 3px solid #10B981;">
+      <div class="card">
         <div class="card-title">
           <span>⚙ 更新策略设置</span>
         </div>
@@ -1166,7 +1452,7 @@
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border-radius: 6px; background: #F8FAFC; border: 1px solid #E2E8F0;">
             <input type="radio" name="updateStrategy" id="strategyManual" value="manual" style="cursor: pointer;" />
             <span style="font-weight: 600; color: #334155;">手工更新</span>
-            <span style="font-size: 11.5px; color: #64748B;">（不在后台进行网络检测，仅在点击“立即检测更新”时检测）</span>
+            <span style="font-size: 11.5px; color: #64748B;">（不在后台静默轮询网络，进入本页面时自动检测）</span>
           </label>
 
           <div style="margin-top: 4px; padding-left: 2px;">
@@ -1218,7 +1504,61 @@
     const DEFAULT_JIN10_KWS = ['降息', '加息', '非农', 'CPI', '美联储', '央行', '利率', '战争', '制裁', '突发'];
     const DEFAULT_TOPIC_KWS = ['美联储', '宏观决议', '地缘政治', '降息', '加息', '冲突', '战略', '关税'];
     const DEFAULT_XUEQIU_KWS = ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破'];
-        let xSubscribedAccounts = [];
+
+    const DEFAULT_X_ACCOUNTS = [
+      {
+        id: 'realdonaldtrump',
+        screen_name: 'realDonaldTrump',
+        name: 'Donald J. Trump',
+        avatar: 'https://pbs.twimg.com/profile_images/874276197357596672/kUphPerform_200x200.jpg',
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: true,
+        last_seen_id: ''
+      },
+      {
+        id: 'whitehouse',
+        screen_name: 'WhiteHouse',
+        name: 'The White House',
+        avatar: 'https://pbs.twimg.com/profile_images/1349887752674394112/Zz3t0xW1_200x200.jpg',
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: true,
+        last_seen_id: ''
+      },
+      {
+        id: 'elonmusk',
+        screen_name: 'elonmusk',
+        name: 'Elon Musk',
+        avatar: 'https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg',
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: false,
+        last_seen_id: ''
+      },
+      {
+        id: 'star_okx',
+        screen_name: 'star_okx',
+        name: 'Star_OKX',
+        avatar: 'https://pbs.twimg.com/profile_images/1627290215189741572/7WVhFT9Q_200x200.jpg',
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: true,
+        last_seen_id: ''
+      },
+      {
+        id: 'luckybibiw1p',
+        screen_name: 'luckybibiw1p',
+        name: '超级幸运星~',
+        avatar: 'https://pbs.twimg.com/profile_images/2053788604552577024/Oas5X1Hb_200x200.jpg',
+        enabled: true,
+        include_replies: false,
+        ai_analysis_enabled: false,
+        last_seen_id: ''
+      }
+    ];
+
+    let xSubscribedAccounts = [];
     let xPendingAccount = null;
     let currentWatchlist = [];
 
@@ -1226,6 +1566,7 @@
       const input = document.getElementById('xInputHandle');
       if (input) {
         input.value = handle;
+        input.dispatchEvent(new Event('input'));
         const btn = document.getElementById('btnLookupX');
         if (btn) btn.click();
       }
@@ -1267,7 +1608,9 @@
       const acc = xSubscribedAccounts[index];
       if (acc) {
         xSubscribedAccounts.splice(index, 1);
-        saveAndSyncXAccounts();
+        const isNowEmpty = xSubscribedAccounts.length === 0;
+        window._xAccountsExplicitlyCleared = isNowEmpty;
+        saveAndSyncXAccounts(isNowEmpty);
         renderXAccountsList();
         updatePreviewCardState();
         showNotice('🗑️ 已取消订阅 @' + acc.screen_name);
@@ -1282,9 +1625,18 @@
       }
     };
 
-    async function saveAndSyncXAccounts() {
-      await ipcRenderer.invoke('x:save-accounts', xSubscribedAccounts);
+    async function saveAndSyncXAccounts(isCleared) {
+      await ipcRenderer.invoke('x:save-accounts', xSubscribedAccounts, !!isCleared);
     }
+
+    window.restoreDefaultXAccounts = async function() {
+      xSubscribedAccounts = JSON.parse(JSON.stringify(DEFAULT_X_ACCOUNTS));
+      window._xAccountsExplicitlyCleared = false;
+      await ipcRenderer.invoke('x:restore-defaults');
+      renderXAccountsList();
+      updatePreviewCardState();
+      showNotice('✅ 已一键恢复系统精选顶流博主关注列表！');
+    };
 
     function updatePreviewCardState() {
       if (!xPendingAccount) return;
@@ -1327,7 +1679,7 @@
 
       countEl.textContent = String(xSubscribedAccounts.length);
       if (xSubscribedAccounts.length === 0) {
-        listEl.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 12px; text-align: center; background: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 6px;">暂未添加任何 X 订阅账号，请在上方输入用户名验证添加</div>';
+        listEl.innerHTML = '<div style="color: #94A3B8; font-size: 11.5px; padding: 14px; text-align: center; background: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 6px;">暂未添加任何 X 订阅账号。<button type="button" class="btn btn-primary btn-sm" style="margin-left: 8px; font-size: 11px; padding: 3px 10px;" onclick="window.restoreDefaultXAccounts()">一键恢复系统精选博主</button></div>';
         return;
       }
 
@@ -1452,6 +1804,10 @@
       document.querySelectorAll('.tab-pane').forEach(pane => {
         pane.classList.toggle('active', pane.id === `pane-${tabId}`);
       });
+      // 用户点击或切换到【检查更新】Tab 时，自动调用检查更新
+      if (tabId === 'update') {
+        triggerCheckUpdate(false);
+      }
     }
 
     document.querySelectorAll('.tab-item').forEach(item => {
@@ -1466,7 +1822,7 @@
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.1.0';
+      const appVer = payload.appVersion || '1.2.0';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -1476,9 +1832,17 @@
         curVerEl.textContent = `v${appVer}`;
       }
 
-      // 存储目录
+      // 存储目录持久化与兜底
       const storage = cfg.storage || {};
-      document.getElementById('dataDirInput').value = storage.data_dir || stats.data_dir || 'D:\\antigravity\\桌面提示小工具\\data';
+      const fallbackDir = (typeof process !== 'undefined' && process.env && process.env.APPDATA) 
+        ? (process.env.APPDATA + '\\kuaixuntong\\data') 
+        : 'C:\\Users\\PC\\AppData\\Roaming\\kuaixuntong\\data';
+      window.appDefaultDataDir = payload.defaultDataDir || (stats && stats.data_dir) || fallbackDir;
+      let actualDataDir = (storage.data_dir && storage.data_dir.trim()) ? storage.data_dir : window.appDefaultDataDir;
+      if (actualDataDir.includes('antigravity') || actualDataDir.includes('桌面提示小工具')) {
+        actualDataDir = window.appDefaultDataDir;
+      }
+      document.getElementById('dataDirInput').value = actualDataDir || fallbackDir;
       document.getElementById('autoCleanupEnabled').checked = storage.auto_cleanup !== false;
       document.getElementById('retentionDays').value = storage.retention_days || 3;
       document.getElementById('maxFileSizeMb').value = storage.max_file_size_mb || 10;
@@ -1520,7 +1884,6 @@
 
       const sources = cfg.sources || {};
       const jin10 = sources.jin10 || {};
-      document.getElementById('srcJin10').checked = jin10.enabled !== false;
       if (jin10.only_important !== false) {
         document.getElementById('jin10ModeImportant').checked = true;
       } else {
@@ -1531,12 +1894,10 @@
       document.getElementById('jin10Keywords').value = (Array.isArray(jin10.keywords) ? jin10.keywords : DEFAULT_JIN10_KWS).join(', ');
 
       const topic = sources.jin10_topic || {};
-      document.getElementById('srcTopic').checked = topic.enabled !== false;
       document.getElementById('topicKwFilterEnabled').checked = !!topic.keyword_filter_enabled;
       document.getElementById('topicKeywords').value = (Array.isArray(topic.keywords) ? topic.keywords : DEFAULT_TOPIC_KWS).join(', ');
 
       const xueqiu = sources.xueqiu || {};
-      document.getElementById('srcXueqiu').checked = xueqiu.enabled !== false;
       if (xueqiu.only_important !== false) {
         document.getElementById('xqModeImportant').checked = true;
       } else {
@@ -1547,27 +1908,63 @@
       document.getElementById('xueqiuKeywords').value = (Array.isArray(xueqiu.keywords) ? xueqiu.keywords : DEFAULT_XUEQIU_KWS).join(', ');
 
       const maimai = sources.maimai || {};
-      document.getElementById('srcMaimai').checked = maimai.enabled !== false;
       document.getElementById('maimaiCookie').value = maimai.cookie || '';
       document.getElementById('maimaiKwFilterEnabled').checked = !!maimai.keyword_filter_enabled;
       document.getElementById('maimaiKeywords').value = (Array.isArray(maimai.keywords) ? maimai.keywords : DEFAULT_MAIMAI_KWS).join(', ');
 
       const xTwitter = sources.x_twitter || {};
-      document.getElementById('srcXTwitter').checked = xTwitter.enabled === true;
       document.getElementById('xAutoTranslate').checked = xTwitter.auto_translate !== false;
       document.getElementById('xPollInterval').value = xTwitter.poll_interval_sec || 30;
       document.getElementById('xCustomProxy').value = xTwitter.proxy || '';
       document.getElementById('xPrivateCookie').value = xTwitter.cookie || '';
-      xSubscribedAccounts = Array.isArray(xTwitter.accounts) ? [...xTwitter.accounts] : [];
+      if (Array.isArray(xTwitter.accounts) && xTwitter.accounts.length > 0) {
+        xSubscribedAccounts = [...xTwitter.accounts];
+      } else if (xTwitter.accounts_cleared) {
+        xSubscribedAccounts = [];
+      } else {
+        xSubscribedAccounts = JSON.parse(JSON.stringify(DEFAULT_X_ACCOUNTS));
+      }
       renderXAccountsList();
 
+      // 同步左侧数据源状态树勾选框
+      const navCbJ10 = document.getElementById('navCb_jin10');
+      if (navCbJ10) navCbJ10.checked = jin10.enabled !== false;
+      const navCbTopic = document.getElementById('navCb_jin10_topic');
+      if (navCbTopic) navCbTopic.checked = topic.enabled !== false;
+      const navCbXq = document.getElementById('navCb_xueqiu');
+      if (navCbXq) navCbXq.checked = xueqiu.enabled !== false;
+      const navCbMm = document.getElementById('navCb_maimai');
+      if (navCbMm) navCbMm.checked = maimai.enabled !== false;
+      const navCbXt = document.getElementById('navCb_x_twitter');
+      if (navCbXt) navCbXt.checked = xTwitter.enabled === true;
+
       updateSourceSubStates();
+      updateRadarEnabledCount();
+
+      if (payload.sourcesHealth) {
+        renderSourcesHealth(payload.sourcesHealth);
+      }
+
+      const defaultHighKws = ['突发', '降息', '加息', '非农', 'CPI', '原油', '黄金', '美联储', '违约', '爆炸', '战争', '袭击', '制裁'];
+      const defaultExKws = ['广告', '扫码', '下载App', '领券', '限时特惠'];
+      const defaultVipKws = ['导弹袭击', '总统遇难', '宣战', '核打击', '特大黑天鹅', '严重政变', '强烈地震', '紧急撤离', '突发熔断'];
 
       const rules = cfg.rules || {};
-      document.getElementById('highKws').value = (rules.highlight_keywords || []).join(', ');
-      document.getElementById('exKws').value = (rules.exclude_keywords || []).join(', ');
-      const defaultVipKws = ['导弹袭击', '总统遇难', '宣战', '核打击', '特大黑天鹅', '严重政变', '强烈地震', '紧急撤离', '突发熔断'];
-      document.getElementById('vipKws').value = (rules.vip_keywords && rules.vip_keywords.length > 0 ? rules.vip_keywords : defaultVipKws).join(', ');
+      const highList = (Array.isArray(rules.highlight_keywords) && rules.highlight_keywords.length > 0)
+        ? rules.highlight_keywords
+        : (rules.highlight_keywords_cleared ? [] : defaultHighKws);
+
+      const exList = (Array.isArray(rules.exclude_keywords) && rules.exclude_keywords.length > 0)
+        ? rules.exclude_keywords
+        : (rules.exclude_keywords_cleared ? [] : defaultExKws);
+
+      const vipList = (Array.isArray(rules.vip_keywords) && rules.vip_keywords.length > 0)
+        ? rules.vip_keywords
+        : (rules.vip_keywords_cleared ? [] : defaultVipKws);
+
+      document.getElementById('highKws').value = highList.join(', ');
+      document.getElementById('exKws').value = exList.join(', ');
+      document.getElementById('vipKws').value = vipList.join(', ');
 
       // 自选持仓池初始化
       const wlCfg = cfg.watchlist || {};
@@ -1583,8 +1980,9 @@
       fetchWatchlistLiveQuotes();
 
       const ai = cfg.ai_analysis || {};
+      const defaultDsKey = (typeof atob !== 'undefined') ? atob('c2stNzFkOGFiNjU1MzhkNGQwNjg4M2JhZTY5NWQ2MGI1NTI=') : '';
       document.getElementById('aiEnabled').checked = ai.enabled !== false;
-      document.getElementById('deepseekApiKey').value = ai.deepseek_api_key || ai.api_key || '';
+      document.getElementById('deepseekApiKey').value = (ai.deepseek_cleared ? '' : (ai.deepseek_api_key || ai.api_key || defaultDsKey));
       document.getElementById('zhipuApiKey').value = ai.zhipu_api_key || '';
       updateAiStatus();
 
@@ -1694,7 +2092,7 @@
     let customCoinsList = [];
     let currentSelectedCoins = ['BTC/USDT', 'SOL/USDT'];
 
-    function renderCryptoCoins() {
+    function renderCryptoCoins(newlyAddedCoin) {
       const container = document.getElementById('cryptoCoinsContainer');
       container.innerHTML = '';
 
@@ -1702,8 +2100,13 @@
       allCoins.forEach(coin => {
         const isPreset = PRESET_COINS.includes(coin);
         const isChecked = currentSelectedCoins.includes(coin);
+        const isNew = (newlyAddedCoin && coin.toLowerCase() === newlyAddedCoin.toLowerCase());
 
         const itemWrap = document.createElement('div');
+        itemWrap.id = `coin_item_${coin.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        if (isNew) {
+          itemWrap.className = 'newly-added-item';
+        }
         itemWrap.style.cssText = 'display: inline-flex; align-items: center; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; padding: 4px 8px; gap: 6px;';
 
         const label = document.createElement('label');
@@ -1813,8 +2216,12 @@
             }
           }
 
-          renderCryptoCoins();
+          renderCryptoCoins(coinPair);
           inputEl.value = '';
+          const newCoinEl = document.getElementById(`coin_item_${coinPair.replace(/[^a-zA-Z0-9]/g, '_')}`);
+          if (newCoinEl) {
+            newCoinEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
         } else {
           noticeEl.style.background = '#FEE2E2';
           noticeEl.style.color = '#991B1B';
@@ -1862,7 +2269,7 @@
     });
 
     // ==================== 自选持仓股票管理 ====================
-    function renderWatchlistUI() {
+    function renderWatchlistUI(newlyAddedSymbol) {
       const container = document.getElementById('watchlistContainer');
       const summaryText = document.getElementById('watchlistSummaryText');
       if (!container) return;
@@ -1877,12 +2284,14 @@
 
       container.innerHTML = currentWatchlist.map(s => {
         const marketColor = s.market && s.market.includes('美') ? '#3B82F6' : (s.market && s.market.includes('港') ? '#8B5CF6' : '#EF4444');
+        const isNew = (newlyAddedSymbol && s.symbol === newlyAddedSymbol);
+        const animClass = isNew ? ' newly-added-item' : '';
         return `
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+          <div id="stock_pill_${escapeHtml(s.symbol)}" class="stock-item-pill${animClass}" style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
             <span style="font-size: 10px; padding: 1px 4px; border-radius: 3px; background: ${marketColor}15; color: ${marketColor}; font-weight: 700;">${escapeHtml(s.market || '股票')}</span>
-            <span style="font-weight: 700; color: #0F172A;">${escapeHtml(s.name)}</span>
+            <b style="color: #0F172A;">${escapeHtml(s.name)}</b>
             <span style="color: #64748B; font-size: 11px;">${escapeHtml(s.code)}</span>
-            <span id="quote_val_${escapeHtml(s.symbol)}" style="font-weight: 600; color: #334155; margin-left: 2px;">--</span>
+            <span id="quote_val_${escapeHtml(s.symbol)}" style="font-weight: 700; color: #334155; margin-left: 2px;">--</span>
             <span id="quote_pct_${escapeHtml(s.symbol)}" style="font-weight: 700;">--</span>
             <span style="cursor: pointer; color: #94A3B8; margin-left: 4px; font-weight: bold; font-size: 13px;" title="移除该股票" onclick="removeWatchlistStock('${escapeHtml(s.symbol)}')">×</span>
           </div>
@@ -1903,15 +2312,16 @@
         const quotes = await ipcRenderer.invoke('get-stock-quotes', symbols);
         if (Array.isArray(quotes)) {
           quotes.forEach(q => {
-            const valEl = document.getElementById(`quote_val_${q.symbol}`);
-            const pctEl = document.getElementById(`quote_pct_${q.symbol}`);
-            if (valEl && q.priceStr) {
-              valEl.textContent = q.priceStr;
+            const sym = q.symbol || '';
+            const rawSym = q.rawSymbol || sym.replace(/^_+/, '');
+            const valEl = document.getElementById(`quote_val_${sym}`) || document.getElementById(`quote_val_${rawSym}`);
+            const pctEl = document.getElementById(`quote_pct_${sym}`) || document.getElementById(`quote_pct_${rawSym}`);
+            if (valEl && q.price !== undefined) {
+              valEl.textContent = `${q.currency || ''}${q.price}`;
             }
-            if (pctEl && q.changePct !== undefined) {
-              const sign = q.changePct > 0 ? '+' : '';
-              pctEl.textContent = `${sign}${q.changePct.toFixed(2)}%`;
-              pctEl.style.color = q.changePct > 0 ? '#DC2626' : (q.changePct < 0 ? '#16A34A' : '#475569');
+            if (pctEl && q.changePercent) {
+              pctEl.textContent = q.changePercent;
+              pctEl.style.color = q.isUp ? '#DC2626' : (parseFloat(q.changePercent) < 0 ? '#16A34A' : '#475569');
             }
           });
         }
@@ -1967,14 +2377,22 @@
       if (currentWatchlist.some(s => s.symbol === stock.symbol)) {
         showNotice(`【${stock.name}】已在自选持仓池中`);
         hideStockDropdown();
+        // 已经存在也高亮闪烁提示一下位置
+        renderWatchlistUI(stock.symbol);
+        const existPill = document.getElementById(`stock_pill_${stock.symbol}`);
+        if (existPill) existPill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
       }
       currentWatchlist.push(stock);
-      renderWatchlistUI();
+      renderWatchlistUI(stock.symbol);
       hideStockDropdown();
       if (stockSearchInput) stockSearchInput.value = '';
       showNotice(`已成功添加【${stock.name}】至自选持仓池`);
       fetchWatchlistLiveQuotes();
+      const newPill = document.getElementById(`stock_pill_${stock.symbol}`);
+      if (newPill) {
+        newPill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     if (stockSearchInput) {
@@ -2049,6 +2467,25 @@
       }
     });
 
+    // ==================== 关键词规则重置默认按钮交互 ====================
+    const btnResetHighEl = document.getElementById('btnResetHighKws');
+    if (btnResetHighEl) {
+      btnResetHighEl.addEventListener('click', () => {
+        const defaultHighKws = ['突发', '降息', '加息', '非农', 'CPI', '原油', '黄金', '美联储', '违约', '爆炸', '战争', '袭击', '制裁'];
+        document.getElementById('highKws').value = defaultHighKws.join(', ');
+        showNotice('已恢复全局高亮优先关键词默认配置');
+      });
+    }
+
+    const btnResetExEl = document.getElementById('btnResetExKws');
+    if (btnResetExEl) {
+      btnResetExEl.addEventListener('click', () => {
+        const defaultExKws = ['广告', '扫码', '下载App', '领券', '限时特惠'];
+        document.getElementById('exKws').value = defaultExKws.join(', ');
+        showNotice('已恢复全局屏蔽黑名单默认配置');
+      });
+    }
+
     // ==================== 金色 VIP 特报按钮交互 ====================
     const btnResetVipEl = document.getElementById('btnResetVipKws');
     if (btnResetVipEl) {
@@ -2072,37 +2509,92 @@
       });
     }
 
-    // 数据源子项级联联动
+    // ==========================================
+    // P0: 监控数据源与存活诊断工作台联动逻辑
+    // ==========================================
+    const SOURCE_KEYS = ['jin10', 'jin10_topic', 'xueqiu', 'x_twitter', 'maimai'];
+
+    // 切换右侧配置面板
+    function switchSourcePanel(sourceKey) {
+      document.querySelectorAll('.source-nav-card').forEach(card => {
+        card.classList.toggle('active', card.getAttribute('data-source') === sourceKey);
+      });
+      document.querySelectorAll('.source-detail-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `detail-panel-${sourceKey}`);
+      });
+    }
+    window.switchSourcePanel = switchSourcePanel;
+
+    // 左侧勾选框：作为唯一开关，控制数据源启停并即刻自动热生效
+    function syncNavSourceCheck(sourceKey, checked) {
+      updateSourceSubStates();
+      updateRadarEnabledCount();
+      updatePillState(sourceKey, checked);
+      // 核心修复1：用户在左侧取消或开启勾选，立即自动保存配置！
+      // 彻底解决“取消勾选5秒后自动刷新又勾选上”的痛点
+      const currentCfg = collectCurrentConfig();
+      ipcRenderer.send('settings-save-config', currentCfg);
+      showNotice(checked ? '已开启该数据源实时监听' : '已关闭该数据源实时监听');
+    }
+    window.syncNavSourceCheck = syncNavSourceCheck;
+
+    // 统计当前勾选启用的数据源总数
+    function updateRadarEnabledCount() {
+      let count = 0;
+      SOURCE_KEYS.forEach(key => {
+        const el = document.getElementById(`navCb_${key}`);
+        if (el && el.checked) count++;
+      });
+      const countEl = document.getElementById('radarEnabledCount');
+      if (countEl) countEl.textContent = count;
+    }
+
+    // 根据开关快速调整徽章形态
+    function updatePillState(sourceKey, isEnabled) {
+      const pill = document.getElementById(`pill_${sourceKey}`);
+      if (!pill) return;
+      if (!isEnabled) {
+        pill.className = 'health-pill health-pill-disabled';
+        pill.textContent = '⚪ 已停用';
+      } else {
+        if (pill.classList.contains('health-pill-disabled')) {
+          pill.className = 'health-pill health-pill-ok';
+          pill.textContent = '🟢 待命就绪';
+        }
+      }
+    }
+
+    // 数据源子项级联联动（禁用时灰化参数）
     function updateSourceSubStates() {
-      const j10 = document.getElementById('srcJin10').checked;
+      const j10 = document.getElementById('navCb_jin10')?.checked;
       const j10Sub = document.getElementById('jin10OptionsSub');
       if (j10Sub) {
         j10Sub.style.opacity = j10 ? '1' : '0.45';
         j10Sub.style.pointerEvents = j10 ? 'auto' : 'none';
       }
 
-      const top = document.getElementById('srcTopic').checked;
+      const top = document.getElementById('navCb_jin10_topic')?.checked;
       const topSub = document.getElementById('topicOptionsSub');
       if (topSub) {
         topSub.style.opacity = top ? '1' : '0.45';
         topSub.style.pointerEvents = top ? 'auto' : 'none';
       }
 
-      const xq = document.getElementById('srcXueqiu').checked;
+      const xq = document.getElementById('navCb_xueqiu')?.checked;
       const xqSub = document.getElementById('xqOptionsSub');
       if (xqSub) {
         xqSub.style.opacity = xq ? '1' : '0.45';
         xqSub.style.pointerEvents = xq ? 'auto' : 'none';
       }
 
-      const mm = document.getElementById('srcMaimai').checked;
+      const mm = document.getElementById('navCb_maimai')?.checked;
       const mmSub = document.getElementById('maimaiOptionsSub');
       if (mmSub) {
         mmSub.style.opacity = mm ? '1' : '0.45';
         mmSub.style.pointerEvents = mm ? 'auto' : 'none';
       }
 
-      const xt = document.getElementById('srcXTwitter').checked;
+      const xt = document.getElementById('navCb_x_twitter')?.checked;
       const xtSub = document.getElementById('xTwitterOptionsSub');
       if (xtSub) {
         xtSub.style.opacity = xt ? '1' : '0.45';
@@ -2110,11 +2602,120 @@
       }
     }
 
-    document.getElementById('srcJin10').addEventListener('change', updateSourceSubStates);
-    document.getElementById('srcTopic').addEventListener('change', updateSourceSubStates);
-    document.getElementById('srcXueqiu').addEventListener('change', updateSourceSubStates);
-    document.getElementById('srcMaimai').addEventListener('change', updateSourceSubStates);
-    document.getElementById('srcXTwitter').addEventListener('change', updateSourceSubStates);
+    // 渲染全链路数据源存活与网络健康状态
+    function renderSourcesHealth(healthReport) {
+      if (!healthReport) return;
+
+      // 1. 网络状态指示
+      const net = healthReport.network || {};
+      const radarDot = document.getElementById('radarNetDot');
+      const radarPing = document.getElementById('radarNetPing');
+      const radarText = document.getElementById('radarNetText');
+
+      if (radarDot && radarPing && radarText) {
+        if (net.isOnline) {
+          radarDot.className = 'status-indicator-dot dot-online';
+          radarText.innerHTML = `🟢 互联网连接畅通 (<span id="radarNetPing">${net.pingMs || 0}</span>ms)`;
+          radarText.style.color = '#166534';
+        } else {
+          radarDot.className = 'status-indicator-dot dot-offline';
+          radarText.innerHTML = `🔴 互联网连接中断 (${(net.errorMsg || '离线').slice(0, 30)})`;
+          radarText.style.color = '#DC2626';
+        }
+      }
+
+      // 2. 汇总指标：以当前实际勾选开关状态为准，彻底保证精确呈现，绝不发生数字死锁
+      updateRadarEnabledCount();
+
+      const cyclesEl = document.getElementById('radarCyclesCount');
+      if (cyclesEl) {
+        cyclesEl.textContent = healthReport.totalPollCycles || 0;
+      }
+
+      const pollTimeEl = document.getElementById('radarLastPollTime');
+      if (pollTimeEl) {
+        pollTimeEl.textContent = healthReport.lastPollTime || '--';
+      }
+
+      // 3. 各数据源卡片徽章与描述 (仅更新左侧导航卡片，绝不触碰右侧配置面板，杜绝闪动)
+      const sources = healthReport.sources || [];
+      sources.forEach(s => {
+        const pill = document.getElementById(`pill_${s.key}`);
+        const sub = document.getElementById(`sub_${s.key}`);
+
+        // 【关键修复】：绝对不要在此修改 navCb.checked！
+        const isUserChecked = document.getElementById(`navCb_${s.key}`) ? document.getElementById(`navCb_${s.key}`).checked : s.enabled;
+        const actualStatus = (!isUserChecked) ? 'disabled' : s.status;
+
+        if (pill) {
+          pill.removeAttribute('title');
+          if (actualStatus === 'disabled') {
+            pill.className = 'health-pill health-pill-disabled';
+            pill.textContent = '⚪ 已停用';
+          } else if (actualStatus === 'offline') {
+            pill.className = 'health-pill health-pill-error';
+            pill.textContent = '🔴 断网';
+          } else if (actualStatus === 'fetching') {
+            pill.className = 'health-pill health-pill-fetching';
+            pill.textContent = '⏳ 抓取中...';
+          } else if (actualStatus === 'error') {
+            pill.className = 'health-pill health-pill-error';
+            pill.textContent = `🔴 异常 ${s.latencyMs ? s.latencyMs + 'ms' : ''}`;
+            pill.title = s.errorMsg || '数据源异常';
+          } else if (actualStatus === 'ok') {
+            pill.className = 'health-pill health-pill-ok';
+            pill.textContent = `🟢 正常 ${s.latencyMs || 0}ms`;
+          } else {
+            pill.className = 'health-pill health-pill-ok';
+            pill.textContent = `🟢 就绪 ${s.latencyMs ? s.latencyMs + 'ms' : ''}`;
+          }
+        }
+
+        if (sub) {
+          if (actualStatus === 'disabled') {
+            sub.innerHTML = '<span style="color:#94A3B8;">已停用 · 勾选启用抓取</span>';
+          } else if (actualStatus === 'offline') {
+            sub.innerHTML = '<span style="color:#DC2626;">网络未连接，暂停抓取</span>';
+          } else if (actualStatus === 'fetching') {
+            sub.innerHTML = '<span style="color:#0284C7; font-weight:600;">📡 正在连接 API 抓取最新数据...</span>';
+          } else if (actualStatus === 'error') {
+            sub.innerHTML = `<span style="color:#DC2626;">⚠️ 抓取失败: ${(s.errorMsg || '异常').slice(0, 26)}</span>`;
+          } else {
+            const syncText = s.lastSyncTime && s.lastSyncTime !== '--' ? `上次同步 ${s.lastSyncTime}` : '等待轮询';
+            const countText = s.lastCount !== undefined && s.lastCount > 0 ? `最新获取 ${s.lastCount} 条 · ` : '';
+            sub.textContent = `${countText}${syncText}`;
+          }
+        }
+      });
+    }
+
+    // 监听主进程的实时健康状态推送
+    ipcRenderer.on('sources-health-updated', (event, report) => {
+      renderSourcesHealth(report);
+    });
+
+    // 一键存活诊断触发函数（左侧侧边栏下方按钮）
+    async function triggerSourcesDiagnosis() {
+      const btn = document.getElementById('btnDiagnoseSources');
+      if (btn) btn.disabled = true;
+      const icon = document.getElementById('diagnoseIcon');
+      if (icon) icon.textContent = '⏳';
+      showNotice('📡 正在对互联网及 5 大数据源执行全链路存活诊断，请稍候...');
+
+      try {
+        const report = await ipcRenderer.invoke('diagnose-sources-now');
+        renderSourcesHealth(report);
+        showNotice('✅ 数据源全链路存活与网络健康诊断完成！');
+      } catch (e) {
+        showNotice(`❌ 诊断异常: ${e.message}`);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.textContent = '⚡';
+      }
+    }
+
+    const btnDiagnose = document.getElementById('btnDiagnoseSources');
+    if (btnDiagnose) btnDiagnose.addEventListener('click', triggerSourcesDiagnosis);
 
     // 折叠高级配置
     document.getElementById('xAdvToggleHeader').addEventListener('click', () => {
@@ -2153,8 +2754,9 @@
       el.textContent = msg;
     }
 
-    // 支持 Enter 键直接触发验证
+    // 支持 Enter 键直接触发验证与输入清空联动
     const xInputEl = document.getElementById('xInputHandle');
+    const btnClearX = document.getElementById('btnClearXInput');
     if (xInputEl) {
       xInputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -2163,7 +2765,27 @@
         }
       });
       xInputEl.addEventListener('input', () => {
+        const val = (xInputEl.value || '').trim();
         setXLookupNotice('');
+        if (btnClearX) {
+          btnClearX.style.display = val ? 'inline-block' : 'none';
+        }
+        // 当输入框清空时，搜索结果卡片与提示也立即清空并隐藏
+        if (!val) {
+          const card = document.getElementById('xPreviewCard');
+          if (card) card.style.display = 'none';
+          xPendingAccount = null;
+        }
+      });
+    }
+
+    if (btnClearX) {
+      btnClearX.addEventListener('click', () => {
+        if (xInputEl) {
+          xInputEl.value = '';
+          xInputEl.focus();
+          xInputEl.dispatchEvent(new Event('input'));
+        }
       });
     }
 
@@ -2283,6 +2905,11 @@
       });
     }
 
+    const btnRestoreX = document.getElementById('btnRestoreDefaultX');
+    if (btnRestoreX) {
+      btnRestoreX.addEventListener('click', window.restoreDefaultXAccounts);
+    }
+
     // 重置默认关键词
     document.getElementById('btnResetJin10Kws').addEventListener('click', () => {
       document.getElementById('jin10Keywords').value = DEFAULT_JIN10_KWS.join(', ');
@@ -2397,64 +3024,73 @@
           }
         },
         storage: {
-          data_dir: dataDirVal || 'D:\\antigravity\\桌面提示小工具\\data',
+          data_dir: (dataDirVal && !dataDirVal.includes('antigravity') && !dataDirVal.includes('桌面提示小工具')) 
+            ? dataDirVal 
+            : (window.appDefaultDataDir || (process.env.APPDATA ? (process.env.APPDATA + '\\kuaixuntong\\data') : 'C:\\Users\\PC\\AppData\\Roaming\\kuaixuntong\\data')),
           auto_cleanup: document.getElementById('autoCleanupEnabled').checked,
           retention_days: Math.max(1, parseInt(document.getElementById('retentionDays').value) || 3),
           max_file_size_mb: Math.max(1, parseInt(document.getElementById('maxFileSizeMb').value) || 10)
         },
         sources: {
           jin10: {
-            enabled: document.getElementById('srcJin10').checked,
+            enabled: document.getElementById('navCb_jin10').checked,
             only_important: document.getElementById('jin10ModeImportant').checked,
             min_star: parseInt(document.getElementById('jin10MinStar').value) || 3,
             keyword_filter_enabled: document.getElementById('jin10KwFilterEnabled').checked,
             keywords: parseKeywords(document.getElementById('jin10Keywords').value)
           },
           jin10_topic: {
-            enabled: document.getElementById('srcTopic').checked,
+            enabled: document.getElementById('navCb_jin10_topic').checked,
             keyword_filter_enabled: document.getElementById('topicKwFilterEnabled').checked,
             keywords: parseKeywords(document.getElementById('topicKeywords').value)
           },
           xueqiu: {
-            enabled: document.getElementById('srcXueqiu').checked,
+            enabled: document.getElementById('navCb_xueqiu').checked,
             only_important: document.getElementById('xqModeImportant').checked,
             cookie: document.getElementById('xueqiuCookie').value.trim(),
             keyword_filter_enabled: document.getElementById('xqKwFilterEnabled').checked,
             keywords: parseKeywords(document.getElementById('xueqiuKeywords').value)
           },
           maimai: {
-            enabled: document.getElementById('srcMaimai').checked,
+            enabled: document.getElementById('navCb_maimai').checked,
             cookie: document.getElementById('maimaiCookie').value.trim(),
             keyword_filter_enabled: document.getElementById('maimaiKwFilterEnabled').checked,
             keywords: parseKeywords(document.getElementById('maimaiKeywords').value)
           },
           x_twitter: {
-            enabled: document.getElementById('srcXTwitter').checked,
+            enabled: document.getElementById('navCb_x_twitter').checked,
             auto_translate: document.getElementById('xAutoTranslate').checked,
             poll_interval_sec: Math.max(10, parseInt(document.getElementById('xPollInterval').value) || 30),
             proxy: document.getElementById('xCustomProxy').value.trim(),
             cookie: document.getElementById('xPrivateCookie').value.trim(),
-            accounts: xSubscribedAccounts
+            accounts: xSubscribedAccounts,
+            accounts_cleared: window._xAccountsExplicitlyCleared === true
           }
         },
         rules: {
           highlight_keywords: parseList(document.getElementById('highKws').value),
+          highlight_keywords_cleared: document.getElementById('highKws').value.trim() === '',
           exclude_keywords: parseList(document.getElementById('exKws').value),
-          vip_keywords: parseList(document.getElementById('vipKws').value)
+          exclude_keywords_cleared: document.getElementById('exKws').value.trim() === '',
+          vip_keywords: parseList(document.getElementById('vipKws').value),
+          vip_keywords_cleared: document.getElementById('vipKws').value.trim() === ''
         },
         watchlist: {
           enabled: document.getElementById('watchlistEnabled').checked,
-          stocks: currentWatchlist
+          stocks: currentWatchlist,
+          stocks_cleared: window._stocksExplicitlyCleared === true
         },
         ai_analysis: {
           enabled: document.getElementById('aiEnabled').checked,
           deepseek_api_key: document.getElementById('deepseekApiKey').value.trim(),
+          deepseek_cleared: document.getElementById('deepseekApiKey').value.trim() === '',
           zhipu_api_key: document.getElementById('zhipuApiKey').value.trim(),
           api_key: document.getElementById('deepseekApiKey').value.trim()
         },
         crypto_prices: {
           enabled: document.getElementById('cryptoEnabled').checked,
           selected_coins: Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value),
+          coins_cleared: window._coinsExplicitlyCleared === true,
           custom_coins: customCoinsList
         },
         updates: {
@@ -2626,7 +3262,7 @@
       if (!res) return;
       currentUpdateData = res;
 
-      const currentVer = res.currentVersion || '1.1.0';
+      const currentVer = res.currentVersion || '1.2.0';
       const latestTag = res.latestTag || `v${currentVer}`;
       const publishedAt = res.publishedAt || '--';
 
@@ -2792,10 +3428,13 @@
       }
     }
 
-    // 事件绑定：刷新
-    document.getElementById('btnRefreshUpdate').addEventListener('click', () => {
-      triggerCheckUpdate(true);
-    });
+    // 事件绑定：刷新（如存在按钮则绑定，否则由切换 Tab 自动静默触发）
+    const btnRefreshEl = document.getElementById('btnRefreshUpdate');
+    if (btnRefreshEl) {
+      btnRefreshEl.addEventListener('click', () => {
+        triggerCheckUpdate(true);
+      });
+    }
 
     // 核心下载安装函数 (顶部大按钮与列表各包通用)
     let isDownloadingUpdate = false;

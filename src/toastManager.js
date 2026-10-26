@@ -15,7 +15,7 @@ class ToastManager {
       this.unreadList = [...historyManager.unattendedAlerts];
     }
     this.openSettingsCallback = null;
-    this.toastWidth = 590; // 宽裕宽度，确保左右操作按钮与虚拟币价格完全单行容纳不换行
+    this.toastWidth = 600; // 宽裕宽度，确保左右操作按钮与虚拟币价格完全单行容纳不换行
 
     this.initIpc();
   }

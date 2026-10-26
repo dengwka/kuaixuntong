@@ -24,15 +24,19 @@ class HistoryManager {
   }
 
   getDefaultDataDir() {
-    if (app) {
-      return path.join(app.getPath('userData'), 'data');
+    if (app && app.getPath) {
+      try {
+        return path.join(app.getPath('userData'), 'data');
+      } catch (e) {}
     }
-    return path.resolve(__dirname, '..', 'data');
+    const os = require('os');
+    const baseAppData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support') : path.join(os.homedir(), '.config'));
+    return path.join(baseAppData, 'kuaixuntong', 'data');
   }
 
   initDefaultDir() {
     this.setDataDir(this.getDefaultDataDir());
-    this.logDir = app ? path.join(app.getPath('userData'), 'log') : path.resolve(__dirname, '..', 'log');
+    this.logDir = this.getDefaultDataDir().replace(/[\\/]data$/i, path.sep + 'log');
   }
 
   setDataDir(targetDir) {
@@ -40,6 +44,9 @@ class HistoryManager {
     let safeDir = String(targetDir);
     if (safeDir.includes('app.asar')) {
       safeDir = safeDir.replace(/[\\/]app\.asar[\\/]?.*/i, path.sep + 'data');
+    }
+    if (safeDir.includes('antigravity') || safeDir.includes('桌面提示小工具')) {
+      safeDir = this.getDefaultDataDir();
     }
     this.dataDir = path.resolve(safeDir);
 

@@ -11,10 +11,14 @@ class Logger {
   }
 
   getDefaultLogDir() {
-    if (app) {
-      return path.join(app.getPath('userData'), 'log');
+    if (app && app.getPath) {
+      try {
+        return path.join(app.getPath('userData'), 'log');
+      } catch (e) {}
     }
-    return path.resolve(__dirname, '..', 'log');
+    const os = require('os');
+    const baseAppData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support') : path.join(os.homedir(), '.config'));
+    return path.join(baseAppData, 'kuaixuntong', 'log');
   }
 
   initDefaultDir() {
@@ -23,7 +27,11 @@ class Logger {
 
   setLogDir(targetDir) {
     if (!targetDir) return;
-    this.logDir = path.resolve(targetDir);
+    let safeDir = String(targetDir);
+    if (safeDir.includes('antigravity') || safeDir.includes('桌面提示小工具')) {
+      safeDir = this.getDefaultLogDir();
+    }
+    this.logDir = path.resolve(safeDir);
     try {
       if (!fs.existsSync(this.logDir)) {
         fs.mkdirSync(this.logDir, { recursive: true });

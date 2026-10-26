@@ -10,12 +10,33 @@
       padding: 0;
       user-select: text;
     }
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      background: transparent !important;
+    }
     body {
-      background: transparent;
+      background: transparent !important;
       font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei UI", "Segoe UI", Roboto, sans-serif;
-      overflow: hidden;
+      overflow: hidden !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
       padding: 4px;
       box-sizing: border-box;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+    /* 彻底杜绝全局与容器内出现任何原生灰色滚动条 */
+    ::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
     .toast-card {
       background: #FAFBFD;
@@ -41,6 +62,10 @@
       border-color: #D9E1E8;
       background: #FAFBFD;
     }
+    .toast-card.is-vip-card.is-test-card:hover {
+      border-color: rgba(223, 186, 115, 0.32) !important;
+      background: radial-gradient(130% 120% at 50% 0%, #1A1C24 0%, #121319 55%, #0B0C10 100%) !important;
+    }
 
     /* 积压多条未读时呈现优雅叠合卡片立体视觉 */
     .toast-card.is-stacked {
@@ -52,80 +77,257 @@
         0 11px 4px -2px rgba(15,23,42,0.14);
       margin-bottom: 6px;
     }
-
-    /* 👑 黑金 VIP 尊贵卡片设计（导弹袭击、总统遇难等特级黑天鹅重大特报） */
-    .toast-card.is-vip-card {
-      background: linear-gradient(145deg, #18181B 0%, #202024 45%, #181512 100%) !important;
-      border: 2px solid #F59E0B !important;
+    /* 黑金 VIP 卡片积压未读时：绝对杜绝浅灰色纸张外凸阴影与外边距，纯粹保留黑曜雅金微光 */
+    .toast-card.is-vip-card.is-stacked {
+      margin-bottom: 0 !important;
       box-shadow: 
-        0 0 30px rgba(245, 158, 11, 0.45), 
-        0 0 10px rgba(234, 179, 8, 0.3), 
-        0 16px 40px rgba(0, 0, 0, 0.6) !important;
-      animation: vipPulseGlow 3s infinite ease-in-out;
+        0 18px 46px -6px rgba(0, 0, 0, 0.8),
+        0 0 1px 1px rgba(223, 186, 115, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 0 24px rgba(223, 186, 115, 0.03) !important;
     }
-    @keyframes vipPulseGlow {
+
+    /* 👑 支付宝黑钻 / QQ超级会员级黑金轻奢视觉体系（专用于特级黑天鹅重大特报） */
+    .toast-card.is-vip-card {
+      /* 深邃黑曜钛金微质感渐变 */
+      background: radial-gradient(130% 120% at 50% 0%, #1A1C24 0%, #121319 55%, #0B0C10 100%) !important;
+      /* 1px 极细香槟雅金发丝镶边，告别刺眼土黄粗边 */
+      border: 1px solid rgba(223, 186, 115, 0.32) !important;
+      /* 顶级黑金微光氛围投影 + 顶部微透倒角内高光 (Rim Lighting) */
+      box-shadow: 
+        0 18px 46px -6px rgba(0, 0, 0, 0.8),
+        0 0 1px 1px rgba(223, 186, 115, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 0 24px rgba(223, 186, 115, 0.03) !important;
+      animation: vipAuraBreathing 4s infinite ease-in-out;
+      backdrop-filter: blur(20px);
+    }
+
+    @keyframes vipAuraBreathing {
       0%, 100% {
-        box-shadow: 0 0 25px rgba(245, 158, 11, 0.4), 0 16px 40px rgba(0, 0, 0, 0.6);
-        border-color: #F59E0B;
+        box-shadow: 
+          0 18px 46px -6px rgba(0, 0, 0, 0.8),
+          0 0 16px rgba(212, 175, 55, 0.14),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12),
+          inset 0 0 20px rgba(223, 186, 115, 0.02);
+        border-color: rgba(223, 186, 115, 0.32);
       }
       50% {
-        box-shadow: 0 0 42px rgba(251, 191, 36, 0.75), 0 16px 48px rgba(0, 0, 0, 0.7);
-        border-color: #FDE047;
+        box-shadow: 
+          0 22px 52px -4px rgba(0, 0, 0, 0.88),
+          0 0 28px rgba(223, 186, 115, 0.28),
+          inset 0 1px 0 rgba(255, 248, 225, 0.22),
+          inset 0 0 24px rgba(223, 186, 115, 0.05);
+        border-color: rgba(223, 186, 115, 0.52);
       }
     }
+
+    /* 顶部导航条：与深色黑曜背景无缝自然融入 */
     .is-vip-card .header {
-      background: rgba(24, 24, 27, 0.96) !important;
-      border-bottom: 1px solid rgba(245, 158, 11, 0.35) !important;
+      background: rgba(255, 255, 255, 0.015) !important;
+      border-bottom: 1px solid rgba(223, 186, 115, 0.15) !important;
+      padding: 8px 16px !important;
     }
+
+    /* 支付宝黑卡芯片级胶囊徽章 */
     .badge-vip {
-      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
-      color: #FFFFFF !important;
-      font-weight: 800 !important;
-      box-shadow: 0 2px 10px rgba(217, 119, 6, 0.5) !important;
-      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, rgba(223, 186, 115, 0.16) 0%, rgba(184, 139, 56, 0.08) 100%) !important;
+      color: #F7E5B5 !important;
+      font-weight: 700 !important;
+      border: 1px solid rgba(223, 186, 115, 0.45) !important;
+      box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.35), 
+        inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+      letter-spacing: 0.6px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      border-radius: 20px !important;
+      padding: 2.5px 11px !important;
+      font-size: 11px !important;
     }
+    .badge-vip .crown-icon {
+      font-size: 12px;
+      filter: drop-shadow(0 1px 2px rgba(223, 186, 115, 0.5));
+    }
+    .badge-vip .vip-kw-pill {
+      background: rgba(223, 186, 115, 0.22);
+      border-radius: 10px;
+      padding: 0 6px;
+      margin-left: 2px;
+      color: #FFF2D1;
+    }
+
+    /* 顶部时间戳与控制器 */
     .is-vip-card .time-lbl {
-      color: #D4D4D8 !important;
+      color: #7E8696 !important;
+      font-size: 11px !important;
     }
     .is-vip-card .icon-btn {
-      color: #FBBF24 !important;
+      color: #8E95A5 !important;
+      transition: all 0.2s ease !important;
     }
     .is-vip-card .icon-btn:hover {
-      color: #FDE047 !important;
+      color: #DFBA73 !important;
+      text-shadow: 0 0 8px rgba(223, 186, 115, 0.45) !important;
+      transform: scale(1.08);
     }
+    .is-vip-card .close-btn:hover {
+      color: #F87171 !important;
+      text-shadow: 0 0 8px rgba(248, 113, 113, 0.45) !important;
+    }
+
+    /* 主标题：拒绝刺眼通体金黄，采用明亮冷铂白 + 悬停香槟金微晕 */
     .is-vip-card .title-text {
-      color: #FEF08A !important;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      color: #F8F9FA !important;
+      font-weight: 700 !important;
+      font-size: 15px !important;
+      line-height: 1.55 !important;
+      letter-spacing: 0.2px !important;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      transition: color 0.2s ease !important;
     }
-    .is-vip-card .body-text {
-      color: #F4F4F5 !important;
+    .is-vip-card .content-container:hover .title-text {
+      color: #DFBA73 !important;
     }
+    .is-vip-card .vip-alert-tag {
+      color: #DFBA73 !important;
+      font-weight: 800 !important;
+      margin-right: 2px;
+    }
+
+    /* 正文：月光钛灰，字体温润，彻底去除白底黑字的高对比眩光感 */
+    .is-vip-card .content-body-inner,
+    .is-vip-card .body-text,
+    .is-vip-card .body-text * {
+      color: #C2CAD6 !important;
+      font-size: 13px !important;
+      line-height: 1.65 !important;
+    }
+
+    /* 核心指标高亮胶囊（如暴涨 8.6%）：雅金精致晶体 */
     .is-vip-card .num-highlight {
-      color: #FBBF24 !important;
-      font-weight: 800;
+      color: #EAC786 !important;
+      background: rgba(223, 186, 115, 0.12) !important;
+      border: 1px solid rgba(223, 186, 115, 0.24) !important;
+      padding: 0 5px !important;
+      border-radius: 4px !important;
+      font-weight: 700 !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
     }
+
+    /* 观点分析：黑金流光微质感卡中卡 (Card-in-Card) */
     .is-vip-card .ai-box {
-      background: rgba(39, 39, 42, 0.9) !important;
-      border-top: 1px solid rgba(245, 158, 11, 0.3) !important;
+      background: rgba(255, 255, 255, 0.025) !important;
+      border: 1px solid rgba(223, 186, 115, 0.18) !important;
+      border-radius: 8px !important;
+      margin: 4px 14px 8px 14px !important;
+      padding: 10px 14px !important;
+      box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    }
+    .is-vip-card .ai-tag-badge {
+      background: linear-gradient(135deg, rgba(223, 186, 115, 0.14) 0%, rgba(184, 139, 56, 0.06) 100%) !important;
+      color: #DFBA73 !important;
+      border: 1px solid rgba(223, 186, 115, 0.32) !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
+      padding: 2.5px 8px !important;
+      border-radius: 4px !important;
     }
     .is-vip-card .ai-summary {
-      color: #E4E4E7 !important;
+      color: #9BA4B5 !important;
+      font-size: 12.5px !important;
+      line-height: 1.55 !important;
     }
+
+    /* 多空影响资产胶囊：柔光微透磨砂质感 */
+    .is-vip-card .chip-bull {
+      background: rgba(16, 185, 129, 0.12) !important;
+      color: #34D399 !important;
+      border: 1px solid rgba(16, 185, 129, 0.28) !important;
+      border-radius: 12px !important;
+      padding: 2px 10px !important;
+      font-weight: 600 !important;
+    }
+    .is-vip-card .chip-bear {
+      background: rgba(239, 68, 68, 0.12) !important;
+      color: #F87171 !important;
+      border: 1px solid rgba(239, 68, 68, 0.28) !important;
+      border-radius: 12px !important;
+      padding: 2px 10px !important;
+      font-weight: 600 !important;
+    }
+    .is-vip-card .chip-neutral {
+      background: rgba(255, 255, 255, 0.05) !important;
+      color: #8E95A5 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      padding: 2px 10px !important;
+      font-weight: 600 !important;
+    }
+
+    /* 底部自选与行情状态栏 */
     .is-vip-card .footer {
-      background: rgba(24, 24, 27, 0.98) !important;
-      border-top: 1px solid rgba(245, 158, 11, 0.3) !important;
+      background: #0E0F14 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+      padding: 6px 14px !important;
     }
-    .is-vip-card .btn-footer-action {
-      background: #27272A !important;
-      border-color: #3F3F46 !important;
-      color: #D4D4D8 !important;
+    .is-vip-card .stock-pill,
+    .is-vip-card .coin-pill {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 4px !important;
+      padding: 1.5px 7px !important;
+      color: #E2E8F0 !important;
     }
-    .is-vip-card .btn-footer-action:hover {
-      background: #3F3F46 !important;
+    .is-vip-card .stock-name,
+    .is-vip-card .coin-val {
+      color: #E2E8F0 !important;
+    }
+    .is-vip-card .stock-val {
+      color: #94A3B8 !important;
+    }
+
+    /* 翻看未读与忽略按钮：轻奢金属灰与金勾边 */
+    .is-vip-card .btn-prev {
+      background: linear-gradient(135deg, rgba(223, 186, 115, 0.12) 0%, rgba(184, 139, 56, 0.06) 100%) !important;
+      border: 1px solid rgba(223, 186, 115, 0.3) !important;
+      color: #DFBA73 !important;
+      border-radius: 4px !important;
+      padding: 2.5px 9px !important;
+      font-weight: 600 !important;
+      transition: all 0.2s ease !important;
+    }
+    .is-vip-card .btn-prev:hover {
+      background: rgba(223, 186, 115, 0.22) !important;
+      border-color: rgba(223, 186, 115, 0.5) !important;
       color: #FFFFFF !important;
+      box-shadow: 0 0 10px rgba(223, 186, 115, 0.25) !important;
+    }
+    .is-vip-card .btn-ignore {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.09) !important;
+      color: #7E8696 !important;
+      border-radius: 4px !important;
+      padding: 2.5px 8px !important;
+      transition: all 0.2s ease !important;
+    }
+    .is-vip-card .btn-ignore:hover {
+      background: rgba(239, 68, 68, 0.1) !important;
+      border-color: rgba(239, 68, 68, 0.28) !important;
+      color: #F87171 !important;
+    }
+
+    /* 底部倒计时进度条：极细香槟流金光带 */
+    .is-vip-card .progress-track {
+      background: rgba(255, 255, 255, 0.05) !important;
+      height: 2px !important;
+    }
+    .is-vip-card .progress-fill {
+      background: linear-gradient(90deg, #99732B 0%, #DFBA73 50%, #F5E2B8 100%) !important;
+      box-shadow: 0 0 6px rgba(223, 186, 115, 0.45) !important;
     }
 
     /* Header */
@@ -347,14 +549,21 @@
       color: #0F172A;
     }
     .content-container::-webkit-scrollbar {
-      width: 5px;
+      display: block !important;
+      width: 5px !important;
+      height: 0 !important;
     }
     .content-container::-webkit-scrollbar-track {
-      background: transparent;
+      background: transparent !important;
     }
     .content-container::-webkit-scrollbar-thumb {
-      background: #CBD5E1;
-      border-radius: 3px;
+      background: #CBD5E1 !important;
+      border-radius: 3px !important;
+    }
+    /* 黑金 VIP 卡片专用超细微透雅金滚动条，杜绝任何浅灰杂色 */
+    .is-vip-card .content-container::-webkit-scrollbar-thumb {
+      background: rgba(223, 186, 115, 0.35) !important;
+      border-radius: 3px !important;
     }
     .title-text {
       font-size: 15px;
@@ -375,6 +584,13 @@
       white-space: pre-wrap;
       word-break: break-word;
       cursor: pointer;
+    }
+    .content-body-inner {
+      font-size: 13px;
+      color: #1E293B;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .num-highlight {
       color: #2563EB;
@@ -514,19 +730,25 @@
       justify-content: space-between;
       border-top: 1px solid #F1F5F9;
       min-height: 32px;
-      gap: 12px;
+      gap: 10px;
       flex-shrink: 0;
+      overflow: hidden;
     }
     .crypto-prices {
       font-size: 11.5px;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       flex-wrap: nowrap;
-      gap: 8px;
+      gap: 6px;
       white-space: nowrap;
       user-select: none;
       flex: 1;
       min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .crypto-prices::-webkit-scrollbar {
+      display: none;
     }
     .coin-pill {
       display: inline-flex;
@@ -563,18 +785,6 @@
     .stock-down {
       font-weight: 700;
       color: #16A34A;
-    }
-    .is-vip-card .stock-pill,
-    .is-vip-card .coin-pill {
-      background: #27272A !important;
-      border-color: #3F3F46 !important;
-    }
-    .is-vip-card .stock-name,
-    .is-vip-card .coin-val {
-      color: #F4F4F5 !important;
-    }
-    .is-vip-card .stock-val {
-      color: #D4D4D8 !important;
     }
     .coin-sym-btc { color: #D97706; font-weight: 800; }
     .coin-sym-eth { color: #4F46E5; font-weight: 800; }
@@ -866,8 +1076,8 @@
       const mb = parseFloat(comp.marginBottom) || 0;
       const mt = parseFloat(comp.marginTop) || 0;
 
-      // 窗口内卡片可用的最大高度，严格留出padding、margin和抗锯齿缓冲
-      const availH = window.innerHeight - padTop - padBottom - mt - mb - 2;
+      // 窗口内卡片可用的最大高度，严格贴合padding与margin，杜绝任何外部滚动条或空隙
+      const availH = window.innerHeight - padTop - padBottom - mt - mb;
       if (availH > 100) {
         c.style.maxHeight = `${Math.floor(availH)}px`;
       }
@@ -897,8 +1107,9 @@
         const padTop = parseFloat(bodyStyle.paddingTop) || 4;
         const padBottom = parseFloat(bodyStyle.paddingBottom) || 4;
 
-        // 真实所需总高度：卡片自然高度 + 外边距(如is-stacked的margin-bottom) + body上下内边距 + 4px抗锯齿与DPI缩放安全冗余
-        const totalNeededH = Math.ceil(rect.height + mb + mt + padTop + padBottom + 4);
+        // 真实所需总高度：卡片自然高度 + 外边距(如is-stacked的margin-bottom) + body上下内边距
+        // 彻底杜绝多余空隙，防止在底部诱发任何原生灰色滚动条或灰色边缘缝隙
+        const totalNeededH = Math.ceil(rect.height + mb + mt + padTop + padBottom);
         const exactH = Math.max(160, totalNeededH);
 
         ipcRenderer.send('toast-ready-to-display', { height: exactH });
@@ -975,8 +1186,8 @@
 
       if (isVip) {
         card.classList.add('is-vip-card');
-        const kwText = alertData.vip_keyword ? ` · ${alertData.vip_keyword}` : '';
-        badge.textContent = `👑 VIP特报${kwText}`;
+        const kw = alertData.vip_keyword ? escapeHtml(alertData.vip_keyword) : '';
+        badge.innerHTML = `<span class="crown-icon">👑</span> <span>VIP特报</span>${kw ? `<span class="vip-kw-pill">${kw}</span>` : ''}`;
         badge.className = 'badge badge-vip';
       } else {
         card.classList.remove('is-vip-card');
@@ -1002,7 +1213,7 @@
         }
       }
 
-      const pubTime = alertData.pub_time || alertData.time || '';
+      const pubTime = alertData.pub_time || alertData.time || alertData.pubTime || (isTest ? new Date().toLocaleTimeString('zh-CN', { hour12: false }) : '');
       if (isTest) {
         // 测试演练不显示延迟数据
         document.getElementById('timeLbl').textContent = `自检演练时间：${pubTime}`;
@@ -1048,8 +1259,16 @@
         }
       } else {
         if (xAuthorCard) xAuthorCard.style.display = 'none';
-        titleEl.style.display = '-webkit-box';
-        titleEl.textContent = extractDisplayTitle(alertData);
+        titleEl.style.display = 'block';
+        const rawTitle = extractDisplayTitle(alertData);
+        if (isVip && rawTitle.startsWith('【') && rawTitle.includes('】')) {
+          const endIdx = rawTitle.indexOf('】');
+          const tag = rawTitle.substring(0, endIdx + 1);
+          const rest = rawTitle.substring(endIdx + 1);
+          titleEl.innerHTML = `<span class="vip-alert-tag">${escapeHtml(tag)}</span>${escapeHtml(rest)}`;
+        } else {
+          titleEl.textContent = rawTitle;
+        }
       }
 
       const rawContent = (alertData.content || '').trim();
@@ -1064,9 +1283,9 @@
                                  !isChineseText(cleanOriginal);
 
       if (isXTwitter && hasForeignOriginal) {
-        bodyEl.innerHTML = `<div style="font-size: 13px; color: #1E293B; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">${highlightNumbers(cleanContent)}</div><div style="border-top: 1px solid #E2E8F0; margin: 8px 0 6px 0;"></div><div style="font-size: 11.5px; color: #64748B; line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(cleanOriginal)}</div>`;
+        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(cleanContent)}</div><div style="border-top: 1px solid #E2E8F0; margin: 8px 0 6px 0;"></div><div style="font-size: 11.5px; color: #64748B; line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(cleanOriginal)}</div>`;
       } else {
-        bodyEl.innerHTML = `<div style="font-size: 13px; color: #1E293B; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">${highlightNumbers(cleanContent)}</div>`;
+        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(cleanContent)}</div>`;
       }
 
       // 财经日历数据
@@ -1178,26 +1397,45 @@
 
           aiSummary.textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
 
-          // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性）
+          // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性，严防 [object Object]）
           chipsRow.innerHTML = '';
-          const impacts = aiData.impacts || {};
-          const entries = Object.entries(impacts);
+          let normalizedList = [];
 
-          if (entries.length > 0) {
+          if (Array.isArray(aiData.impacts)) {
+            normalizedList = aiData.impacts.map(it => {
+              if (typeof it === 'string') return { asset: it, dir: '中性' };
+              const asset = it.target || it.name || it.asset || '标的';
+              const dir = it.bias || it.direction || it.dir || '中性';
+              return { asset: String(asset), dir: String(dir) };
+            });
+          } else if (aiData.impacts && typeof aiData.impacts === 'object') {
+            normalizedList = Object.entries(aiData.impacts).map(([key, val]) => {
+              if (typeof val === 'string') return { asset: key, dir: val };
+              if (val && typeof val === 'object') {
+                return {
+                  asset: val.name || val.target || key,
+                  dir: val.direction || val.bias || '中性'
+                };
+              }
+              return { asset: key, dir: String(val) };
+            });
+          }
+
+          if (normalizedList.length > 0) {
             // 智能排序：优先将明确的【利好】和【利空】排在最前，中性排在后方
-            entries.sort((a, b) => {
-              const weight = (d) => (d === '利好' || d === '利空' ? 2 : 1);
-              return weight(b[1]) - weight(a[1]);
+            normalizedList.sort((a, b) => {
+              const weight = (d) => (d.includes('利好') ? 3 : (d.includes('利空') ? 2 : 1));
+              return weight(b.dir) - weight(a.dir);
             });
 
-            for (const [asset, dir] of entries) {
+            for (const { asset, dir } of normalizedList) {
               const chip = document.createElement('span');
               let chipClass = 'chip-neutral';
               let icon = '⚪';
-              if (dir === '利好') {
+              if (dir.includes('利好')) {
                 chipClass = 'chip-bull';
                 icon = '🟢';
-              } else if (dir === '利空') {
+              } else if (dir.includes('利空')) {
                 chipClass = 'chip-bear';
                 icon = '🔴';
               }

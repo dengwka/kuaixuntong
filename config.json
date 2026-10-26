@@ -7,7 +7,7 @@
     "play_sound": true,
     "style": "light_minimalist",
     "quiet_hours": {
-      "enabled": true,
+      "enabled": false,
       "start_time": "23:00",
       "end_time": "08:00"
     },
@@ -22,7 +22,7 @@
       "only_important": true,
       "min_star": 3,
       "weight": 80,
-      "keyword_filter_enabled": false,
+      "keyword_filter_enabled": true,
       "keywords": [
         "降息",
         "加息",
@@ -44,16 +44,7 @@
       "weight": 95,
       "poll_interval_sec": 10,
       "keyword_filter_enabled": false,
-      "keywords": [
-        "美联储",
-        "宏观决议",
-        "地缘政治",
-        "降息",
-        "加息",
-        "冲突",
-        "战略",
-        "关税"
-      ]
+      "keywords": []
     },
     "xueqiu": {
       "name": "雪球快讯",
@@ -62,18 +53,7 @@
       "cookie": "",
       "weight": 75,
       "keyword_filter_enabled": false,
-      "keywords": [
-        "涨停",
-        "跌停",
-        "财报",
-        "业绩",
-        "减持",
-        "增持",
-        "重组",
-        "违约",
-        "证监会",
-        "突破"
-      ]
+      "keywords": []
     },
     "maimai": {
       "name": "脉脉职言",
@@ -81,21 +61,11 @@
       "cookie": "",
       "weight": 75,
       "keyword_filter_enabled": false,
-      "keywords": [
-        "裁员",
-        "年终奖",
-        "倒闭",
-        "降薪",
-        "涉案",
-        "调查",
-        "高管变动",
-        "离职",
-        "破产"
-      ]
+      "keywords": []
     },
     "x_twitter": {
       "name": "𝕏 (Twitter) 监控",
-      "enabled": false,
+      "enabled": true,
       "poll_interval_sec": 30,
       "weight": 85,
       "accounts": [
@@ -159,25 +129,46 @@
     "min_alert_score": 60,
     "highlight_keywords": [
       "突发",
-      "爆炸",
-      "战争",
-      "袭击",
-      "制裁",
       "降息",
       "加息",
       "非农",
       "CPI",
-      "伊朗",
-      "特朗普",
+      "原油",
+      "黄金",
       "美联储",
-      "违约"
+      "违约",
+      "爆炸",
+      "战争",
+      "袭击",
+      "制裁"
     ],
     "exclude_keywords": [
       "广告",
       "扫码",
-      "下载App",
       "领券",
+      "下载App",
       "限时特惠"
+    ],
+    "vip_keywords": [],
+    "highlight_keywords_cleared": false,
+    "exclude_keywords_cleared": false,
+    "vip_keywords_cleared": true
+  },
+  "watchlist": {
+    "enabled": true,
+    "stocks": [
+      {
+        "code": "00700",
+        "symbol": "r_hk00700",
+        "name": "腾讯控股",
+        "market": "港股"
+      },
+      {
+        "code": "JD",
+        "symbol": "usJD",
+        "name": "京东",
+        "market": "美股"
+      }
     ]
   },
   "ai_analysis": {
@@ -203,7 +194,7 @@
     "custom_coins": []
   },
   "storage": {
-    "data_dir": "D:\\antigravity\\桌面提示小工具\\data",
+    "data_dir": "C:\\Users\\PC\\AppData\\Roaming\\kuaixuntong\\data",
     "auto_cleanup": true,
     "retention_days": 3,
     "max_file_size_mb": 10

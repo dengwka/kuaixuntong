@@ -96,7 +96,10 @@ class StockQuoteManager {
       for (const line of lines) {
         const idx = line.indexOf('=');
         if (idx === -1) continue;
-        const id = line.substring(2, idx).trim();
+        const rawId = line.substring(0, idx).trim();
+        const cleanId = rawId.replace(/^v_+/, '');
+        // 尝试从 cleanSymbols 中找到完全匹配的请求 symbol，保证 ID 一致性
+        const matchedReqSymbol = cleanSymbols.find(s => s.toLowerCase() === cleanId.toLowerCase()) || cleanId;
         const rawVal = line.substring(idx + 2, line.length - 1);
         const parts = rawVal.split('~');
 
@@ -109,16 +112,17 @@ class StockQuoteManager {
 
           let currency = '¥';
           let mkt = 'A股';
-          if (id.includes('hk')) {
+          if (cleanId.includes('hk')) {
             currency = 'HK$';
             mkt = '港股';
-          } else if (id.includes('us')) {
+          } else if (cleanId.includes('us')) {
             currency = '$';
             mkt = '美股';
           }
 
           quotes.push({
-            symbol: id,
+            symbol: matchedReqSymbol,
+            rawSymbol: cleanId,
             code,
             name,
             market: mkt,

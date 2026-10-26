@@ -1,6 +1,6 @@
 {
   "name": "kuaixuntong",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "快讯通 - 实时突发财经与宏观事件监控助手",
   "main": "src/main.js",
   "scripts": {
@@ -38,7 +38,8 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      "config.json"
     ],
     "win": {
       "target": [
@@ -53,7 +54,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "快讯通",
-      "artifactName": "kuaixuntong-Setup-${version}.${ext}"
+      "artifactName": "kuaixuntong-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
     },
     "mac": {
       "identity": null,
