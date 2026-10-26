@@ -3,8 +3,6 @@ const path = require('path');
 const os = require('os');
 const { app } = require('electron');
 
-const DEFAULT_DEEPSEEK_KEY = Buffer.from('c2stNzFkOGFiNjU1MzhkNGQwNjg4M2JhZTY5NWQ2MGI1NTI=', 'base64').toString('utf-8');
-
 const DEFAULT_X_ACCOUNTS = [
   {
     id: 'realdonaldtrump',
@@ -35,40 +33,17 @@ const DEFAULT_X_ACCOUNTS = [
     include_replies: false,
     ai_analysis_enabled: false,
     last_seen_id: ''
-  },
-  {
-    id: 'star_okx',
-    screen_name: 'star_okx',
-    name: 'Star_OKX',
-    avatar: 'https://pbs.twimg.com/profile_images/1627290215189741572/7WVhFT9Q_200x200.jpg',
-    enabled: true,
-    include_replies: false,
-    ai_analysis_enabled: true,
-    last_seen_id: ''
-  },
-  {
-    id: 'luckybibiw1p',
-    screen_name: 'luckybibiw1p',
-    name: '超级幸运星~',
-    avatar: 'https://pbs.twimg.com/profile_images/2053788604552577024/Oas5X1Hb_200x200.jpg',
-    enabled: true,
-    include_replies: false,
-    ai_analysis_enabled: false,
-    last_seen_id: ''
   }
 ];
 
-const DEFAULT_WATCHLIST_STOCKS = [
-  { code: '00700', symbol: 'r_hk00700', name: '腾讯控股', market: '港股' },
-  { code: 'JD', symbol: 'usJD', name: '京东', market: '美股' }
-];
+const DEFAULT_WATCHLIST_STOCKS = [];
 
-const DEFAULT_CRYPTO_COINS = ['BTC/USDT', 'SOL/USDT'];
+const DEFAULT_CRYPTO_COINS = ['BTC/USDT', 'ETH/USDT'];
 
 class ConfigManager {
   constructor() {
-    this.rootConfigPath = path.join(__dirname, '..', 'config.json');
-    this.userConfigPath = app ? path.join(app.getPath('userData'), 'config.json') : this.rootConfigPath;
+    const defaultUserDir = path.join(process.env.APPDATA || os.homedir(), 'kuaixuntong');
+    this.userConfigPath = app ? path.join(app.getPath('userData'), 'config.json') : path.join(defaultUserDir, 'config.json');
     // 永久多重安全备份路径：独立于应用安装/卸载目录，防止卸载时被误删清空
     this.backupConfigPath = path.join(os.homedir(), '.kuaixuntong', 'config.json');
     this.backupConfigPath2 = path.join(process.env.APPDATA || os.homedir(), 'kuaixuntong_config_backup', 'config.json');
@@ -326,26 +301,6 @@ class ConfigManager {
               include_replies: false,
               ai_analysis_enabled: false,
               last_seen_id: ''
-            },
-            {
-              id: 'star_okx',
-              screen_name: 'star_okx',
-              name: 'Star_OKX',
-              avatar: 'https://pbs.twimg.com/profile_images/1627290215189741572/7WVhFT9Q_200x200.jpg',
-              enabled: true,
-              include_replies: false,
-              ai_analysis_enabled: true,
-              last_seen_id: ''
-            },
-            {
-              id: 'luckybibiw1p',
-              screen_name: 'luckybibiw1p',
-              name: '超级幸运星~',
-              avatar: 'https://pbs.twimg.com/profile_images/2053788604552577024/Oas5X1Hb_200x200.jpg',
-              enabled: true,
-              include_replies: false,
-              ai_analysis_enabled: false,
-              last_seen_id: ''
             }
           ],
           cookie: '',
@@ -368,16 +323,13 @@ class ConfigManager {
       },
       watchlist: {
         enabled: true,
-        stocks: [
-          { code: '00700', symbol: 'r_hk00700', name: '腾讯控股', market: '港股' },
-          { code: 'JD', symbol: 'usJD', name: '京东', market: '美股' }
-        ]
+        stocks: []
       },
       ai_analysis: {
         enabled: true,
-        deepseek_api_key: DEFAULT_DEEPSEEK_KEY,
+        deepseek_api_key: '',
         zhipu_api_key: '',
-        api_key: DEFAULT_DEEPSEEK_KEY,
+        api_key: '',
         deepseek_api_url: 'https://api.deepseek.com/chat/completions',
         zhipu_api_url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
         deepseek_model: 'deepseek-chat',
@@ -423,10 +375,6 @@ class ConfigManager {
       targetPath = this.backupConfigPath2;
       isFromBackup = true;
       console.log(`[Config] 自动从二级容灾备份还原: ${this.backupConfigPath2}`);
-    } 
-    // 优先级 4: 项目根目录内置配置 (开发与初始打包兜底)
-    else if (fs.existsSync(this.rootConfigPath)) {
-      targetPath = this.rootConfigPath;
     }
 
     try {
@@ -498,20 +446,12 @@ class ConfigManager {
           }
         }
 
-        // 关键恢复 1：X 监听博主容灾自愈链 (独立存储 -> 备份 -> 内置配置 -> 默认预设)
+        // 关键恢复 1：X 监听博主容灾自愈链 (独立存储 -> 备份 -> 默认预设)
         if (!merged.sources.x_twitter.accounts_cleared && (!Array.isArray(merged.sources.x_twitter.accounts) || merged.sources.x_twitter.accounts.length === 0)) {
           const xVault = this.loadXAccounts();
           if (xVault && xVault.length > 0) {
             merged.sources.x_twitter.accounts = xVault;
-          } else if (fs.existsSync(this.rootConfigPath)) {
-            try {
-              const rootRaw = JSON.parse(fs.readFileSync(this.rootConfigPath, 'utf-8'));
-              if (rootRaw && rootRaw.sources && rootRaw.sources.x_twitter && Array.isArray(rootRaw.sources.x_twitter.accounts) && rootRaw.sources.x_twitter.accounts.length > 0) {
-                merged.sources.x_twitter.accounts = rootRaw.sources.x_twitter.accounts;
-              }
-            } catch (eXRoot) {}
-          }
-          if (!merged.sources.x_twitter.accounts || merged.sources.x_twitter.accounts.length === 0) {
+          } else {
             merged.sources.x_twitter.accounts = JSON.parse(JSON.stringify(DEFAULT_X_ACCOUNTS));
           }
         }
@@ -531,53 +471,20 @@ class ConfigManager {
 
         // 关键恢复 2：自选股票容灾自愈
         if (!merged.watchlist.stocks_cleared && (!Array.isArray(merged.watchlist.stocks) || merged.watchlist.stocks.length === 0)) {
-          if (fs.existsSync(this.rootConfigPath)) {
-            try {
-              const rootRaw = JSON.parse(fs.readFileSync(this.rootConfigPath, 'utf-8'));
-              if (rootRaw && rootRaw.watchlist && Array.isArray(rootRaw.watchlist.stocks) && rootRaw.watchlist.stocks.length > 0) {
-                merged.watchlist.stocks = rootRaw.watchlist.stocks;
-              }
-            } catch (eStk) {}
-          }
-          if (!merged.watchlist.stocks || merged.watchlist.stocks.length === 0) {
-            merged.watchlist.stocks = JSON.parse(JSON.stringify(DEFAULT_WATCHLIST_STOCKS));
-          }
+          merged.watchlist.stocks = JSON.parse(JSON.stringify(DEFAULT_WATCHLIST_STOCKS));
         }
 
         // 关键恢复 3：主流虚拟币容灾自愈
         if (!merged.crypto_prices.coins_cleared && (!Array.isArray(merged.crypto_prices.selected_coins) || merged.crypto_prices.selected_coins.length === 0)) {
-          if (fs.existsSync(this.rootConfigPath)) {
-            try {
-              const rootRaw = JSON.parse(fs.readFileSync(this.rootConfigPath, 'utf-8'));
-              if (rootRaw && rootRaw.crypto_prices && Array.isArray(rootRaw.crypto_prices.selected_coins) && rootRaw.crypto_prices.selected_coins.length > 0) {
-                merged.crypto_prices.selected_coins = rootRaw.crypto_prices.selected_coins;
-              }
-            } catch (eCoin) {}
-          }
-          if (!merged.crypto_prices.selected_coins || merged.crypto_prices.selected_coins.length === 0) {
-            merged.crypto_prices.selected_coins = [...DEFAULT_CRYPTO_COINS];
-          }
+          merged.crypto_prices.selected_coins = [...DEFAULT_CRYPTO_COINS];
         }
 
-        // 关键恢复 4：AI API Key 容灾恢复链（独立 Key 库 -> 内置 config.json -> 默认 Key）
+        // 关键恢复 4：AI API Key 容灾恢复链（从用户本地独立 Key 保险箱安全加载）
         if (!merged.ai_analysis.deepseek_api_key && !isDsCleared) {
           const savedKeys = this.loadApiKeys();
           if (savedKeys && savedKeys.deepseek_api_key) {
             merged.ai_analysis.deepseek_api_key = savedKeys.deepseek_api_key;
             merged.ai_analysis.api_key = savedKeys.deepseek_api_key;
-          }
-          if (!merged.ai_analysis.deepseek_api_key && fs.existsSync(this.rootConfigPath)) {
-            try {
-              const rootRaw = JSON.parse(fs.readFileSync(this.rootConfigPath, 'utf-8'));
-              if (rootRaw && rootRaw.ai_analysis && rootRaw.ai_analysis.deepseek_api_key) {
-                merged.ai_analysis.deepseek_api_key = rootRaw.ai_analysis.deepseek_api_key;
-                merged.ai_analysis.api_key = rootRaw.ai_analysis.deepseek_api_key;
-              }
-            } catch (eRoot) {}
-          }
-          if (!merged.ai_analysis.deepseek_api_key) {
-            merged.ai_analysis.deepseek_api_key = DEFAULT_DEEPSEEK_KEY;
-            merged.ai_analysis.api_key = DEFAULT_DEEPSEEK_KEY;
           }
         }
 
@@ -680,7 +587,7 @@ class ConfigManager {
       if (newConfig.ai_analysis.deepseek_api_key) {
         this.saveApiKeys(newConfig.ai_analysis);
       } else if (!newConfig.ai_analysis.deepseek_cleared) {
-        const existingKey = (cur.ai_analysis && cur.ai_analysis.deepseek_api_key) || (this.loadApiKeys() && this.loadApiKeys().deepseek_api_key) || DEFAULT_DEEPSEEK_KEY;
+        const existingKey = (cur.ai_analysis && cur.ai_analysis.deepseek_api_key) || (this.loadApiKeys() && this.loadApiKeys().deepseek_api_key) || '';
         this.config.ai_analysis.deepseek_api_key = existingKey;
         this.config.ai_analysis.api_key = existingKey;
       }
@@ -702,20 +609,6 @@ class ConfigManager {
 
       // 同步写入永久多重容灾备份
       this.syncBackupFiles(this.config);
-
-      // 仅在非 asar 虚拟包环境（如开发源码调试）下写入本地根目录模板 (脱敏保护，符合开源与云端规则)
-      if (this.rootConfigPath && !this.rootConfigPath.includes('app.asar')) {
-        try {
-          const rootCopy = JSON.parse(data);
-          if (rootCopy.ai_analysis) {
-            rootCopy.ai_analysis.deepseek_api_key = '';
-            rootCopy.ai_analysis.api_key = '';
-          }
-          fs.writeFileSync(this.rootConfigPath, JSON.stringify(rootCopy, null, 2), 'utf-8');
-        } catch (errRoot) {
-          console.warn('[Config] 写入本地根目录配置失败 (已安全跳过):', errRoot.message);
-        }
-      }
       return true;
     } catch (e) {
       console.error('[Config] 保存配置失败:', e);

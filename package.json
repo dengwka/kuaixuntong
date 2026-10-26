@@ -38,8 +38,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "package.json",
-      "config.json"
+      "package.json"
     ],
     "win": {
       "target": [
