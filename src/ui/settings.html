@@ -683,7 +683,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.3.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.4.0 · 运行中</span>
     </div>
   </div>
 
@@ -832,6 +832,30 @@
                   </div>
                   <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词（与星级宏观指标取并集）。</span>
                 </div>
+                <!-- 📊 行情级别过滤 (独立档位滑块) -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="checkbox-row" style="font-size: 12px; margin: 0; cursor: pointer;">
+                      <input type="checkbox" id="jin10ImpactFilterEnabled" onchange="toggleImpactFilterRow('jin10', this.checked)" />
+                      <b style="color: #1E293B;">📊 启用【行情级别过滤】 (默认不开启)</b>
+                    </label>
+                    <span class="impact-level-tag" id="jin10ImpactTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: #64748B; font-weight: 600;">未开启 · 全量推送</span>
+                  </div>
+                  <div id="jin10ImpactSliderBox" style="display: none; flex-direction: column; gap: 5px; margin-left: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 11.5px; color: #475569; font-weight: 600;">推送门槛：<b id="jin10ImpactScoreDisplay" style="color: #2563EB; font-size: 13px;">60分</b></span>
+                      <span id="jin10ImpactDesc" style="font-size: 11px; color: #2563EB; font-weight: 600;">普通行情（常规政策/日常异动推送）</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">0分 (不过滤)</span>
+                      <input type="range" id="jin10ImpactMinScore" min="0" max="100" step="5" value="60" style="flex: 1; cursor: pointer; accent-color: #2563EB;" oninput="updateImpactScoreDisplay('jin10', this.value)" />
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">100分 (必然大涨大跌)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                      💡 划分标准：0分不过滤；60分为常规异动；80分大概率（80%以上）引发大涨大跌；100分为必然暴涨暴跌或重磅黑天鹅。结合AI与本地策略综合得出结论，低于设定分数的快讯将被过滤拦截。
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -853,6 +877,30 @@
                   <button type="button" class="btn btn-secondary btn-sm" id="btnResetTopicKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复专栏默认关键词">重置默认</button>
                 </div>
                 <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+                <!-- 📊 行情级别过滤 (独立档位滑块) -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="checkbox-row" style="font-size: 12px; margin: 0; cursor: pointer;">
+                      <input type="checkbox" id="topicImpactFilterEnabled" onchange="toggleImpactFilterRow('topic', this.checked)" />
+                      <b style="color: #1E293B;">📊 启用【行情级别过滤】 (默认不开启)</b>
+                    </label>
+                    <span class="impact-level-tag" id="topicImpactTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: #64748B; font-weight: 600;">未开启 · 全量推送</span>
+                  </div>
+                  <div id="topicImpactSliderBox" style="display: none; flex-direction: column; gap: 5px; margin-left: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 11.5px; color: #475569; font-weight: 600;">推送门槛：<b id="topicImpactScoreDisplay" style="color: #2563EB; font-size: 13px;">60分</b></span>
+                      <span id="topicImpactDesc" style="font-size: 11px; color: #2563EB; font-weight: 600;">普通行情（常规政策/日常异动推送）</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">0分 (不过滤)</span>
+                      <input type="range" id="topicImpactMinScore" min="0" max="100" step="5" value="60" style="flex: 1; cursor: pointer; accent-color: #2563EB;" oninput="updateImpactScoreDisplay('topic', this.value)" />
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">100分 (必然大涨大跌)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                      💡 划分标准：0分不过滤；60分为常规异动；80分大概率（80%以上）引发大涨大跌；100分为必然暴涨暴跌或重磅黑天鹅。结合AI与本地策略综合得出结论，低于设定分数的快讯将被过滤拦截。
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -889,6 +937,30 @@
                     <button type="button" class="btn btn-secondary btn-sm" id="btnResetXqKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复雪球默认关键词">重置默认</button>
                   </div>
                   <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+                <!-- 📊 行情级别过滤 (独立档位滑块) -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="checkbox-row" style="font-size: 12px; margin: 0; cursor: pointer;">
+                      <input type="checkbox" id="xqImpactFilterEnabled" onchange="toggleImpactFilterRow('xq', this.checked)" />
+                      <b style="color: #1E293B;">📊 启用【行情级别过滤】 (默认不开启)</b>
+                    </label>
+                    <span class="impact-level-tag" id="xqImpactTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: #64748B; font-weight: 600;">未开启 · 全量推送</span>
+                  </div>
+                  <div id="xqImpactSliderBox" style="display: none; flex-direction: column; gap: 5px; margin-left: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 11.5px; color: #475569; font-weight: 600;">推送门槛：<b id="xqImpactScoreDisplay" style="color: #2563EB; font-size: 13px;">60分</b></span>
+                      <span id="xqImpactDesc" style="font-size: 11px; color: #2563EB; font-weight: 600;">普通行情（常规政策/日常异动推送）</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">0分 (不过滤)</span>
+                      <input type="range" id="xqImpactMinScore" min="0" max="100" step="5" value="60" style="flex: 1; cursor: pointer; accent-color: #2563EB;" oninput="updateImpactScoreDisplay('xq', this.value)" />
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">100分 (必然大涨大跌)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                      💡 划分标准：0分不过滤；60分为常规异动；80分大概率（80%以上）引发大涨大跌；100分为必然暴涨暴跌或重磅黑天鹅。结合AI与本地策略综合得出结论，低于设定分数的快讯将被过滤拦截。
+                    </div>
+                  </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -1010,6 +1082,31 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- 📊 行情级别过滤 (独立档位滑块) -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="checkbox-row" style="font-size: 12px; margin: 0; cursor: pointer;">
+                      <input type="checkbox" id="xImpactFilterEnabled" onchange="toggleImpactFilterRow('x', this.checked)" />
+                      <b style="color: #1E293B;">📊 启用【行情级别过滤】 (默认不开启)</b>
+                    </label>
+                    <span class="impact-level-tag" id="xImpactTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: #64748B; font-weight: 600;">未开启 · 全量推送</span>
+                  </div>
+                  <div id="xImpactSliderBox" style="display: none; flex-direction: column; gap: 5px; margin-left: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 11.5px; color: #475569; font-weight: 600;">推送门槛：<b id="xImpactScoreDisplay" style="color: #2563EB; font-size: 13px;">60分</b></span>
+                      <span id="xImpactDesc" style="font-size: 11px; color: #2563EB; font-weight: 600;">普通行情（常规政策/日常异动推送）</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">0分 (不过滤)</span>
+                      <input type="range" id="xImpactMinScore" min="0" max="100" step="5" value="60" style="flex: 1; cursor: pointer; accent-color: #2563EB;" oninput="updateImpactScoreDisplay('x', this.value)" />
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">100分 (必然大涨大跌)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                      💡 划分标准：0分不过滤；60分为常规异动；80分大概率（80%以上）引发大涨大跌；100分为必然暴涨暴跌或重磅黑天鹅。结合AI与本地策略综合得出结论，低于设定分数的快讯将被过滤拦截。
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1036,6 +1133,30 @@
                     <button type="button" class="btn btn-secondary btn-sm" id="btnResetMmKws" style="font-size: 11px; padding: 4px 8px; flex-shrink: 0;" title="恢复脉脉默认关键词">重置默认</button>
                   </div>
                   <span class="tip-text" style="margin-left: 20px;">中英文逗号隔开，勾选后仅推送命中词。</span>
+                <!-- 📊 行情级别过滤 (独立档位滑块) -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="checkbox-row" style="font-size: 12px; margin: 0; cursor: pointer;">
+                      <input type="checkbox" id="maimaiImpactFilterEnabled" onchange="toggleImpactFilterRow('maimai', this.checked)" />
+                      <b style="color: #1E293B;">📊 启用【行情级别过滤】 (默认不开启)</b>
+                    </label>
+                    <span class="impact-level-tag" id="maimaiImpactTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: #64748B; font-weight: 600;">未开启 · 全量推送</span>
+                  </div>
+                  <div id="maimaiImpactSliderBox" style="display: none; flex-direction: column; gap: 5px; margin-left: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 11.5px; color: #475569; font-weight: 600;">推送门槛：<b id="maimaiImpactScoreDisplay" style="color: #2563EB; font-size: 13px;">60分</b></span>
+                      <span id="maimaiImpactDesc" style="font-size: 11px; color: #2563EB; font-weight: 600;">普通行情（常规政策/日常异动推送）</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">0分 (不过滤)</span>
+                      <input type="range" id="maimaiImpactMinScore" min="0" max="100" step="5" value="60" style="flex: 1; cursor: pointer; accent-color: #2563EB;" oninput="updateImpactScoreDisplay('maimai', this.value)" />
+                      <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">100分 (必然大涨大跌)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                      💡 划分标准：0分不过滤；60分为常规异动；80分大概率（80%以上）引发大涨大跌；100分为必然暴涨暴跌或重磅黑天鹅。结合AI与本地策略综合得出结论，低于设定分数的快讯将被过滤拦截。
+                    </div>
+                  </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -2208,13 +2329,66 @@
       });
     });
 
+    // 行情级别过滤描述与实时联动
+    function getImpactScoreDesc(val) {
+      const v = parseInt(val) || 0;
+      if (v === 0) return '0分 · 不过滤（全量快讯正常推送）';
+      if (v <= 40) return `${v}分 · 弱影响（微弱波动或中性偏向亦推送）`;
+      if (v <= 60) return `${v}分 · 普通行情（常规政策/日常异动推送）`;
+      if (v <= 75) return `${v}分 · 较大概率异动（多数板块有明确利好利空）`;
+      if (v <= 95) return `${v}分 · 大概率（80%+概率导致板块或标的大涨大跌）`;
+      return '100分 · 必然大涨大跌（重磅决议/黑天鹅特报/极端暴涨暴跌）';
+    }
+
+    function updateImpactScoreDisplay(sourceKey, val) {
+      const displayEl = document.getElementById(`${sourceKey}ImpactScoreDisplay`);
+      const descEl = document.getElementById(`${sourceKey}ImpactDesc`);
+      const tagEl = document.getElementById(`${sourceKey}ImpactTag`);
+      const v = parseInt(val) || 0;
+      if (displayEl) displayEl.textContent = `${v}分`;
+      if (descEl) descEl.textContent = getImpactScoreDesc(v);
+      if (tagEl) {
+        const enabledCb = document.getElementById(`${sourceKey}ImpactFilterEnabled`);
+        if (enabledCb && enabledCb.checked) {
+          tagEl.textContent = v === 0 ? '不过滤' : `≥ ${v}分推送`;
+          tagEl.style.background = v >= 80 ? '#EFF6FF' : '#F1F5F9';
+          tagEl.style.color = v >= 80 ? '#1D4ED8' : '#334155';
+        } else {
+          tagEl.textContent = '未开启 · 全量推送';
+          tagEl.style.background = '#F1F5F9';
+          tagEl.style.color = '#64748B';
+        }
+      }
+    }
+    window.updateImpactScoreDisplay = updateImpactScoreDisplay;
+
+    function toggleImpactFilterRow(sourceKey, checked) {
+      const box = document.getElementById(`${sourceKey}ImpactSliderBox`);
+      const tag = document.getElementById(`${sourceKey}ImpactTag`);
+      const slider = document.getElementById(`${sourceKey}ImpactMinScore`);
+      const val = slider ? parseInt(slider.value) || 0 : 0;
+      if (box) box.style.display = checked ? 'flex' : 'none';
+      if (tag) {
+        if (checked) {
+          tag.textContent = val === 0 ? '不过滤' : `≥ ${val}分推送`;
+          tag.style.background = val >= 80 ? '#EFF6FF' : '#F1F5F9';
+          tag.style.color = val >= 80 ? '#1D4ED8' : '#334155';
+        } else {
+          tag.textContent = '未开启 · 全量推送';
+          tag.style.background = '#F1F5F9';
+          tag.style.color = '#64748B';
+        }
+      }
+    }
+    window.toggleImpactFilterRow = toggleImpactFilterRow;
+
     function applySettingsPayload(payload) {
       if (!payload) return;
       const cfg = payload.config || payload || {};
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.3.0';
+      const appVer = payload.appVersion || '1.4.0';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -2284,10 +2458,18 @@
       document.getElementById('jin10MinStar').value = String(jin10.min_star || 3);
       document.getElementById('jin10KwFilterEnabled').checked = !!jin10.keyword_filter_enabled;
       document.getElementById('jin10Keywords').value = (Array.isArray(jin10.keywords) ? jin10.keywords : DEFAULT_JIN10_KWS).join(', ');
+      document.getElementById('jin10ImpactFilterEnabled').checked = !!jin10.impact_filter_enabled;
+      document.getElementById('jin10ImpactMinScore').value = jin10.impact_min_score !== undefined ? jin10.impact_min_score : 60;
+      updateImpactScoreDisplay('jin10', document.getElementById('jin10ImpactMinScore').value);
+      toggleImpactFilterRow('jin10', !!jin10.impact_filter_enabled);
 
       const topic = sources.jin10_topic || {};
       document.getElementById('topicKwFilterEnabled').checked = !!topic.keyword_filter_enabled;
       document.getElementById('topicKeywords').value = (Array.isArray(topic.keywords) ? topic.keywords : DEFAULT_TOPIC_KWS).join(', ');
+      document.getElementById('topicImpactFilterEnabled').checked = !!topic.impact_filter_enabled;
+      document.getElementById('topicImpactMinScore').value = topic.impact_min_score !== undefined ? topic.impact_min_score : 60;
+      updateImpactScoreDisplay('topic', document.getElementById('topicImpactMinScore').value);
+      toggleImpactFilterRow('topic', !!topic.impact_filter_enabled);
 
       const xueqiu = sources.xueqiu || {};
       if (xueqiu.only_important !== false) {
@@ -2298,17 +2480,29 @@
       document.getElementById('xueqiuCookie').value = xueqiu.cookie || '';
       document.getElementById('xqKwFilterEnabled').checked = !!xueqiu.keyword_filter_enabled;
       document.getElementById('xueqiuKeywords').value = (Array.isArray(xueqiu.keywords) ? xueqiu.keywords : DEFAULT_XUEQIU_KWS).join(', ');
+      document.getElementById('xqImpactFilterEnabled').checked = !!xueqiu.impact_filter_enabled;
+      document.getElementById('xqImpactMinScore').value = xueqiu.impact_min_score !== undefined ? xueqiu.impact_min_score : 60;
+      updateImpactScoreDisplay('xq', document.getElementById('xqImpactMinScore').value);
+      toggleImpactFilterRow('xq', !!xueqiu.impact_filter_enabled);
 
       const maimai = sources.maimai || {};
       document.getElementById('maimaiCookie').value = maimai.cookie || '';
       document.getElementById('maimaiKwFilterEnabled').checked = !!maimai.keyword_filter_enabled;
       document.getElementById('maimaiKeywords').value = (Array.isArray(maimai.keywords) ? maimai.keywords : DEFAULT_MAIMAI_KWS).join(', ');
+      document.getElementById('maimaiImpactFilterEnabled').checked = !!maimai.impact_filter_enabled;
+      document.getElementById('maimaiImpactMinScore').value = maimai.impact_min_score !== undefined ? maimai.impact_min_score : 60;
+      updateImpactScoreDisplay('maimai', document.getElementById('maimaiImpactMinScore').value);
+      toggleImpactFilterRow('maimai', !!maimai.impact_filter_enabled);
 
       const xTwitter = sources.x_twitter || {};
       document.getElementById('xAutoTranslate').checked = xTwitter.auto_translate !== false;
       document.getElementById('xPollInterval').value = xTwitter.poll_interval_sec || 30;
       document.getElementById('xCustomProxy').value = xTwitter.proxy || '';
       document.getElementById('xPrivateCookie').value = xTwitter.cookie || '';
+      document.getElementById('xImpactFilterEnabled').checked = !!xTwitter.impact_filter_enabled;
+      document.getElementById('xImpactMinScore').value = xTwitter.impact_min_score !== undefined ? xTwitter.impact_min_score : 60;
+      updateImpactScoreDisplay('x', document.getElementById('xImpactMinScore').value);
+      toggleImpactFilterRow('x', !!xTwitter.impact_filter_enabled);
       if (Array.isArray(xTwitter.accounts) && xTwitter.accounts.length > 0) {
         xSubscribedAccounts = xTwitter.accounts.map(acc => {
           const item = { ...acc };
@@ -4134,25 +4328,33 @@
             only_important: document.getElementById('jin10ModeImportant').checked,
             min_star: parseInt(document.getElementById('jin10MinStar').value) || 3,
             keyword_filter_enabled: document.getElementById('jin10KwFilterEnabled').checked,
-            keywords: parseKeywords(document.getElementById('jin10Keywords').value)
+            keywords: parseKeywords(document.getElementById('jin10Keywords').value),
+            impact_filter_enabled: document.getElementById('jin10ImpactFilterEnabled').checked,
+            impact_min_score: parseInt(document.getElementById('jin10ImpactMinScore').value) || 0
           },
           jin10_topic: {
             enabled: document.getElementById('navCb_jin10_topic').checked,
             keyword_filter_enabled: document.getElementById('topicKwFilterEnabled').checked,
-            keywords: parseKeywords(document.getElementById('topicKeywords').value)
+            keywords: parseKeywords(document.getElementById('topicKeywords').value),
+            impact_filter_enabled: document.getElementById('topicImpactFilterEnabled').checked,
+            impact_min_score: parseInt(document.getElementById('topicImpactMinScore').value) || 0
           },
           xueqiu: {
             enabled: document.getElementById('navCb_xueqiu').checked,
             only_important: document.getElementById('xqModeImportant').checked,
             cookie: document.getElementById('xueqiuCookie').value.trim(),
             keyword_filter_enabled: document.getElementById('xqKwFilterEnabled').checked,
-            keywords: parseKeywords(document.getElementById('xueqiuKeywords').value)
+            keywords: parseKeywords(document.getElementById('xueqiuKeywords').value),
+            impact_filter_enabled: document.getElementById('xqImpactFilterEnabled').checked,
+            impact_min_score: parseInt(document.getElementById('xqImpactMinScore').value) || 0
           },
           maimai: {
             enabled: document.getElementById('navCb_maimai').checked,
             cookie: document.getElementById('maimaiCookie').value.trim(),
             keyword_filter_enabled: document.getElementById('maimaiKwFilterEnabled').checked,
-            keywords: parseKeywords(document.getElementById('maimaiKeywords').value)
+            keywords: parseKeywords(document.getElementById('maimaiKeywords').value),
+            impact_filter_enabled: document.getElementById('maimaiImpactFilterEnabled').checked,
+            impact_min_score: parseInt(document.getElementById('maimaiImpactMinScore').value) || 0
           },
           x_twitter: {
             enabled: document.getElementById('navCb_x_twitter').checked,
@@ -4161,7 +4363,9 @@
             proxy: document.getElementById('xCustomProxy').value.trim(),
             cookie: document.getElementById('xPrivateCookie').value.trim(),
             accounts: xSubscribedAccounts,
-            accounts_cleared: window._xAccountsExplicitlyCleared === true
+            accounts_cleared: window._xAccountsExplicitlyCleared === true,
+            impact_filter_enabled: document.getElementById('xImpactFilterEnabled').checked,
+            impact_min_score: parseInt(document.getElementById('xImpactMinScore').value) || 0
           }
         },
         rules: {

@@ -183,7 +183,14 @@ class NotifierService {
       if (ai.summary) {
         lines.push(`> 💡 **AI研判**：<font color="comment">${ai.summary}</font>`);
       }
-      const impactsList = this.parseImpactsList(ai.impacts);
+      const rawImpacts = this.parseImpactsList(ai.impacts);
+      const activeImpacts = rawImpacts.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
+      const impactsList = activeImpacts.length > 0 ? activeImpacts : [];
+      const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
+        ? alertData.impact_score
+        : (ai && ai.impact_score !== undefined && ai.impact_score !== null ? ai.impact_score : null);
+      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+
       if (impactsList.length > 0) {
         const impactStrs = impactsList.map(it => {
           const isBearish = it.dir.includes('利空');
@@ -195,7 +202,9 @@ class NotifierService {
           }
           return `⚪ <font color="comment">${it.asset} ${it.dir}</font>`;
         }).join(' · ');
-        lines.push(`> 📊 **多空研判**：${impactStrs}`);
+        lines.push(`> 📊 **多空研判**：${scorePrefix}${impactStrs}`);
+      } else if (scorePrefix) {
+        lines.push(`> 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
       }
       lines.push(`>`);
     }
@@ -312,13 +321,22 @@ class NotifierService {
       if (ai.summary) {
         despLines.push(`- 💡 **AI研判**：${ai.summary}`);
       }
-      const impactsList = this.parseImpactsList(ai.impacts);
+      const rawImpacts = this.parseImpactsList(ai.impacts);
+      const activeImpacts = rawImpacts.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
+      const impactsList = activeImpacts.length > 0 ? activeImpacts : [];
+      const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
+        ? alertData.impact_score
+        : (ai && ai.impact_score !== undefined && ai.impact_score !== null ? ai.impact_score : null);
+      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+
       if (impactsList.length > 0) {
         const impactStrs = impactsList.map(it => {
           const icon = it.dir.includes('利好') ? '🟢' : (it.dir.includes('利空') ? '🔴' : '⚪');
           return `${icon} ${it.asset} ${it.dir}`;
         }).join('  ');
-        despLines.push(`- 📊 **多空研判**：${impactStrs}`);
+        despLines.push(`- 📊 **多空研判**：${scorePrefix}${impactStrs}`);
+      } else if (scorePrefix) {
+        despLines.push(`- 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
       }
     }
 
@@ -420,7 +438,14 @@ class NotifierService {
 
     // AI 研判与多空情绪
     const aiSummary = alertData.ai_analysis?.summary || '无特殊AI研判';
-    const impactsList = this.parseImpactsList(alertData.ai_analysis?.impacts);
+    const rawImpacts = this.parseImpactsList(alertData.ai_analysis?.impacts);
+    const activeImpacts = rawImpacts.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
+    const impactsList = activeImpacts.length > 0 ? activeImpacts : [];
+    const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
+      ? alertData.impact_score
+      : (alertData.ai_analysis?.impact_score !== undefined && alertData.ai_analysis?.impact_score !== null ? alertData.ai_analysis.impact_score : null);
+    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+
     let impactStr = '';
     if (impactsList.length > 0) {
       impactStr = impactsList.map(it => {
@@ -468,7 +493,7 @@ class NotifierService {
         tag: 'div',
         text: {
           tag: 'lark_md',
-          content: `💡 **AI研判**：${aiSummary}\n\n📊 **多空研判**：${impactStr}`
+          content: `💡 **AI研判**：${aiSummary}\n\n📊 **多空研判**：${scorePrefix}${impactStr}`
         }
       },
       // 3. 行情分割线与实时自选报价 (仅在有自选数据时呈现)
@@ -693,7 +718,9 @@ class NotifierService {
       source_key: 'jin10',
       pub_time: now,
       url: 'https://github.com/dengwka/kuaixuntong',
+      impact_score: 88,
       ai_analysis: {
+        impact_score: 88,
         summary: '网络连接正常，AI多空情绪引擎与行情实时推送管道对接成功。',
         impacts: { 'A股': '利好', '虚拟币': '利好', '黄金': '中性', '美元': '利空', '原油': '中性' }
       }
@@ -767,9 +794,21 @@ class NotifierService {
   async sendAlert(alertData, mobileConfig, fullConfig, tickerPayload) {
     if (!mobileConfig || !mobileConfig.enabled) return;
 
-    let tickers = tickerPayload;
-    if (!tickers || (!tickers.stockPrices && !tickers.cryptoPrices)) {
-      tickers = await this.getLiveTickerPayload(fullConfig);
+    let tickers = tickerPayload ? { ...tickerPayload } : {};
+    const stockEnabled = fullConfig?.watchlist?.enabled !== false && (fullConfig?.watchlist?.stocks || []).length > 0;
+    const cryptoEnabled = fullConfig?.crypto_prices?.enabled !== false && (fullConfig?.crypto_prices?.selected_coins || []).length > 0;
+
+    const needStock = stockEnabled && (!tickers.stockPrices || !tickers.stockPrices.trim());
+    const needCrypto = cryptoEnabled && (!tickers.cryptoPrices || !tickers.cryptoPrices.trim());
+
+    if (needStock || needCrypto) {
+      const live = await this.getLiveTickerPayload(fullConfig);
+      if (needStock && live.stockPrices) {
+        tickers.stockPrices = live.stockPrices;
+      }
+      if (needCrypto && live.cryptoPrices) {
+        tickers.cryptoPrices = live.cryptoPrices;
+      }
     }
 
     // 1. 企业微信群机器人推送
@@ -886,10 +925,17 @@ class NotifierService {
     const prefix = isVip ? '👑【VIP重大特报】' : '⚡【快讯】';
 
     const aiSummary = alertData.ai_analysis?.summary || '无特殊AI研判';
-    const impactsList = this.parseImpactsList(alertData.ai_analysis?.impacts);
+    const rawImpacts = this.parseImpactsList(alertData.ai_analysis?.impacts);
+    const activeImpacts = rawImpacts.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
+    const impactsList = activeImpacts.length > 0 ? activeImpacts : [];
+    const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
+      ? alertData.impact_score
+      : (alertData.ai_analysis?.impact_score !== undefined && alertData.ai_analysis?.impact_score !== null ? alertData.ai_analysis.impact_score : null);
+    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+
     const impactStrs = impactsList.length > 0 
-      ? impactsList.map(it => `${it.asset} ${it.dir}`).join(' · ')
-      : '多空情绪平稳';
+      ? `${scorePrefix}${impactsList.map(it => `${it.asset} ${it.dir}`).join(' · ')}`
+      : (scorePrefix ? `${scorePrefix}多空情绪平稳` : '多空情绪平稳');
 
     const stockText = tickerPayload?.stockPrices?.split(/\s{2,}/).filter(Boolean).join(' | ') || '无';
     const cryptoText = tickerPayload?.cryptoPrices?.split(/\s{2,}/).filter(Boolean).join(' | ') || '无';
@@ -954,7 +1000,9 @@ class NotifierService {
       source_key: 'jin10',
       pub_time: now,
       url: 'https://github.com/dengwka/kuaixuntong',
+      impact_score: 88,
       ai_analysis: {
+        impact_score: 88,
         summary: '网络连接顺畅，AI多空情绪引擎与股票、虚拟币行情管道已打通。',
         impacts: { 'A股': '利好', '虚拟币': '利好', '黄金': '中性', '美元': '利空', '原油': '中性' }
       }
@@ -981,7 +1029,9 @@ class NotifierService {
       source_key: 'jin10',
       pub_time: now,
       url: 'https://github.com/dengwka/kuaixuntong',
+      impact_score: 88,
       ai_analysis: {
+        impact_score: 88,
         summary: '网络连接畅通，AI多空情绪引擎与股票、加密货币行情管道工作正常。',
         impacts: { 'A股': '利好', '虚拟币': '利好', '黄金': '中性', '美元': '利空', '原油': '中性' }
       }
@@ -1009,7 +1059,9 @@ class NotifierService {
       source_key: 'jin10',
       pub_time: now,
       url: 'https://github.com/dengwka/kuaixuntong',
+      impact_score: 88,
       ai_analysis: {
+        impact_score: 88,
         summary: '微信推送管道工作正常，后续自选标的与重要事件将以精美卡片形式直推。',
         impacts: { 'A股': '利好', '虚拟币': '利好', '黄金': '中性', '美元': '利空', '原油': '中性' }
       }

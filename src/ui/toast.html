@@ -370,6 +370,13 @@
     .badge-maimai {
       background: #0D9488;
     }
+    .badge-system {
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
     .badge-x {
       background: #0F172A;
       color: #FFFFFF;
@@ -530,10 +537,10 @@
 
     /* Content */
     .content-container {
-      padding: 13px 16px 8px 16px;
-      flex: 1 1 auto;
+      padding: 13px 16px 12px 16px !important;
+      flex: 0 0 auto !important; /* 关键：坚决禁止 flex 压缩内容区，保证正文始终自然完整展现 */
       min-height: 50px;
-      overflow-y: auto;
+      overflow-y: hidden;
       overflow-anchor: none; /* 彻底禁止滚动锚定偏移，避免高度计算时向上推挤标题 */
       display: flex;
       flex-direction: column;
@@ -585,6 +592,7 @@
       white-space: pre-wrap;
       word-break: break-word;
       cursor: pointer;
+      margin-bottom: 2px;
     }
     .content-body-inner {
       font-size: 13px;
@@ -592,6 +600,7 @@
       line-height: 1.65;
       white-space: pre-wrap;
       word-break: break-word;
+      padding-bottom: 2px;
     }
     .num-highlight {
       color: #2563EB;
@@ -695,31 +704,81 @@
       line-height: 1.45;
     }
     .chips-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 2px;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      gap: 6px 8px !important;
+      margin-top: 6px !important;
     }
     .chip {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      border: 1px solid;
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      height: 24px !important;
+      line-height: 22px !important;
+      padding: 0 8px !important;
+      border-radius: 6px !important;
+      border: 1px solid !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      gap: 4px !important;
+      box-sizing: border-box !important;
+    }
+    .chip span, .chip b {
+      white-space: nowrap !important;
     }
     .chip-bull {
-      background: #DCFCE7;
-      color: #15803D;
-      border-color: #86EFAC;
+      background: #ECFDF5 !important;
+      color: #047857 !important;
+      border-color: #A7F3D0 !important;
     }
     .chip-bear {
-      background: #FEE2E2;
-      color: #B91C1C;
-      border-color: #FCA5A5;
+      background: #FEF2F2 !important;
+      color: #B91C1C !important;
+      border-color: #FECACA !important;
     }
     .chip-neutral {
-      background: #F1F5F9;
-      color: #475569;
-      border-color: #CBD5E1;
+      background: #F8FAFC !important;
+      color: #64748B !important;
+      border-color: #E2E8F0 !important;
+    }
+    .chip-score {
+      font-weight: 700 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      gap: 4px !important;
+    }
+    .chip-score-high {
+      background: #EFF6FF !important;
+      color: #1D4ED8 !important;
+      border-color: #93C5FD !important;
+    }
+    .chip-score-normal {
+      background: #F1F5F9 !important;
+      color: #334155 !important;
+      border-color: #CBD5E1 !important;
+    }
+    .chip-score-neutral {
+      background: #F8FAFC !important;
+      color: #64748B !important;
+      border-color: #E2E8F0 !important;
+    }
+    .is-vip-card .chip-score-high {
+      background: rgba(223, 186, 115, 0.2) !important;
+      color: #FBBF24 !important;
+      border-color: rgba(223, 186, 115, 0.5) !important;
+    }
+    .is-vip-card .chip {
+      height: 24px !important;
+      line-height: 22px !important;
+      padding: 0 8px !important;
+      border-radius: 6px !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
     }
 
     /* Footer & Universal Ticker */
@@ -943,8 +1002,8 @@
     <!-- Header -->
     <div class="header">
       <div class="header-left">
-        <span class="badge" id="sourceBadge">⚡ 金十快讯</span>
-        <span class="time-lbl" id="timeLbl">原文发布时间：--:--:--</span>
+        <span class="badge" id="sourceBadge">⚡ 实时快讯</span>
+        <span class="time-lbl" id="timeLbl">发布时间：--:--:--</span>
       </div>
       <div class="header-right">
         <span class="icon-btn" id="btnSettings" title="打开管理配置">⚙</span>
@@ -1113,7 +1172,9 @@
         return alertData.title.trim();
       }
       const raw = (alertData.content || '').trim();
-      if (!raw) return '金十重要资讯快讯';
+      const isUpdate = (alertData.source_key === 'system' || alertData.source_key === 'update' || (alertData.source || '').includes('版本更新'));
+      if (isUpdate) return '🚀 发现新版本更新';
+      if (!raw) return '重要资讯快讯';
 
       // 1. 如果包含多币种或外汇汇总
       if (raw.includes('【美元') || raw.includes('【美联储') || (raw.includes('【英镑') && raw.includes('【欧元'))) {
@@ -1147,7 +1208,7 @@
         return firstSentence.length > 70 ? firstSentence.substring(0, 70) + '...' : firstSentence;
       }
 
-      return '金十宏观突发要闻';
+      return alertData.source ? `${alertData.source}突发要闻` : '突发要闻';
     }
 
     const COIN_COLOR_MAP = {
@@ -1271,10 +1332,18 @@
       // 窗口内卡片可用的最大高度，严格贴合padding与margin，杜绝任何外部滚动条或空隙
       const availH = window.innerHeight - padTop - padBottom - mt - mb;
       if (availH > 100) {
-        c.style.maxHeight = `${Math.floor(availH)}px`;
+        c.style.maxHeight = `${Math.ceil(availH)}px`;
       }
       const contentEl = document.getElementById('contentArea');
       if (contentEl) {
+        // 仅当卡片内容自然总高度确实超过当前可用窗口高度（即达到系统设定的最大封顶高度）时才开启局部滚动
+        if (c.scrollHeight > availH + 2) {
+          contentEl.style.overflowY = 'auto';
+          contentEl.style.flexShrink = '1';
+        } else {
+          contentEl.style.overflowY = 'hidden';
+          contentEl.style.flexShrink = '0';
+        }
         contentEl.scrollTop = 0;
       }
     }
@@ -1288,11 +1357,31 @@
       const doSend = () => {
         const c = document.getElementById('cardContainer') || card;
         if (!c) return;
+        const contentEl = document.getElementById('contentArea');
 
-        // 1. 临时解除maxHeight限制以精准测量内容自然撑开的高度
+        // 1. 临时彻底解除任何高度与压缩约束以精准测量内容自然撑开的高度
         c.style.maxHeight = 'none';
+        c.style.height = 'auto';
+        if (contentEl) {
+          contentEl.style.maxHeight = 'none';
+          contentEl.style.height = 'auto';
+          contentEl.style.flexShrink = '0';
+          contentEl.style.overflowY = 'visible';
+        }
 
+        // 2. 测量卡片真实外轮廓高度，并额外比对 scrollHeight，双重保障绝不漏掉半个字符
         const rect = c.getBoundingClientRect();
+        let cardNaturalH = Math.ceil(Math.max(rect.height, c.scrollHeight));
+
+        // 如果 contentArea 内部存在未被包裹的细微滚动溢出，补充这部分高度
+        if (contentEl) {
+          const cScroll = contentEl.scrollHeight;
+          const cClient = contentEl.clientHeight;
+          if (cScroll > cClient) {
+            cardNaturalH += (cScroll - cClient);
+          }
+        }
+
         const comp = window.getComputedStyle(c);
         const mb = parseFloat(comp.marginBottom) || 0;
         const mt = parseFloat(comp.marginTop) || 0;
@@ -1301,16 +1390,20 @@
         const padTop = parseFloat(bodyStyle.paddingTop) || 4;
         const padBottom = parseFloat(bodyStyle.paddingBottom) || 4;
 
-        // 真实所需总高度：卡片自然高度 + 外边距(如is-stacked的margin-bottom) + body上下内边距
-        // 彻底杜绝多余空隙，防止在底部诱发任何原生灰色滚动条或灰色边缘缝隙
-        const totalNeededH = Math.ceil(rect.height + mb + mt + padTop + padBottom);
+        // 真实所需总高度：卡片自然高度 + 外边距 + body上下内边距 + 6px 呼吸裕量，彻底防止底行字体切削
+        const totalNeededH = Math.ceil(cardNaturalH + mb + mt + padTop + padBottom + 6);
         const exactH = Math.max(160, totalNeededH);
+
+        // 测量完毕后恢复 contentEl 正常样式（防备极端超长文本超过屏幕最大高度时仍能滚动）
+        if (contentEl) {
+          contentEl.style.overflowY = '';
+        }
 
         ipcRenderer.send('toast-ready-to-display', { height: exactH, width: currentAdaptiveWidth });
       };
       // 立即触发与微延迟二次测量，彻底解决 requestAnimationFrame 在隐藏窗口被 Chromium 挂起的问题
       doSend();
-      setTimeout(doSend, 30);
+      setTimeout(doSend, 40);
     }
 
     function isMouseInside() {
@@ -1374,6 +1467,7 @@
       const srcName = alertData.source || '';
       const isXTwitter = (alertData.source_key === 'x_twitter' || srcName.includes('𝕏') || alertData.source_key === 'x' || !!alertData.author_handle);
       const isVip = !!alertData.is_vip;
+      const isUpdate = (alertData.source_key === 'system' || alertData.source_key === 'update' || srcName.includes('版本更新') || srcName.includes('软件更新') || String(alertData.id || '').startsWith('update_'));
 
       if (isVip) {
         card.classList.add('is-vip-card');
@@ -1389,6 +1483,9 @@
         } else if (isTest || srcName.includes('测试')) {
           badge.textContent = '🧪 测试演练';
           badge.className = 'badge badge-test';
+        } else if (isUpdate) {
+          badge.textContent = '🚀 版本更新';
+          badge.className = 'badge badge-system';
         } else if (alertData.source_key === 'xueqiu' || srcName.includes('雪球')) {
           badge.textContent = '❄️ 雪球快讯';
           badge.className = 'badge badge-xueqiu';
@@ -1398,8 +1495,11 @@
         } else if (srcName.includes('重要') || alertData.source_key === 'jin10_topic') {
           badge.textContent = '🔥 重要事件';
           badge.className = 'badge badge-important';
-        } else {
+        } else if (alertData.source_key === 'jin10' || srcName.includes('金十')) {
           badge.textContent = '⚡ 金十快讯';
+          badge.className = 'badge badge-normal';
+        } else {
+          badge.textContent = srcName || '⚡ 实时快讯';
           badge.className = 'badge badge-normal';
         }
       }
@@ -1408,6 +1508,8 @@
       if (isTest) {
         // 测试演练不显示延迟数据
         document.getElementById('timeLbl').textContent = `自检演练时间：${pubTime}`;
+      } else if (isUpdate) {
+        document.getElementById('timeLbl').textContent = `发布时间：${pubTime}`;
       } else {
         const delaySec = alertData.sync_delay_sec !== undefined ? Number(alertData.sync_delay_sec) : 0;
         let delayText = '';
@@ -1664,14 +1766,45 @@
             });
           }
 
-          if (normalizedList.length > 0) {
-            // 智能排序：优先将明确的【利好】和【利空】排在最前，中性排在后方
-            normalizedList.sort((a, b) => {
+          // 渲染【行情级别打分】胶囊（置于利好多空研判行最前端）
+          const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
+            ? alertData.impact_score
+            : (aiData && aiData.impact_score !== undefined && aiData.impact_score !== null ? aiData.impact_score : null);
+
+          let hasScoreChip = false;
+          if (rawScore !== null && rawScore !== undefined) {
+            const scoreNum = Math.max(0, Math.min(100, Number(rawScore)));
+            if (!isNaN(scoreNum)) {
+              hasScoreChip = true;
+              const scoreChip = document.createElement('span');
+              let scoreClass = 'chip-score-normal';
+              let icon = '⚡';
+              if (scoreNum >= 80) {
+                scoreClass = 'chip-score-high';
+                icon = '🔥';
+              } else if (scoreNum === 0) {
+                scoreClass = 'chip-score-neutral';
+                icon = '⚪';
+              }
+              scoreChip.className = `chip chip-score ${scoreClass}`;
+              scoreChip.innerHTML = `<span>${icon}</span> <span>行情影响</span> <b>${scoreNum}分</b>`;
+              chipsRow.appendChild(scoreChip);
+            }
+          }
+
+          // 智能精炼多空标的展示：
+          // 1. 若存在明确的【利好】或【利空】标的，聚焦呈现有实际方向的核心标的，彻底清除无关“中性”噪点
+          // 2. 若全部资产均无剧烈倾向（全中性），则精简为单个“⚪ 多空情绪 均衡平稳”胶囊，绝不堆叠冗余灰色框
+          const activeList = normalizedList.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
+          const displayList = activeList.length > 0 ? activeList : (normalizedList.length > 0 ? [{ asset: '多空情绪', dir: '均衡平稳' }] : []);
+
+          if (displayList.length > 0) {
+            displayList.sort((a, b) => {
               const weight = (d) => (d.includes('利好') ? 3 : (d.includes('利空') ? 2 : 1));
               return weight(b.dir) - weight(a.dir);
             });
 
-            for (const { asset, dir } of normalizedList) {
+            for (const { asset, dir } of displayList) {
               const chip = document.createElement('span');
               let chipClass = 'chip-neutral';
               let icon = '⚪';
@@ -1686,6 +1819,8 @@
               chip.innerHTML = `<span>${icon}</span> <span>${escapeHtml(asset)}</span> <b>${escapeHtml(dir)}</b>`;
               chipsRow.appendChild(chip);
             }
+            chipsRow.style.display = 'flex';
+          } else if (hasScoreChip) {
             chipsRow.style.display = 'flex';
           } else {
             chipsRow.style.display = 'none';

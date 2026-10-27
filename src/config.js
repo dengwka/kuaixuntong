@@ -237,7 +237,9 @@ class ConfigManager {
           min_star: 3,
           weight: 80,
           keyword_filter_enabled: false,
-          keywords: ['降息', '加息', '非农', 'CPI', '美联储', '央行', '利率', '战争', '制裁', '突发']
+          keywords: ['降息', '加息', '非农', 'CPI', '美联储', '央行', '利率', '战争', '制裁', '突发'],
+          impact_filter_enabled: false,
+          impact_min_score: 60
         },
         jin10_topic: {
           name: '重要事件',
@@ -247,7 +249,9 @@ class ConfigManager {
           weight: 95,
           poll_interval_sec: 10,
           keyword_filter_enabled: false,
-          keywords: ['美联储', '宏观决议', '地缘政治', '降息', '加息', '冲突', '战略', '关税']
+          keywords: ['美联储', '宏观决议', '地缘政治', '降息', '加息', '冲突', '战略', '关税'],
+          impact_filter_enabled: false,
+          impact_min_score: 60
         },
         xueqiu: {
           name: '雪球快讯',
@@ -256,7 +260,9 @@ class ConfigManager {
           cookie: '',
           weight: 75,
           keyword_filter_enabled: false,
-          keywords: ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破']
+          keywords: ['涨停', '跌停', '财报', '业绩', '减持', '增持', '重组', '违约', '证监会', '突破'],
+          impact_filter_enabled: false,
+          impact_min_score: 60
         },
         maimai: {
           name: '脉脉职言',
@@ -264,13 +270,17 @@ class ConfigManager {
           cookie: '',
           weight: 75,
           keyword_filter_enabled: false,
-          keywords: ['裁员', '年终奖', '倒闭', '降薪', '涉案', '调查', '高管变动', '离职', '破产']
+          keywords: ['裁员', '年终奖', '倒闭', '降薪', '涉案', '调查', '高管变动', '离职', '破产'],
+          impact_filter_enabled: false,
+          impact_min_score: 60
         },
         x_twitter: {
           name: '𝕏 (Twitter) 监控',
           enabled: false,
           poll_interval_sec: 30,
           weight: 85,
+          impact_filter_enabled: false,
+          impact_min_score: 60,
           accounts: [
             {
               id: 'realdonaldtrump',

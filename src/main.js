@@ -17,6 +17,8 @@ const updateManager = require('./updater');
 const Translator = require('./translator');
 const XFetcher = require('./fetcherX');
 const notifier = require('./notifier');
+const stockQuoteManager = require('./stockQuote');
+const cryptoPriceManager = require('./cryptoPrice');
 
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
@@ -143,6 +145,7 @@ function triggerTestToast() {
     url: 'https://github.com/dengwka/kuaixuntong',
     important: true,
     score: 95,
+    impact_score: 95,
     watchlist_impact: {
       target: '自选股票池 / 港股科技',
       direction: '强烈利好',
@@ -151,6 +154,7 @@ function triggerTestToast() {
     ai_analysis: {
       ai_source: 'DeepSeek 智能研判',
       source_type: 'deepseek',
+      impact_score: 95,
       summary: '多国央行罕见落地协同降息与巨量流动性注入，极大利好权益类资产与高弹性科技成长股，黄金与大宗商品全面提振，美元指数短线承压下挫。',
       impacts: {
         'A股': '利好',
@@ -238,6 +242,24 @@ async function pollCycle() {
           }
         }
 
+        // 结合本地策略与AI分析计算综合行情影响评分 (0-100)
+        const impactScore = financialAi.calculateImpactScore(evalItem, evalItem.ai_analysis);
+        evalItem.impact_score = impactScore;
+        if (evalItem.ai_analysis) {
+          evalItem.ai_analysis.impact_score = impactScore;
+        }
+
+        // 独立数据源【行情级别过滤】检查 (默认不开启，开启后按 0-100 档位过滤)
+        const sourceConf = cfgSources[evalItem.source_key] || {};
+        if (sourceConf.impact_filter_enabled && !evalItem.is_test) {
+          const minImpactScore = Math.max(0, Math.min(100, parseInt(sourceConf.impact_min_score) || 0));
+          if (minImpactScore > 0 && impactScore < minImpactScore) {
+            logger.info(`[行情级别过滤] [${evalItem.source || evalItem.source_key}] ${evalItem.title} 影响评分(${impactScore}分) < 门槛(${minImpactScore}分)，已拦截不推送`);
+            historyManager.pushedIds.add(evalUid);
+            continue;
+          }
+        }
+
         historyManager.recordPushed(evalItem, evalItem.sync_delay_sec);
 
         // 🖥️ 电脑端桌面弹窗推送 (独立平齐控制，默认开启)
@@ -276,6 +298,24 @@ async function pollCycle() {
   }
 }
 
+let tickerPreheatTimer = null;
+function startTickerPreheat() {
+  if (tickerPreheatTimer) clearInterval(tickerPreheatTimer);
+  const preheat = () => {
+    try {
+      const cfg = configManager.config;
+      if (cfg?.watchlist?.enabled !== false && (cfg?.watchlist?.stocks || []).length > 0) {
+        stockQuoteManager.getFormattedSummary(cfg.watchlist.stocks).catch(() => {});
+      }
+      if (cfg?.crypto_prices?.enabled !== false && (cfg?.crypto_prices?.selected_coins || []).length > 0) {
+        cryptoPriceManager.getFormattedSummary(cfg.crypto_prices.selected_coins).catch(() => {});
+      }
+    } catch (e) {}
+  };
+  preheat();
+  tickerPreheatTimer = setInterval(preheat, 20000); // 每 20 秒静默更新一次内存缓存，确保推送时 0ms 命中现成行情
+}
+
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
   const intervalSec = Math.max(3, (configManager.config.system && configManager.config.system.poll_interval_sec) || 5);
@@ -283,6 +323,7 @@ function startPolling() {
   // 首次运行
   pollCycle();
   pollTimer = setInterval(pollCycle, intervalSec * 1000);
+  startTickerPreheat();
 }
 
 app.whenReady().then(() => {

@@ -352,13 +352,13 @@ class ToastManager {
 
     // 先隐藏创建窗口，等待页面完整计算高度并组装完毕后一次性贴角显示
     const initX = workArea.x + workArea.width - width - marginX;
-    const initY = isMac ? (workArea.y + marginY) : (workArea.y + workArea.height - 300 - marginY);
+    const initY = isMac ? (workArea.y + marginY) : (workArea.y + workArea.height - 480 - marginY);
 
     const toastWin = new BrowserWindow({
       x: initX,
       y: initY,
       width,
-      height: 300,
+      height: 480,
       frame: false,
       transparent: true,
       alwaysOnTop: true,
