@@ -132,13 +132,29 @@ class HistoryManager {
     const newRecord = {
       id: uid,
       title: item.title || '',
+      content: item.content || '',
       source: item.source || '',
+      source_key: item.source_key || '',
+      source_name: item.source_name || '',
+      author_name: item.author_name || '',
+      author_handle: item.author_handle || '',
+      author_avatar: item.author_avatar || '',
       pub_time: item.pub_time || item.time || '',
+      time: item.time || item.pub_time || '',
       pushed_at: nowStr,
       sync_delay_sec: Number(syncDelaySec) || 0,
       important: !!item.important,
       url: item.url || '',
       lifecycle_status: 'pushed',
+      pics: item.pics || [],
+      pic: item.pic || null,
+      is_vip: !!item.is_vip,
+      vip_keyword: item.vip_keyword || '',
+      original_text: item.original_text || null,
+      is_translated: !!item.is_translated,
+      economic_data: item.economic_data || null,
+      is_economic_data: !!item.is_economic_data,
+      ai_analysis: item.ai_analysis || null,
       ai_summary: (item.ai_analysis && item.ai_analysis.summary) || '',
       impacts: (item.ai_analysis && item.ai_analysis.impacts) || {}
     };
@@ -168,14 +184,34 @@ class HistoryManager {
     if (action === 'unattended_expired') {
       const exists = this.unattendedAlerts.some(a => String(a.id) === aid);
       if (!exists) {
-        this.unattendedAlerts.push({
+        // 完整保留未读卡片的所有渲染字段，防止重启后补看未读时丢弃内容与作者头像
+        const fullAlert = {
+          ...(record || {}),
+          ...(extraData || {}),
           id: aid,
           title: (extraData && extraData.title) || (record && record.title) || '',
+          content: (extraData && extraData.content) || (record && record.content) || '',
           source: (extraData && extraData.source) || (record && record.source) || '',
+          source_key: (extraData && extraData.source_key) || (record && record.source_key) || '',
+          source_name: (extraData && extraData.source_name) || (record && record.source_name) || '',
+          author_name: (extraData && extraData.author_name) || (record && record.author_name) || '',
+          author_handle: (extraData && extraData.author_handle) || (record && record.author_handle) || '',
+          author_avatar: (extraData && extraData.author_avatar) || (record && record.author_avatar) || '',
           pub_time: (extraData && extraData.pub_time) || (record && record.pub_time) || '',
+          time: (extraData && extraData.time) || (record && record.time) || '',
           expired_at: new Date().toLocaleString('zh-CN', { hour12: false }),
-          url: (extraData && extraData.url) || (record && record.url) || ''
-        });
+          url: (extraData && extraData.url) || (record && record.url) || '',
+          pics: (extraData && extraData.pics) || (record && record.pics) || [],
+          pic: (extraData && extraData.pic) || (record && record.pic) || null,
+          is_vip: !!((extraData && extraData.is_vip) || (record && record.is_vip)),
+          vip_keyword: (extraData && extraData.vip_keyword) || (record && record.vip_keyword) || '',
+          original_text: (extraData && extraData.original_text) || (record && record.original_text) || null,
+          is_translated: !!((extraData && extraData.is_translated) || (record && record.is_translated)),
+          economic_data: (extraData && extraData.economic_data) || (record && record.economic_data) || null,
+          is_economic_data: !!((extraData && extraData.is_economic_data) || (record && record.is_economic_data)),
+          ai_analysis: (extraData && extraData.ai_analysis) || (record && record.ai_analysis) || null
+        };
+        this.unattendedAlerts.push(fullAlert);
         this.saveUnattended();
       }
       logger.info(`[UNATTENDED] 弹窗未点击超时关闭: [${aid}], 计入未读池并开启托盘闪烁`);

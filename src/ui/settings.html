@@ -683,7 +683,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.2.2 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.3.0 · 运行中</span>
     </div>
   </div>
 
@@ -693,7 +693,7 @@
     <div class="tab-item" data-tab="keywords">🎯 关键词规则</div>
     <div class="tab-item" data-tab="ai">💡 AI观点研判</div>
     <div class="tab-item" data-tab="toast">🔔 弹窗与行情</div>
-    <div class="tab-item" data-tab="mobile">📱 手机微信推送</div>
+    <div class="tab-item" data-tab="mobile">📢 推送管理</div>
     <div class="tab-item" data-tab="autostart">🚀 开机自启</div>
     <div class="tab-item" data-tab="storage">📂 数据与日志</div>
     <div class="tab-item" data-tab="update" id="tabItemUpdate">
@@ -1225,7 +1225,7 @@
       <!-- 主流虚拟币实时价格 -->
       <div class="card">
         <div class="card-title">
-          <span>🪙 主流虚拟币实时价格 (优先 OKX 报价)</span>
+          <span>💰 主流虚拟币实时价格 (优先 OKX 报价)</span>
         </div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px;">
           弹窗弹出时实时获取所选币种的最新报价，展示在卡片底部居中位置。最多勾选 7 个币种。
@@ -1245,6 +1245,16 @@
         </div>
         <div id="coinAddNotice" style="font-size: 11.5px; margin-bottom: 8px; padding: 5px 8px; border-radius: 4px; display: none;"></div>
 
+        <!-- 已选展示币种排序池 (支持拖拽调整弹窗展示先后顺序) -->
+        <div style="margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 11.5px; font-weight: 600; color: #1E293B;">已选展示币种（按住 ⠿ 可拖拽调整弹窗展示先后顺序）：</span>
+            <span id="cryptoSelectedSummary" style="font-size: 11px; color: #475569;">已选: 2/7个</span>
+          </div>
+          <div id="cryptoSelectedOrderContainer" style="display: flex; flex-wrap: wrap; gap: 8px; background: #FFFBEB; border: 1px solid #FDE68A; padding: 8px 12px; border-radius: 6px; min-height: 42px; align-items: center;"></div>
+        </div>
+
+        <div style="font-size: 11.5px; font-weight: 600; color: #64748B; margin-bottom: 6px;">可选币种库（勾选以添加到上方展示池，最多7个）：</div>
         <div style="display: flex; flex-wrap: wrap; gap: 8px 10px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;" id="cryptoCoinsContainer"></div>
 
         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -1255,50 +1265,281 @@
       </div>
     </div>
 
-    <!-- ==================== TAB: 手机微信即时推送 (企业微信群机器人) ==================== -->
+    <!-- ==================== TAB: 推送管理 (电脑端桌面弹窗 / 手机端即时消息) ==================== -->
     <div class="tab-pane" id="pane-mobile">
       <div class="card">
         <div class="card-title">
-          <span>📱 手机微信即时推送 · 企业微信群机器人</span>
-          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">微信/企微双端直达</span>
+          <span>📢 消息推送管理 · 电脑桌面与手机移动端</span>
+          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">双端独立控制 · 秒级直达</span>
         </div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 14px; line-height: 1.6;">
-          离开电脑或外出时，核心突发快讯与自选标的异动秒级推送到手机。<br>
-          通过<b>企业微信群机器人 Webhook</b>，配合企业微信官方【微信插件】，可在普通<b>个人微信</b>聊天列表中直接收到精美卡片提醒！
+          管理快讯通的电脑端桌面弹窗与手机移动端推送，两端优先级平齐、互不影响，勾选即推送。<br>
+          手机端支持<b>企业微信群机器人</b>、<b>飞书消息推送</b>以及<b>个人微信公众号直推</b>，按需开启任意通道。
         </div>
 
-        <!-- 主推送开关 -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
-          <div class="form-row" style="margin-bottom: 0;">
-            <label class="checkbox-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-              <span style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="mobilePushEnabled" />
-                <b style="color: #0F172A; font-size: 13px;">启用手机端推送 (秒级推送到企业微信 / 个人微信)</b>
-              </span>
-              <span id="mobilePushStatusTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #E2E8F0; color: #64748B; font-weight: 600;">已关闭</span>
-            </label>
+        <!-- 双端总开关：电脑端桌面推送 & 手机端消息推送 -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          <!-- 电脑端推送总开关 -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px;">
+            <div class="form-row" style="margin-bottom: 0;">
+              <label class="checkbox-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; margin: 0;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="desktopPushEnabled" checked />
+                  <b style="color: #0F172A; font-size: 13px;">🖥️ 启用电脑端桌面弹窗推送（默认开启）</b>
+                </span>
+                <span id="desktopPushStatusTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">运行中</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 手机端推送总开关 -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px;">
+            <div class="form-row" style="margin-bottom: 0;">
+              <label class="checkbox-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; margin: 0;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="mobilePushEnabled" />
+                  <b style="color: #0F172A; font-size: 13px;">📱 启用手机端推送服务总开关</b>
+                </span>
+                <span id="mobilePushStatusTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #E2E8F0; color: #64748B; font-weight: 600;">已关闭</span>
+              </label>
+            </div>
           </div>
         </div>
 
         <div id="mobileConfigDetails" style="transition: opacity 0.2s ease;">
-          <!-- Webhook 配置 -->
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" style="font-weight: 600; color: #1E293B; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-              <span>企业微信群机器人 Webhook 地址:</span>
-              <span style="font-size: 11px; color: #64748B; font-weight: 400;">(格式: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...)</span>
-            </label>
-            <input type="text" id="mobileWeComWebhook" class="form-control" placeholder="请粘贴企业微信群机器人的 Webhook 完整地址" style="font-size: 12px; font-family: monospace;" />
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-              <button type="button" class="btn btn-secondary btn-sm" id="btnTestMobilePush" style="padding: 6px 14px; font-weight: 600;">
-                ⚡ 发送测试消息到手机微信
+          <!-- 通道 1: 企业微信群机器人 -->
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; padding: 14px; border-radius: 8px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <label class="checkbox-row" style="margin: 0;">
+                <input type="checkbox" id="mobileWeComEnabled" checked />
+                <b style="color: #1E293B; font-size: 13px;">🏢 通道 1：企业微信群机器人</b>
+              </label>
+              <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; color: #475569; font-weight: 600;">企微App弹窗 · 20条/分</span>
+            </div>
+
+            <!-- 企微配置方法简介 -->
+            <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 11.5px; line-height: 1.6; color: #0369A1;">
+              <b>📖 接入指引</b>：电脑端企微群设置 ➔【添加机器人】➔【新创建】复制 Webhook 地址粘贴到下方即可。
+            </div>
+
+            <div style="margin-bottom: 4px;">
+              <label class="form-label" style="font-size: 11.5px; margin-bottom: 5px; font-weight: 600; color: #334155;">企业微信 Webhook 地址：</label>
+              <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                <input type="text" id="mobileWeComWebhook" class="form-control" placeholder="例如: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex: 1; min-width: 0; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 10px;" />
+                <button type="button" class="btn btn-secondary btn-sm" id="btnTestMobilePush" style="flex-shrink: 0; height: 34px; padding: 0 16px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                  ⚡ 测试发送
+                </button>
+              </div>
+              <div id="mobilePushTestNotice" style="font-size: 12px; font-weight: 600; margin-top: 6px; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- 通道 2: 飞书 -->
+          <div style="background: #FFFFFF; border: 1px solid #C7D2FE; padding: 14px; border-radius: 8px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(99,102,241,0.06);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <label class="checkbox-row" style="margin: 0;">
+                <input type="checkbox" id="mobileFeishuEnabled" />
+                <b style="color: #1E293B; font-size: 13px;">🕊️ 通道 2：飞书消息推送</b>
+              </label>
+              <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #EEF2FF; color: #4338CA; font-weight: 600;">飞书App秒级弹窗 · 支持单聊直推/团队群</span>
+            </div>
+
+            <!-- 模式切换按钮组 -->
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #F1F5F9; padding: 4px; border-radius: 6px; width: fit-content;">
+              <button type="button" id="btnFeishuModeWebhook" class="btn btn-sm" style="background: #FFFFFF; color: #2563EB; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 11.5px;">
+                🤖 模式 1：群自定义机器人
               </button>
-              <div id="mobilePushTestNotice" style="font-size: 12px; font-weight: 600; display: none;"></div>
+              <button type="button" id="btnFeishuModeAgent" class="btn btn-sm" style="background: transparent; color: #64748B; font-weight: 600; padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 11.5px;">
+                🧠 模式 2：飞书智能体 / 自建应用
+              </button>
+            </div>
+
+            <!-- 模式 1：群自定义机器人容器 -->
+            <div id="feishuWebhookBox" style="display: block;">
+              <div style="background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 11.5px; line-height: 1.6; color: #3730A3;">
+                <b>📖 接入指引</b>：在飞书内部群 ➔ 群设置【群机器人】➔【添加机器人】➔【自定义机器人】复制 Webhook 地址粘贴到下方即可。
+              </div>
+
+              <div style="margin-bottom: 4px;">
+                <label class="form-label" style="font-size: 11.5px; margin-bottom: 5px; font-weight: 600; color: #334155;">飞书 Webhook 地址：</label>
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                  <input type="text" id="mobileFeishuWebhook" class="form-control" placeholder="例如: https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex: 1; min-width: 0; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 10px;" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnTestFeishuPush" style="flex-shrink: 0; height: 34px; padding: 0 16px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                    ⚡ 测试发送
+                  </button>
+                </div>
+                <div id="feishuPushTestNotice" style="font-size: 12px; font-weight: 600; margin-top: 6px; display: none;"></div>
+              </div>
+
+              <!-- 可选安全密钥 Secret -->
+              <div style="margin-top: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label style="font-size: 11px; color: #64748B; margin: 0; flex-shrink: 0;">安全密钥 Secret (可选):</label>
+                  <input type="password" id="mobileFeishuSecret" class="form-control" placeholder="若在飞书机器人设置中勾选了【签名校验】才需填写，默认留空即可" style="flex: 1; font-size: 11px; font-family: monospace; height: 28px; padding: 4px 8px;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 模式 2：飞书智能体 / 自建应用容器 -->
+            <div id="feishuAgentBox" style="display: none;">
+              <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 11.5px; line-height: 1.6; color: #166534;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                  <b>📖 飞书智能体接入指引：</b>
+                  <a href="https://open.feishu.cn/app" target="_blank" onclick="require('electron').shell.openExternal('https://open.feishu.cn/app'); return false;" style="color: #166534; font-weight: 600; text-decoration: none; font-size: 11px;">
+                    🔗 打开飞书开放平台 ➔
+                  </a>
+                </div>
+                <div>① 在开放平台创建应用并开启机器人能力；② 复制 App ID 与 Secret 填入下方；③ 接收目标填飞书邮箱或群ID。</div>
+              </div>
+
+              <!-- 智能体配置卡片：统一横向排版，等长输入框 -->
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 9px;">
+                <!-- 行 1: App ID -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <label style="width: 135px; flex-shrink: 0; font-size: 12px; font-weight: 700; color: #1E293B; text-align: right;">
+                    🔑 飞书 App ID：
+                  </label>
+                  <div style="flex: 1; min-width: 0; position: relative;">
+                    <input type="text" id="mobileFeishuAppId" class="form-control" placeholder="请输入应用 App ID (例如: cli_a1b2c3d4e5f67890)" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 32px; padding: 4px 10px; background: #FFFFFF;" />
+                  </div>
+                </div>
+
+                <!-- 行 2: App Secret -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <label style="width: 135px; flex-shrink: 0; font-size: 12px; font-weight: 700; color: #1E293B; text-align: right;">
+                    🔒 飞书 App Secret：
+                  </label>
+                  <div style="flex: 1; min-width: 0; position: relative;">
+                    <input type="password" id="mobileFeishuAppSecret" class="form-control" placeholder="请输入应用凭证 App Secret" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 32px; padding: 4px 34px 4px 10px; background: #FFFFFF;" />
+                    <button type="button" id="btnToggleFeishuSecret" title="切换显示明文" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 13px; color: #64748B; padding: 4px; line-height: 1; display: flex; align-items: center; justify-content: center;">
+                      👁
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 行 3: 接收目标 ID -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <label style="width: 135px; flex-shrink: 0; font-size: 12px; font-weight: 700; color: #1E293B; text-align: right;">
+                    🎯 接收目标 ID：
+                  </label>
+                  <div style="flex: 1; min-width: 0; position: relative;">
+                    <input type="text" id="mobileFeishuReceiveId" class="form-control" placeholder="填您的飞书登录邮箱(单聊直推)，或群ID oc_xxx，或用户ID ou_xxx" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 32px; padding: 4px 10px; background: #FFFFFF;" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 智能体操作行 -->
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-primary btn-sm" id="btnTestFeishuAgent" style="height: 32px; padding: 0 16px; font-weight: 600; font-size: 12px;">
+                  ⚡ 测试发送智能体卡片消息
+                </button>
+              </div>
+              <div id="feishuAgentTestNotice" style="font-size: 12px; font-weight: 600; margin-top: 6px; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- 通道 3: 微信公众号直推 -->
+          <div style="background: #FFFFFF; border: 1px solid #BFDBFE; padding: 14px; border-radius: 8px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(37,99,235,0.06);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <label class="checkbox-row" style="margin: 0;">
+                <input type="checkbox" id="mobileWxOfficialEnabled" />
+                <b style="color: #1E293B; font-size: 13px;">📢 通道 3：个人微信公众号直推</b>
+              </label>
+              <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">
+                强烈推荐 · 10万条/天 · 个人微信秒收
+              </span>
+            </div>
+            <div style="font-size: 11.5px; color: #475569; margin-bottom: 10px; line-height: 1.5;">
+              直连腾讯微信官方模板消息接口推送至个人微信，免营业执照与认证，每天 10 万条免费额度。
+            </div>
+
+            <!-- 微信测试号接入指引：严格不超过 2 行 -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 11.5px; line-height: 1.6;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                <b style="color: #2563EB;">📖 微信测试号接入指引：</b>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnCopyWxTemplate" style="font-size: 11px; padding: 1px 8px; height: 22px;">
+                    📋 复制模板代码
+                  </button>
+                  <a href="https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login" target="_blank" onclick="require('electron').shell.openExternal('https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login'); return false;" style="color: #2563EB; font-weight: 600; text-decoration: none; font-size: 11px;">
+                    🔗 打开微信测试号官网 ➔
+                  </a>
+                </div>
+              </div>
+              <div style="color: #334155;">
+                ① 浏览器登录官网复制 appID/Secret 并扫码关注复制 OpenID；② 新增测试模板获取模板ID并填入下方测试。
+              </div>
+            </div>
+
+            <!-- 个微配置卡片：统一在一个卡片内，左边名称，右边输入框，输入框一样长 -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 8px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <!-- 行 1: 微信 AppID -->
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <label style="width: 135px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #1E293B; text-align: right;">
+                  🔑 微信 AppID：
+                </label>
+                <div style="flex: 1; min-width: 0; position: relative;">
+                  <input type="text" id="mobileWxAppId" class="form-control" placeholder="请输入公众号 AppID (例如: wx1234567890abcdef)" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 10px; background: #FFFFFF;" />
+                </div>
+              </div>
+
+              <!-- 行 2: 微信 AppSecret -->
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <label style="width: 135px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #1E293B; text-align: right;">
+                  🔒 微信 AppSecret：
+                </label>
+                <div style="flex: 1; min-width: 0; position: relative;">
+                  <input type="password" id="mobileWxAppSecret" class="form-control" placeholder="请输入公众号 AppSecret 密钥" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 36px 6px 10px; background: #FFFFFF;" />
+                  <button type="button" id="btnToggleWxSecret" title="切换显示明文" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 14px; color: #64748B; padding: 4px; line-height: 1; display: flex; align-items: center; justify-content: center;">
+                    👁
+                  </button>
+                </div>
+              </div>
+
+              <!-- 行 3: 接收人 OpenID -->
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <label style="width: 135px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #1E293B; text-align: right;">
+                  👤 接收人 OpenID：
+                </label>
+                <div style="flex: 1; min-width: 0; position: relative;">
+                  <input type="text" id="mobileWxOpenId" class="form-control" placeholder="请输入接收人 OpenID (例如: o-xxxxxxxxxxxxxxxx)" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 10px; background: #FFFFFF;" />
+                </div>
+              </div>
+
+              <!-- 行 4: 消息模板 ID -->
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <label style="width: 135px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #1E293B; text-align: right;">
+                  📄 消息模板 ID：
+                </label>
+                <div style="flex: 1; min-width: 0; position: relative;">
+                  <input type="text" id="mobileWxTemplateId" class="form-control" placeholder="请输入模板消息ID (例如: 8_pX9f...)" style="width: 100%; box-sizing: border-box; font-size: 12px; font-family: monospace; height: 34px; padding: 6px 10px; background: #FFFFFF;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 操作按钮行：一键复制配置参数、一键粘贴配置、测试按钮 -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 4px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnCopyAllWxConfig" title="将 AppID、AppSecret、OpenID、模板ID 全部一键复制到剪贴板，方便发送给他人或备份" style="padding: 6px 14px; font-weight: 600; font-size: 12px; color: #1D4ED8; background: #EFF6FF; border: 1px solid #BFDBFE;">
+                  📋 一键复制配置参数
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnPasteAllWxConfig" title="从剪贴板智能识别并自动填入 AppID、AppSecret、OpenID、模板ID" style="padding: 6px 14px; font-weight: 600; font-size: 12px; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0;">
+                  📥 一键粘贴导入配置
+                </button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="btn btn-primary btn-sm" id="btnTestWxOfficial" style="padding: 6px 16px; font-weight: 600; font-size: 12px; height: 32px;">
+                  ⚡ 发送测试模板消息到微信
+                </button>
+                <div id="wxOfficialTestNotice" style="font-size: 12px; font-weight: 600; display: none;"></div>
+              </div>
             </div>
           </div>
 
           <!-- 触发策略与降噪过滤 -->
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
-            <div style="font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 8px; display: flex; align-items: gap: 6px;">
+            <div style="font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
               <span>🎯 手机推送策略与降噪防打扰</span>
               <span style="font-size: 11px; color: #64748B; font-weight: normal; margin-left: 6px;">(避免手机频繁震动打扰，建议保持精选策略)</span>
             </div>
@@ -1332,22 +1573,9 @@
                 <input type="checkbox" id="mobileTriggerAll" style="margin-top: 2px;" />
                 <div>
                   <span style="font-size: 12px; font-weight: 600; color: #B45309;">⚠️ 全量推送：桌面弹出的所有快讯均推送到手机</span>
-                  <div style="font-size: 11px; color: #64748B;">每日约 50~200 条消息，如不需要频繁打扰请勿勾选此项。</div>
+                  <div style="font-size: 11px; color: #64748B;">每日约 50~200 条消息，如希望手机 100% 同步所有弹窗请勾选此项。</div>
                 </div>
               </label>
-            </div>
-          </div>
-
-          <!-- 30秒极速配置图文指南 -->
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 12px 14px; border-radius: 6px;">
-            <div style="font-size: 12px; font-weight: 700; color: #1D4ED8; margin-bottom: 6px;">
-              📖 30秒极速配置指南（手机如何收到通知？）
-            </div>
-            <div style="font-size: 11.5px; color: #1E3A8A; line-height: 1.7;">
-              <b>第 1 步 · 获取机器人 Webhook</b>：<br>
-              在电脑或手机版<b>企业微信</b>中，进入任意群聊（或单独建一个只有您自己的群） ➔ 点击右上角【...】➔【添加群机器人】➔【新建】命名为“快讯通提醒”➔ 复制生成的 <b>Webhook 地址</b> 粘贴到上方。<br>
-              <b>第 2 步 · 在普通个人微信中接收（关键）</b>：<br>
-              在手机企业微信打开【我】➔【设置】➔【微信插件】➔ 扫码关注企业微信插件。完成后，即便手机平时只打开普通<b>个人微信</b>，群机器人的卡片消息也会像微信好友一样实时在<b>微信聊天列表</b>中弹出提醒！
             </div>
           </div>
         </div>
@@ -1986,7 +2214,7 @@
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.2.2';
+      const appVer = payload.appVersion || '1.3.0';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -2166,11 +2394,50 @@
       customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
       renderCryptoCoins();
 
-      // 9. 手机微信即时推送配置
+      // 9. 推送管理：电脑端与手机端独立控制
+      const desktopPushCfg = cfg.desktop_push || {};
+      const desktopEnabled = desktopPushCfg.enabled !== false;
+      if (document.getElementById('desktopPushEnabled')) {
+        document.getElementById('desktopPushEnabled').checked = desktopEnabled;
+        updateDesktopPushUIStatus(desktopEnabled);
+      }
+
       const mobilePush = cfg.mobile_push || {};
       const mobileEnabled = mobilePush.enabled === true;
       document.getElementById('mobilePushEnabled').checked = mobileEnabled;
+      updateMobilePushUIStatus(mobileEnabled);
+      document.getElementById('mobileWeComEnabled').checked = mobilePush.wecom_enabled !== false;
       document.getElementById('mobileWeComWebhook').value = mobilePush.wecom_webhook_url || '';
+      if (document.getElementById('mobileFeishuEnabled')) {
+        document.getElementById('mobileFeishuEnabled').checked = mobilePush.feishu_enabled === true;
+      }
+      if (document.getElementById('mobileFeishuWebhook')) {
+        document.getElementById('mobileFeishuWebhook').value = mobilePush.feishu_webhook_url || '';
+      }
+      if (document.getElementById('mobileFeishuSecret')) {
+        document.getElementById('mobileFeishuSecret').value = mobilePush.feishu_secret || '';
+      }
+      if (document.getElementById('mobileFeishuAppId')) {
+        document.getElementById('mobileFeishuAppId').value = mobilePush.feishu_app_id || '';
+      }
+      if (document.getElementById('mobileFeishuAppSecret')) {
+        document.getElementById('mobileFeishuAppSecret').value = mobilePush.feishu_app_secret || '';
+      }
+      if (document.getElementById('mobileFeishuReceiveId')) {
+        document.getElementById('mobileFeishuReceiveId').value = mobilePush.feishu_receive_id || '';
+      }
+      switchFeishuMode(mobilePush.feishu_mode === 'agent' ? 'agent' : 'webhook');
+      if (document.getElementById('mobileServerChanEnabled')) {
+        document.getElementById('mobileServerChanEnabled').checked = mobilePush.serverchan_enabled === true;
+      }
+      if (document.getElementById('mobileServerChanKey')) {
+        document.getElementById('mobileServerChanKey').value = mobilePush.serverchan_sendkey || '';
+      }
+      document.getElementById('mobileWxOfficialEnabled').checked = mobilePush.wx_official_enabled === true;
+      document.getElementById('mobileWxAppId').value = mobilePush.wx_official_app_id || '';
+      document.getElementById('mobileWxAppSecret').value = mobilePush.wx_official_app_secret || '';
+      document.getElementById('mobileWxOpenId').value = mobilePush.wx_official_openid || '';
+      document.getElementById('mobileWxTemplateId').value = mobilePush.wx_official_template_id || '';
       document.getElementById('mobileTriggerWatchlist').checked = mobilePush.trigger_on_watchlist !== false;
       document.getElementById('mobileTriggerVip').checked = mobilePush.trigger_on_vip !== false;
       document.getElementById('mobileTriggerX').checked = mobilePush.trigger_on_x !== false;
@@ -2301,6 +2568,7 @@
 
     function renderCryptoCoins(newlyAddedCoin) {
       const container = document.getElementById('cryptoCoinsContainer');
+      if (!container) return;
       container.innerHTML = '';
 
       const allCoins = Array.from(new Set([...PRESET_COINS, ...customCoinsList]));
@@ -2354,31 +2622,129 @@
         container.appendChild(itemWrap);
       });
 
+      renderCryptoSelectedOrder();
       updateCryptoSelectionLimit();
     }
 
-    function handleCoinChange(cb) {
-      const checked = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked'));
-      if (checked.length > 7) {
-        cb.checked = false;
-        showNotice('最多只能选择 7 个展示币种！');
+    function renderCryptoSelectedOrder() {
+      const container = document.getElementById('cryptoSelectedOrderContainer');
+      const summaryEl = document.getElementById('cryptoSelectedSummary');
+      if (!container) return;
+
+      if (!currentSelectedCoins || currentSelectedCoins.length === 0) {
+        container.innerHTML = '<div style="color: #B45309; font-size: 11.5px; padding: 4px; text-align: center; width: 100%;">暂无勾选币种，请在下方币种库勾选添加（最多7个）</div>';
+        if (summaryEl) summaryEl.textContent = '已选: 0/7个';
+        return;
       }
-      currentSelectedCoins = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(c => c.value);
+
+      if (summaryEl) summaryEl.textContent = `已选: ${currentSelectedCoins.length}/7个 (按住 ⠿ 可拖拽调整弹窗展示先后顺序)`;
+
+      container.innerHTML = currentSelectedCoins.map((coin, idx) => {
+        return `
+          <div class="crypto-order-pill" data-index="${idx}" draggable="true" style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #F59E0B; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: grab; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: transform 0.15s, box-shadow 0.15s;">
+            <span class="crypto-drag-handle" style="cursor: grab; color: #D97706; font-size: 13px;" title="按住拖拽排序">⠿</span>
+            <b style="color: #92400E;">${escapeHtml(coin)}</b>
+            <span style="cursor: pointer; color: #94A3B8; font-weight: bold; font-size: 14px; margin-left: 2px; line-height: 1;" title="取消展示该币种" onclick="event.stopPropagation(); unselectCryptoCoin('${escapeHtml(coin)}')">×</span>
+          </div>
+        `;
+      }).join('');
+
+      attachCryptoDragEvents(container);
+    }
+
+    window.unselectCryptoCoin = function(coin) {
+      currentSelectedCoins = currentSelectedCoins.filter(c => c !== coin);
+      const cb = document.querySelector(`input[name="cryptoCoin"][value="${coin}"]`);
+      if (cb) cb.checked = false;
+      renderCryptoSelectedOrder();
+      updateCryptoSelectionLimit();
+      showNotice(`已从展示列表移除 ${coin}`);
+    };
+
+    let draggedCoinIndex = null;
+    function attachCryptoDragEvents(container) {
+      const pills = container.querySelectorAll('.crypto-order-pill');
+      pills.forEach(pill => {
+        pill.addEventListener('dragstart', (e) => {
+          draggedCoinIndex = parseInt(pill.getAttribute('data-index'), 10);
+          pill.style.opacity = '0.4';
+          pill.style.cursor = 'grabbing';
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(draggedCoinIndex));
+        });
+
+        pill.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          pill.style.transform = 'scale(1.05)';
+          pill.style.borderColor = '#D97706';
+          pill.style.boxShadow = '0 2px 8px rgba(217, 119, 6, 0.25)';
+        });
+
+        pill.addEventListener('dragleave', () => {
+          pill.style.transform = '';
+          pill.style.borderColor = '#F59E0B';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+        });
+
+        pill.addEventListener('drop', (e) => {
+          e.preventDefault();
+          pill.style.transform = '';
+          pill.style.borderColor = '#F59E0B';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+          const targetIndex = parseInt(pill.getAttribute('data-index'), 10);
+          if (draggedCoinIndex !== null && draggedCoinIndex !== targetIndex) {
+            const movedCoin = currentSelectedCoins.splice(draggedCoinIndex, 1)[0];
+            currentSelectedCoins.splice(targetIndex, 0, movedCoin);
+            renderCryptoSelectedOrder();
+            updateCryptoSelectionLimit();
+            showNotice('已更新虚拟币展示顺序');
+          }
+          draggedCoinIndex = null;
+        });
+
+        pill.addEventListener('dragend', () => {
+          pill.style.opacity = '1';
+          pill.style.cursor = 'grab';
+          pill.style.transform = '';
+          pill.style.borderColor = '#F59E0B';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+          draggedCoinIndex = null;
+        });
+      });
+    }
+
+    function handleCoinChange(cb) {
+      if (cb.checked) {
+        if (currentSelectedCoins.length >= 7) {
+          cb.checked = false;
+          showNotice('最多只能选择 7 个展示币种！');
+          return;
+        }
+        if (!currentSelectedCoins.includes(cb.value)) {
+          currentSelectedCoins.push(cb.value);
+        }
+      } else {
+        currentSelectedCoins = currentSelectedCoins.filter(c => c !== cb.value);
+      }
+      renderCryptoSelectedOrder();
       updateCryptoSelectionLimit();
     }
 
     function updateCryptoSelectionLimit() {
       const cBoxes = Array.from(document.querySelectorAll('input[name="cryptoCoin"]'));
-      const checkedBoxes = cBoxes.filter(cb => cb.checked);
-      if (checkedBoxes.length >= 7) {
-        cBoxes.forEach(cb => {
+      const isMax = currentSelectedCoins.length >= 7;
+      cBoxes.forEach(cb => {
+        cb.checked = currentSelectedCoins.includes(cb.value);
+        if (isMax) {
           if (!cb.checked) cb.disabled = true;
-        });
-      } else {
-        cBoxes.forEach(cb => cb.disabled = false);
-      }
-      const names = checkedBoxes.map(cb => cb.value.split('/')[0]).join(', ');
-      document.getElementById('cryptoLimitTip').textContent = `已选: ${names || '无'} (${checkedBoxes.length}/7个)`;
+          else cb.disabled = false;
+        } else {
+          cb.disabled = false;
+        }
+      });
+      const names = currentSelectedCoins.map(c => c.split('/')[0]).join(', ');
+      document.getElementById('cryptoLimitTip').textContent = `已选展示: ${names || '无'} (${currentSelectedCoins.length}/7个)`;
     }
 
     // 搜索并添加交易对（通过 OKX 严格校验）
@@ -2476,6 +2842,26 @@
     });
 
     // ==================== 手机微信 / 企业微信即时推送交互 ====================
+    function updateDesktopPushUIStatus(enabled) {
+      const tag = document.getElementById('desktopPushStatusTag');
+      if (!tag) return;
+      if (enabled) {
+        tag.textContent = '🟢 运行中';
+        tag.style.background = '#DCFCE7';
+        tag.style.color = '#166534';
+      } else {
+        tag.textContent = '已关闭';
+        tag.style.background = '#E2E8F0';
+        tag.style.color = '#64748B';
+      }
+    }
+
+    if (document.getElementById('desktopPushEnabled')) {
+      document.getElementById('desktopPushEnabled').addEventListener('change', (e) => {
+        updateDesktopPushUIStatus(e.target.checked);
+      });
+    }
+
     function updateMobilePushUIStatus(enabled) {
       const tag = document.getElementById('mobilePushStatusTag');
       const container = document.getElementById('mobileConfigDetails');
@@ -2538,6 +2924,386 @@
       }
     });
 
+    // 飞书推送模式切换 (群自定义机器人 / 智能体自建应用)
+    let currentFeishuMode = 'webhook';
+    function switchFeishuMode(mode) {
+      currentFeishuMode = mode;
+      const btnWh = document.getElementById('btnFeishuModeWebhook');
+      const btnAg = document.getElementById('btnFeishuModeAgent');
+      const boxWh = document.getElementById('feishuWebhookBox');
+      const boxAg = document.getElementById('feishuAgentBox');
+
+      if (mode === 'agent') {
+        if (btnAg) {
+          btnAg.style.background = '#FFFFFF';
+          btnAg.style.color = '#2563EB';
+          btnAg.style.fontWeight = '700';
+          btnAg.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+        }
+        if (btnWh) {
+          btnWh.style.background = 'transparent';
+          btnWh.style.color = '#64748B';
+          btnWh.style.fontWeight = '600';
+          btnWh.style.boxShadow = 'none';
+        }
+        if (boxWh) boxWh.style.display = 'none';
+        if (boxAg) boxAg.style.display = 'block';
+      } else {
+        if (btnWh) {
+          btnWh.style.background = '#FFFFFF';
+          btnWh.style.color = '#2563EB';
+          btnWh.style.fontWeight = '700';
+          btnWh.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+        }
+        if (btnAg) {
+          btnAg.style.background = 'transparent';
+          btnAg.style.color = '#64748B';
+          btnAg.style.fontWeight = '600';
+          btnAg.style.boxShadow = 'none';
+        }
+        if (boxWh) boxWh.style.display = 'block';
+        if (boxAg) boxAg.style.display = 'none';
+      }
+    }
+
+    const btnFeishuModeWebhook = document.getElementById('btnFeishuModeWebhook');
+    if (btnFeishuModeWebhook) {
+      btnFeishuModeWebhook.addEventListener('click', () => switchFeishuMode('webhook'));
+    }
+    const btnFeishuModeAgent = document.getElementById('btnFeishuModeAgent');
+    if (btnFeishuModeAgent) {
+      btnFeishuModeAgent.addEventListener('click', () => switchFeishuMode('agent'));
+    }
+
+    // 切换飞书 AppSecret 明文显示
+    const btnToggleFeishuSecret = document.getElementById('btnToggleFeishuSecret');
+    if (btnToggleFeishuSecret) {
+      btnToggleFeishuSecret.addEventListener('click', () => {
+        const input = document.getElementById('mobileFeishuAppSecret');
+        if (!input) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          btnToggleFeishuSecret.textContent = '🙈';
+          btnToggleFeishuSecret.title = '隐藏密钥';
+        } else {
+          input.type = 'password';
+          btnToggleFeishuSecret.textContent = '👁';
+          btnToggleFeishuSecret.title = '查看明文';
+        }
+      });
+    }
+
+    const btnTestFeishuPushEl = document.getElementById('btnTestFeishuPush');
+    if (btnTestFeishuPushEl) {
+      btnTestFeishuPushEl.addEventListener('click', async () => {
+        const webhookUrl = document.getElementById('mobileFeishuWebhook') ? document.getElementById('mobileFeishuWebhook').value.trim() : '';
+        const secret = document.getElementById('mobileFeishuSecret') ? document.getElementById('mobileFeishuSecret').value.trim() : '';
+        const noticeEl = document.getElementById('feishuPushTestNotice');
+        const btn = btnTestFeishuPushEl;
+
+        if (!webhookUrl) {
+          if (noticeEl) {
+            noticeEl.style.display = 'block';
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = '⚠️ 请先输入飞书群机器人 Webhook 地址';
+          }
+          return;
+        }
+
+        if (!webhookUrl.startsWith('https://open.feishu.cn/open-apis/bot/v2/hook/')) {
+          if (noticeEl) {
+            noticeEl.style.display = 'block';
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = '⚠️ Webhook 格式不正确，必须以 https://open.feishu.cn/open-apis/bot/v2/hook/ 开头';
+          }
+          return;
+        }
+
+        btn.disabled = true;
+        if (noticeEl) {
+          noticeEl.style.display = 'block';
+          noticeEl.style.color = '#2563EB';
+          noticeEl.textContent = '⏳ 正在向飞书群发送彩色卡片测试消息...';
+        }
+
+        try {
+          const res = await ipcRenderer.invoke('test-feishu-push', { mode: 'webhook', webhookUrl, secret });
+          btn.disabled = false;
+          if (noticeEl) {
+            if (res && res.success) {
+              noticeEl.style.color = '#059669';
+              noticeEl.textContent = `✅ ${res.message}`;
+            } else {
+              noticeEl.style.color = '#DC2626';
+              noticeEl.textContent = `❌ ${res ? res.message : '发送失败'}`;
+            }
+          }
+        } catch (err) {
+          btn.disabled = false;
+          if (noticeEl) {
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
+          }
+        }
+      });
+    }
+
+    // 飞书智能体 / 自建应用测试发送
+    const btnTestFeishuAgentEl = document.getElementById('btnTestFeishuAgent');
+    if (btnTestFeishuAgentEl) {
+      btnTestFeishuAgentEl.addEventListener('click', async () => {
+        const appId = document.getElementById('mobileFeishuAppId') ? document.getElementById('mobileFeishuAppId').value.trim() : '';
+        const appSecret = document.getElementById('mobileFeishuAppSecret') ? document.getElementById('mobileFeishuAppSecret').value.trim() : '';
+        const receiveId = document.getElementById('mobileFeishuReceiveId') ? document.getElementById('mobileFeishuReceiveId').value.trim() : '';
+        const noticeEl = document.getElementById('feishuAgentTestNotice');
+        const btn = btnTestFeishuAgentEl;
+
+        if (!appId || !appSecret || !receiveId) {
+          if (noticeEl) {
+            noticeEl.style.display = 'block';
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = '⚠️ 请先完整填写飞书 App ID、App Secret 和 接收目标 ID';
+          }
+          return;
+        }
+
+        btn.disabled = true;
+        if (noticeEl) {
+          noticeEl.style.display = 'block';
+          noticeEl.style.color = '#2563EB';
+          noticeEl.textContent = '⏳ 正在向飞书智能体会话发送测试卡片...';
+        }
+
+        try {
+          const res = await ipcRenderer.invoke('test-feishu-push', {
+            mode: 'agent',
+            appId,
+            appSecret,
+            receiveId
+          });
+          btn.disabled = false;
+          if (noticeEl) {
+            if (res && res.success) {
+              noticeEl.style.color = '#059669';
+              noticeEl.textContent = `✅ ${res.message}`;
+            } else {
+              noticeEl.style.color = '#DC2626';
+              noticeEl.textContent = `❌ ${res ? res.message : '发送失败'}`;
+            }
+          }
+        } catch (err) {
+          btn.disabled = false;
+          if (noticeEl) {
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
+          }
+        }
+      });
+    }
+
+    const btnTestServerChanEl = document.getElementById('btnTestServerChan');
+    if (btnTestServerChanEl) {
+      btnTestServerChanEl.addEventListener('click', async () => {
+        const sendKey = document.getElementById('mobileServerChanKey') ? document.getElementById('mobileServerChanKey').value.trim() : '';
+        const noticeEl = document.getElementById('serverChanTestNotice');
+        const btn = btnTestServerChanEl;
+
+        if (!sendKey) {
+          if (noticeEl) {
+            noticeEl.style.display = 'block';
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = '⚠️ 请先输入 Server酱 SendKey';
+          }
+          return;
+        }
+
+        btn.disabled = true;
+        if (noticeEl) {
+          noticeEl.style.display = 'block';
+          noticeEl.style.color = '#2563EB';
+          noticeEl.textContent = '⏳ 正在向微信发送 Server酱 测试消息...';
+        }
+
+        try {
+          const res = await ipcRenderer.invoke('test-serverchan-push', { sendKey });
+          btn.disabled = false;
+          if (noticeEl) {
+            if (res && res.success) {
+              noticeEl.style.color = '#059669';
+              noticeEl.textContent = `✅ ${res.message}`;
+            } else {
+              noticeEl.style.color = '#DC2626';
+              noticeEl.textContent = `❌ ${res ? res.message : '发送失败'}`;
+            }
+          }
+        } catch (err) {
+          btn.disabled = false;
+          if (noticeEl) {
+            noticeEl.style.color = '#DC2626';
+            noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
+          }
+        }
+      });
+    }
+
+    // 切换微信 AppSecret 密码明文/密文显示
+    const btnToggleWxSecret = document.getElementById('btnToggleWxSecret');
+    if (btnToggleWxSecret) {
+      btnToggleWxSecret.addEventListener('click', () => {
+        const input = document.getElementById('mobileWxAppSecret');
+        if (!input) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          btnToggleWxSecret.textContent = '🙈';
+          btnToggleWxSecret.title = '隐藏密钥';
+        } else {
+          input.type = 'password';
+          btnToggleWxSecret.textContent = '👁';
+          btnToggleWxSecret.title = '查看明文';
+        }
+      });
+    }
+
+    document.getElementById('btnTestWxOfficial').addEventListener('click', async () => {
+      const appId = document.getElementById('mobileWxAppId').value.trim();
+      const appSecret = document.getElementById('mobileWxAppSecret').value.trim();
+      const openId = document.getElementById('mobileWxOpenId').value.trim();
+      const templateId = document.getElementById('mobileWxTemplateId').value.trim();
+      const noticeEl = document.getElementById('wxOfficialTestNotice');
+      const btn = document.getElementById('btnTestWxOfficial');
+
+      if (!appId || !appSecret || !openId || !templateId) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = '⚠️ 请先完整填写 AppID、AppSecret、OpenID 和 模板ID';
+        return;
+      }
+
+      btn.disabled = true;
+      noticeEl.style.display = 'block';
+      noticeEl.style.color = '#2563EB';
+      noticeEl.textContent = '⏳ 正在向微信发送官方模板测试消息...';
+
+      try {
+        const res = await ipcRenderer.invoke('test-wx-official-push', {
+          wx_official_app_id: appId,
+          wx_official_app_secret: appSecret,
+          wx_official_openid: openId,
+          wx_official_template_id: templateId
+        });
+        btn.disabled = false;
+        if (res && res.success) {
+          noticeEl.style.color = '#059669';
+          noticeEl.textContent = `✅ ${res.message}`;
+        } else {
+          noticeEl.style.color = '#DC2626';
+          noticeEl.textContent = `❌ ${res ? res.message : '发送失败'}`;
+        }
+      } catch (err) {
+        btn.disabled = false;
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
+      }
+    });
+
+    // 一键复制微信测试号模板代码
+    const btnCopyWxTpl = document.getElementById('btnCopyWxTemplate');
+    if (btnCopyWxTpl) {
+      btnCopyWxTpl.addEventListener('click', () => {
+        const tplCode = `{{first.DATA}}\n内容：{{keyword1.DATA}}\n研判：{{keyword2.DATA}}\n影响：{{keyword3.DATA}}\n持仓：{{keyword4.DATA}}\n行情：{{keyword5.DATA}}\n{{remark.DATA}}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(tplCode).then(() => {
+            showNotice('📋 已成功复制模板代码到剪贴板！');
+          }).catch(() => {
+            copyWxTplFallback(tplCode);
+          });
+        } else {
+          copyWxTplFallback(tplCode);
+        }
+      });
+    }
+
+    function copyWxTplFallback(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showNotice('📋 已成功复制到剪贴板！');
+    }
+
+    // 一键复制全部微信配置参数 (AppID, Secret, OpenID, TemplateID)
+    const btnCopyAllWx = document.getElementById('btnCopyAllWxConfig');
+    if (btnCopyAllWx) {
+      btnCopyAllWx.addEventListener('click', () => {
+        const appId = document.getElementById('mobileWxAppId').value.trim();
+        const appSecret = document.getElementById('mobileWxAppSecret').value.trim();
+        const openId = document.getElementById('mobileWxOpenId').value.trim();
+        const templateId = document.getElementById('mobileWxTemplateId').value.trim();
+
+        if (!appId && !appSecret && !openId && !templateId) {
+          showNotice('⚠️ 当前配置参数均为空，请填写后再复制');
+          return;
+        }
+
+        const configText = `微信AppID: ${appId}\n微信AppSecret: ${appSecret}\n接收人OpenID: ${openId}\n模板ID: ${templateId}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(configText).then(() => {
+            showNotice('📋 已成功复制全部配置参数，可直接粘贴发送给他人！');
+          }).catch(() => {
+            copyWxTplFallback(configText);
+          });
+        } else {
+          copyWxTplFallback(configText);
+        }
+      });
+    }
+
+    // 一键粘贴导入微信配置
+    const btnPasteAllWx = document.getElementById('btnPasteAllWxConfig');
+    if (btnPasteAllWx) {
+      btnPasteAllWx.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text || !text.trim()) {
+            showNotice('⚠️ 剪贴板为空，请先在微信中复制参数信息');
+            return;
+          }
+          let found = false;
+          const appIdMatch = text.match(/(?:微信AppID|appId|app_id)[:：\s=]+([a-zA-Z0-9_-]+)/i);
+          const secretMatch = text.match(/(?:微信AppSecret|appSecret|app_secret|secret)[:：\s=]+([a-zA-Z0-9_-]+)/i);
+          const openIdMatch = text.match(/(?:接收人OpenID|openId|openid)[:：\s=]+([a-zA-Z0-9_-]+)/i);
+          const tplIdMatch = text.match(/(?:模板ID|templateId|template_id)[:：\s=]+([a-zA-Z0-9_-]+)/i);
+
+          if (appIdMatch && appIdMatch[1]) {
+            document.getElementById('mobileWxAppId').value = appIdMatch[1];
+            found = true;
+          }
+          if (secretMatch && secretMatch[1]) {
+            document.getElementById('mobileWxAppSecret').value = secretMatch[1];
+            found = true;
+          }
+          if (openIdMatch && openIdMatch[1]) {
+            document.getElementById('mobileWxOpenId').value = openIdMatch[1];
+            found = true;
+          }
+          if (tplIdMatch && tplIdMatch[1]) {
+            document.getElementById('mobileWxTemplateId').value = tplIdMatch[1];
+            found = true;
+          }
+
+          if (found) {
+            showNotice('✅ 已成功智能识别并填入微信配置参数！');
+          } else {
+            showNotice('⚠️ 未识别到配置格式，请手动在各输入框中粘贴');
+          }
+        } catch (err) {
+          showNotice('⚠️ 读取剪贴板失败，请手动在各输入框中粘贴');
+        }
+      });
+    }
+
     // ==================== 自选持仓股票管理 ====================
     function renderWatchlistUI(newlyAddedSymbol) {
       const container = document.getElementById('watchlistContainer');
@@ -2550,23 +3316,79 @@
         return;
       }
 
-      if (summaryText) summaryText.textContent = `已选持仓: ${currentWatchlist.length}/7支标的 (弹窗底部通用展示)`;
+      if (summaryText) summaryText.textContent = `已选持仓: ${currentWatchlist.length}/7支标的 (按住 ⠿ 可拖拽调整弹窗展示先后顺序)`;
 
-      container.innerHTML = currentWatchlist.map(s => {
+      container.innerHTML = currentWatchlist.map((s, idx) => {
         const marketColor = s.market && s.market.includes('美') ? '#3B82F6' : (s.market && s.market.includes('港') ? '#8B5CF6' : '#EF4444');
         const isNew = (newlyAddedSymbol && s.symbol === newlyAddedSymbol);
         const animClass = isNew ? ' newly-added-item' : '';
         return `
-          <div id="stock_pill_${escapeHtml(s.symbol)}" class="stock-item-pill${animClass}" style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+          <div id="stock_pill_${escapeHtml(s.symbol)}" class="stock-item-pill${animClass}" data-index="${idx}" draggable="true" style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); cursor: grab; user-select: none; transition: transform 0.15s, box-shadow 0.15s;">
+            <span class="stock-drag-handle" style="cursor: grab; color: #94A3B8; font-size: 13px; margin-right: -2px; padding: 0 2px;" title="按住拖拽调整先后顺序">⠿</span>
             <span style="font-size: 10px; padding: 1px 4px; border-radius: 3px; background: ${marketColor}15; color: ${marketColor}; font-weight: 700;">${escapeHtml(s.market || '股票')}</span>
             <b style="color: #0F172A;">${escapeHtml(s.name)}</b>
             <span style="color: #64748B; font-size: 11px;">${escapeHtml(s.code)}</span>
             <span id="quote_val_${escapeHtml(s.symbol)}" style="font-weight: 700; color: #334155; margin-left: 2px;">--</span>
             <span id="quote_pct_${escapeHtml(s.symbol)}" style="font-weight: 700;">--</span>
-            <span style="cursor: pointer; color: #94A3B8; margin-left: 4px; font-weight: bold; font-size: 13px;" title="移除该股票" onclick="removeWatchlistStock('${escapeHtml(s.symbol)}')">×</span>
+            <span style="cursor: pointer; color: #94A3B8; margin-left: 4px; font-weight: bold; font-size: 14px; line-height: 1;" title="移除该股票" onclick="event.stopPropagation(); removeWatchlistStock('${escapeHtml(s.symbol)}')">×</span>
           </div>
         `;
       }).join('');
+
+      attachStockDragEvents(container);
+    }
+
+    let draggedStockIndex = null;
+    function attachStockDragEvents(container) {
+      const pills = container.querySelectorAll('.stock-item-pill');
+      pills.forEach(pill => {
+        pill.addEventListener('dragstart', (e) => {
+          draggedStockIndex = parseInt(pill.getAttribute('data-index'), 10);
+          pill.style.opacity = '0.4';
+          pill.style.cursor = 'grabbing';
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(draggedStockIndex));
+        });
+
+        pill.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          pill.style.transform = 'scale(1.05)';
+          pill.style.borderColor = '#2563EB';
+          pill.style.boxShadow = '0 2px 8px rgba(37,99,235,0.2)';
+        });
+
+        pill.addEventListener('dragleave', () => {
+          pill.style.transform = '';
+          pill.style.borderColor = '#CBD5E1';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+        });
+
+        pill.addEventListener('drop', (e) => {
+          e.preventDefault();
+          pill.style.transform = '';
+          pill.style.borderColor = '#CBD5E1';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+          const targetIndex = parseInt(pill.getAttribute('data-index'), 10);
+          if (draggedStockIndex !== null && draggedStockIndex !== targetIndex) {
+            const movedItem = currentWatchlist.splice(draggedStockIndex, 1)[0];
+            currentWatchlist.splice(targetIndex, 0, movedItem);
+            renderWatchlistUI();
+            fetchWatchlistLiveQuotes();
+            showNotice('已更新自选持仓展示顺序');
+          }
+          draggedStockIndex = null;
+        });
+
+        pill.addEventListener('dragend', () => {
+          pill.style.opacity = '1';
+          pill.style.cursor = 'grab';
+          pill.style.transform = '';
+          pill.style.borderColor = '#CBD5E1';
+          pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+          draggedStockIndex = null;
+        });
+      });
     }
 
     window.removeWatchlistStock = function(symbol) {
@@ -3364,8 +4186,8 @@
         },
         crypto_prices: {
           enabled: document.getElementById('cryptoEnabled').checked,
-          selected_coins: Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value),
-          coins_cleared: window._coinsExplicitlyCleared === true,
+          selected_coins: currentSelectedCoins,
+          coins_cleared: currentSelectedCoins.length === 0,
           custom_coins: customCoinsList
         },
         updates: {
@@ -3373,10 +4195,27 @@
           notify_on_new: document.getElementById('updateNotifyOnNew').checked,
           auto_check: document.getElementById('strategyAuto').checked
         },
+        desktop_push: {
+          enabled: document.getElementById('desktopPushEnabled') ? document.getElementById('desktopPushEnabled').checked : true
+        },
         mobile_push: {
           enabled: document.getElementById('mobilePushEnabled').checked,
-          channel: 'wecom',
+          wecom_enabled: document.getElementById('mobileWeComEnabled').checked,
           wecom_webhook_url: document.getElementById('mobileWeComWebhook').value.trim(),
+          feishu_enabled: document.getElementById('mobileFeishuEnabled') ? document.getElementById('mobileFeishuEnabled').checked : false,
+          feishu_mode: currentFeishuMode || 'webhook',
+          feishu_webhook_url: document.getElementById('mobileFeishuWebhook') ? document.getElementById('mobileFeishuWebhook').value.trim() : '',
+          feishu_secret: document.getElementById('mobileFeishuSecret') ? document.getElementById('mobileFeishuSecret').value.trim() : '',
+          feishu_app_id: document.getElementById('mobileFeishuAppId') ? document.getElementById('mobileFeishuAppId').value.trim() : '',
+          feishu_app_secret: document.getElementById('mobileFeishuAppSecret') ? document.getElementById('mobileFeishuAppSecret').value.trim() : '',
+          feishu_receive_id: document.getElementById('mobileFeishuReceiveId') ? document.getElementById('mobileFeishuReceiveId').value.trim() : '',
+          serverchan_enabled: document.getElementById('mobileServerChanEnabled') ? document.getElementById('mobileServerChanEnabled').checked : false,
+          serverchan_sendkey: document.getElementById('mobileServerChanKey') ? document.getElementById('mobileServerChanKey').value.trim() : '',
+          wx_official_enabled: document.getElementById('mobileWxOfficialEnabled').checked,
+          wx_official_app_id: document.getElementById('mobileWxAppId').value.trim(),
+          wx_official_app_secret: document.getElementById('mobileWxAppSecret').value.trim(),
+          wx_official_openid: document.getElementById('mobileWxOpenId').value.trim(),
+          wx_official_template_id: document.getElementById('mobileWxTemplateId').value.trim(),
           trigger_on_watchlist: document.getElementById('mobileTriggerWatchlist').checked,
           trigger_on_vip: document.getElementById('mobileTriggerVip').checked,
           trigger_on_x: document.getElementById('mobileTriggerX').checked,

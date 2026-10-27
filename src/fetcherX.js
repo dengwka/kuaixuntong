@@ -871,7 +871,16 @@ class XFetcher {
       const itemUid = `x_${account.screen_name}_${tweet.id_str}`;
       if (historyManager.isPushed(itemUid)) continue;
 
-      const rawText = tweet.text;
+      let rawText = (tweet.text || '').trim();
+      if (!rawText) {
+        if (tweet.pics && tweet.pics.length > 0) {
+          rawText = '【分享了图片动态】';
+        } else if (tweet.is_retweet) {
+          rawText = '【转发了推文】';
+        } else {
+          rawText = '【发布了新动态】';
+        }
+      }
       const pubDate = new Date(tweet.created_at_ms || tweet.created_at || Date.now());
       const timeStr = pubDate.toLocaleTimeString('zh-CN', { hour12: false });
       const pubTimeStr = pubDate.toLocaleString('zh-CN', { hour12: false });
@@ -893,7 +902,7 @@ class XFetcher {
         }
       }
 
-      const titlePrefix = tweet.is_retweet ? `𝕏 ${account.name} (转推)` : `𝕏 ${account.name}`;
+      const titlePrefix = tweet.is_retweet ? `X ${account.name} (转推)` : `X ${account.name}`;
 
       // 针对指定开启了 AI 分析的博主（如特朗普），调用 AI/金十宏观研判与利多利空分析
       let aiAnalysis = null;

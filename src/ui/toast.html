@@ -1164,31 +1164,9 @@
     };
 
     function categorizeQuotes(stockPrices, cryptoPrices) {
-      const stockItems = [];
-      const cryptoItems = [];
-
-      const rawStockList = (stockPrices || '').trim().split(/\s{2,}/).filter(Boolean);
-      const rawCryptoList = (cryptoPrices || '').trim().split(/\s{2,}/).filter(Boolean);
-
-      const all = [...rawStockList, ...rawCryptoList];
-      const seen = new Set();
-
-      for (const item of all) {
-        const trimmed = item.trim();
-        if (!trimmed || seen.has(trimmed)) continue;
-        seen.add(trimmed);
-
-        const parts = trimmed.split(/\s+/);
-        const lastPart = parts[parts.length - 1];
-        // 凡是末尾为百分比涨跌幅的（如 +0.52%, -1.25%, 0.00%），准确归为股票自选持仓
-        if (parts.length >= 3 && /^[+-]?\d+(\.\d+)?%$/.test(lastPart)) {
-          stockItems.push(trimmed);
-        } else {
-          // 否则归为虚拟币实时行情
-          cryptoItems.push(trimmed);
-        }
-      }
-
+      // 严格按照入参字符串分割，严格保留配置页面中拖拽排序后的原始先后次序
+      const stockItems = (stockPrices || '').trim().split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
+      const cryptoItems = (cryptoPrices || '').trim().split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
       return { stockItems, cryptoItems };
     }
 
@@ -1456,21 +1434,51 @@
       // 4. 标题与正文（智能提取并兜底，彻底杜绝无标题与空白尴尬）
       const xAuthorCard = document.getElementById('xAuthorCard');
       if (isXTwitter) {
+        let authorName = (alertData.author_name || '').trim();
+        let authorHandle = (alertData.author_handle || '').trim().replace(/^@+/, '');
+
+        // 智能提取与容错兜底：若作者名或 handle 缺失，尝试从标题中逆向提取 (如 "𝕏 Elon Musk (@elonmusk)")
+        if ((!authorName || !authorHandle) && alertData.title) {
+          const handleMatch = alertData.title.match(/@([a-zA-Z0-9_]+)/);
+          if (handleMatch && !authorHandle) {
+            authorHandle = handleMatch[1];
+          }
+          const nameMatch = alertData.title.match(/(?:𝕏|X)?\s*([^(@]+?)\s*(?:\(@|$)/);
+          if (nameMatch && nameMatch[1].trim() && !authorName) {
+            authorName = nameMatch[1].trim();
+          }
+        }
+        if (!authorName) {
+          authorName = authorHandle || '推特动态';
+        }
+
         // 𝕏 消息顶部展示博主原生发布信息 (头像 + 昵称 + @用户名 + 发布时间)，正文直接展示推文
         titleEl.style.display = 'none';
         if (xAuthorCard) {
           xAuthorCard.style.display = 'flex';
-          const avatarUrl = alertData.author_avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
           const avatarEl = document.getElementById('xAuthorAvatar');
           if (avatarEl) {
-            avatarEl.dataset.authorName = alertData.author_name || '';
-            avatarEl.dataset.authorHandle = alertData.author_handle || '';
+            avatarEl.dataset.authorName = authorName;
+            avatarEl.dataset.authorHandle = authorHandle;
             delete avatarEl.dataset.proxyTried;
             avatarEl.onerror = () => window.handleToastAvatarError(avatarEl);
-            avatarEl.src = avatarUrl;
+            let avatarUrl = alertData.author_avatar;
+            if (!avatarUrl || avatarUrl.includes('default_profile')) {
+              avatarEl.src = getFallbackAvatar(authorName || authorHandle || 'X', 38);
+            } else {
+              avatarEl.src = avatarUrl;
+            }
           }
-          document.getElementById('xAuthorName').textContent = alertData.author_name || alertData.author_handle || '博主';
-          document.getElementById('xAuthorHandle').textContent = `@${alertData.author_handle || ''}`;
+          document.getElementById('xAuthorName').textContent = authorName;
+          const handleEl = document.getElementById('xAuthorHandle');
+          if (handleEl) {
+            if (authorHandle) {
+              handleEl.style.display = 'inline';
+              handleEl.textContent = `@${authorHandle}`;
+            } else {
+              handleEl.style.display = 'none';
+            }
+          }
           const pubTime = alertData.pub_time || alertData.time || '';
           const subTextEl = document.getElementById('xAuthorSubtext');
           if (subTextEl) {
@@ -1491,8 +1499,23 @@
         }
       }
 
-      const rawContent = (alertData.content || '').trim();
+      let rawContent = (alertData.content || '').trim();
       const rawOriginal = (alertData.original_text || '').trim();
+
+      // 绝不允许内容区域空白！多层级稳固兜底：
+      if (!rawContent) {
+        if (rawOriginal) {
+          rawContent = rawOriginal;
+        } else if (alertData.title) {
+          const titleContent = alertData.title.replace(/^(?:𝕏|X)\s+[^(@]+?\s*\(@[a-zA-Z0-9_]+\)\s*:?\s*/, '').trim();
+          rawContent = titleContent || alertData.title;
+        } else if (alertData.ai_analysis && alertData.ai_analysis.summary) {
+          rawContent = `💡 ${alertData.ai_analysis.summary}`;
+        } else {
+          rawContent = '（点击卡片打开原文查看推文详情）';
+        }
+      }
+
       const cleanContent = rawContent.replace(/\n{3,}/g, '\n\n');
       const cleanOriginal = rawOriginal.replace(/\n{3,}/g, '\n\n');
 

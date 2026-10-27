@@ -13,7 +13,15 @@ class ToastManager {
     this.currentAlertData = null;
     this.unreadList = [];
     if (historyManager.unattendedAlerts && historyManager.unattendedAlerts.length > 0) {
-      this.unreadList = [...historyManager.unattendedAlerts];
+      this.unreadList = historyManager.unattendedAlerts.map(item => {
+        if (!item.content || !item.author_name) {
+          const rec = (historyManager.records || []).find(r => String(r.id) === String(item.id));
+          if (rec) {
+            return { ...rec, ...item, content: rec.content || item.content || rec.title };
+          }
+        }
+        return item;
+      });
     }
     this.openSettingsCallback = null;
     this.toastWidth = 500; // 默认基准宽度
@@ -460,11 +468,28 @@ class ToastManager {
       return;
     }
 
-    const prevAlert = this.unreadList.shift();
+    let prevAlert = this.unreadList.shift();
     if (this.trayManager) {
       this.trayManager.setUnreadCount(this.unreadList.length);
     }
     prevAlert.is_prev_unread = true;
+
+    // 智能数据补全：若历史未读栈中的 prevAlert 缺失内容或博主字段（如历史旧版本遗留数据），主动从 records 中恢复
+    if (!prevAlert.content || !prevAlert.author_name) {
+      const rec = (historyManager.records || []).find(r => String(r.id) === String(prevAlert.id));
+      if (rec) {
+        prevAlert = {
+          ...rec,
+          ...prevAlert,
+          content: prevAlert.content || rec.content || rec.title,
+          author_name: prevAlert.author_name || rec.author_name,
+          author_handle: prevAlert.author_handle || rec.author_handle,
+          author_avatar: prevAlert.author_avatar || rec.author_avatar,
+          source_key: prevAlert.source_key || rec.source_key
+        };
+      }
+    }
+
     historyManager.recordInteraction(prevAlert.id, 'unread_viewed', prevAlert);
 
     this.currentAlertData = prevAlert;

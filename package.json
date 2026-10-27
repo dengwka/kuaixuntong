@@ -1,6 +1,6 @@
 {
   "name": "kuaixuntong",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "快讯通 - 实时突发财经与宏观事件监控助手",
   "main": "src/main.js",
   "scripts": {
@@ -94,7 +94,6 @@
       ]
     }
   },
-  "dependencies": {},
   "devDependencies": {
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8"

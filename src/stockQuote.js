@@ -186,7 +186,19 @@ class StockQuoteManager {
         }
       }
 
-      return quotes;
+      // 严格按照入参 cleanSymbols 的配置顺序重排序，保证弹窗和推送顺序与用户设置 100% 一致
+      const orderedQuotes = [];
+      for (const sym of cleanSymbols) {
+        const found = quotes.find(q => 
+          (q.symbol && q.symbol.toLowerCase() === sym.toLowerCase()) || 
+          (q.rawSymbol && q.rawSymbol.toLowerCase() === sym.toLowerCase())
+        );
+        if (found) {
+          orderedQuotes.push(found);
+        }
+      }
+
+      return orderedQuotes.length > 0 ? orderedQuotes : quotes;
     } catch (e) {
       logger.error('[StockQuote] 获取股票行情异常:', e.message);
       const fallback = cleanSymbols.map(s => this.cache.get(s.toLowerCase())?.data).filter(Boolean);

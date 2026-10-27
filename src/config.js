@@ -353,10 +353,28 @@ class ConfigManager {
         notify_on_new: true,
         check_interval_hours: 12
       },
+      desktop_push: {
+        enabled: true // 电脑端桌面弹窗推送总开关 (默认开启)
+      },
       mobile_push: {
         enabled: false,
         channel: 'wecom',
+        wecom_enabled: true,
         wecom_webhook_url: '',
+        feishu_enabled: false,
+        feishu_mode: 'webhook', // 'webhook' 或 'agent' (智能体/自建应用模式)
+        feishu_webhook_url: '',
+        feishu_secret: '',
+        feishu_app_id: '',
+        feishu_app_secret: '',
+        feishu_receive_id: '',
+        serverchan_enabled: false,
+        serverchan_sendkey: '',
+        wx_official_enabled: false,
+        wx_official_app_id: '',
+        wx_official_app_secret: '',
+        wx_official_openid: '',
+        wx_official_template_id: '',
         trigger_on_watchlist: true,
         trigger_on_vip: true,
         trigger_on_x: true,
@@ -410,6 +428,7 @@ class ConfigManager {
           crypto_prices: { ...defaults.crypto_prices, ...(parsed.crypto_prices || {}) },
           storage: { ...defaults.storage, ...(parsed.storage || {}) },
           updates: { ...defaults.updates, ...(parsed.updates || {}) },
+          desktop_push: { ...defaults.desktop_push, ...(parsed.desktop_push || {}) },
           mobile_push: { ...defaults.mobile_push, ...(parsed.mobile_push || {}) }
         };
 
@@ -451,8 +470,43 @@ class ConfigManager {
                 if (bkParsed.storage && bkParsed.storage.data_dir && (!merged.storage.data_dir || !merged.storage.data_dir.trim())) {
                   merged.storage.data_dir = bkParsed.storage.data_dir;
                 }
-                if (bkParsed.mobile_push && bkParsed.mobile_push.wecom_webhook_url && (!merged.mobile_push.wecom_webhook_url || !merged.mobile_push.wecom_webhook_url.trim())) {
-                  merged.mobile_push.wecom_webhook_url = bkParsed.mobile_push.wecom_webhook_url;
+                if (bkParsed.mobile_push && typeof bkParsed.mobile_push === 'object') {
+                  if (bkParsed.mobile_push.wecom_webhook_url && (!merged.mobile_push.wecom_webhook_url || !merged.mobile_push.wecom_webhook_url.trim())) {
+                    merged.mobile_push.wecom_webhook_url = bkParsed.mobile_push.wecom_webhook_url;
+                  }
+                  if (bkParsed.mobile_push.feishu_webhook_url && (!merged.mobile_push.feishu_webhook_url || !merged.mobile_push.feishu_webhook_url.trim())) {
+                    merged.mobile_push.feishu_webhook_url = bkParsed.mobile_push.feishu_webhook_url;
+                  }
+                  if (bkParsed.mobile_push.feishu_secret && (!merged.mobile_push.feishu_secret || !merged.mobile_push.feishu_secret.trim())) {
+                    merged.mobile_push.feishu_secret = bkParsed.mobile_push.feishu_secret;
+                  }
+                  if (bkParsed.mobile_push.feishu_mode) {
+                    merged.mobile_push.feishu_mode = bkParsed.mobile_push.feishu_mode;
+                  }
+                  if (bkParsed.mobile_push.feishu_app_id && (!merged.mobile_push.feishu_app_id || !merged.mobile_push.feishu_app_id.trim())) {
+                    merged.mobile_push.feishu_app_id = bkParsed.mobile_push.feishu_app_id;
+                  }
+                  if (bkParsed.mobile_push.feishu_app_secret && (!merged.mobile_push.feishu_app_secret || !merged.mobile_push.feishu_app_secret.trim())) {
+                    merged.mobile_push.feishu_app_secret = bkParsed.mobile_push.feishu_app_secret;
+                  }
+                  if (bkParsed.mobile_push.feishu_receive_id && (!merged.mobile_push.feishu_receive_id || !merged.mobile_push.feishu_receive_id.trim())) {
+                    merged.mobile_push.feishu_receive_id = bkParsed.mobile_push.feishu_receive_id;
+                  }
+                  if (bkParsed.mobile_push.serverchan_sendkey && (!merged.mobile_push.serverchan_sendkey || !merged.mobile_push.serverchan_sendkey.trim())) {
+                    merged.mobile_push.serverchan_sendkey = bkParsed.mobile_push.serverchan_sendkey;
+                  }
+                  if (bkParsed.mobile_push.wx_official_app_id && (!merged.mobile_push.wx_official_app_id || !merged.mobile_push.wx_official_app_id.trim())) {
+                    merged.mobile_push.wx_official_app_id = bkParsed.mobile_push.wx_official_app_id;
+                  }
+                  if (bkParsed.mobile_push.wx_official_app_secret && (!merged.mobile_push.wx_official_app_secret || !merged.mobile_push.wx_official_app_secret.trim())) {
+                    merged.mobile_push.wx_official_app_secret = bkParsed.mobile_push.wx_official_app_secret;
+                  }
+                  if (bkParsed.mobile_push.wx_official_openid && (!merged.mobile_push.wx_official_openid || !merged.mobile_push.wx_official_openid.trim())) {
+                    merged.mobile_push.wx_official_openid = bkParsed.mobile_push.wx_official_openid;
+                  }
+                  if (bkParsed.mobile_push.wx_official_template_id && (!merged.mobile_push.wx_official_template_id || !merged.mobile_push.wx_official_template_id.trim())) {
+                    merged.mobile_push.wx_official_template_id = bkParsed.mobile_push.wx_official_template_id;
+                  }
                 }
               }
             } catch (bke) {}
@@ -569,6 +623,7 @@ class ConfigManager {
       storage: { ...(cur.storage || {}), ...(newConfig.storage || {}) },
       crypto_prices: { ...(cur.crypto_prices || {}), ...(newConfig.crypto_prices || {}) },
       updates: { ...(cur.updates || {}), ...(newConfig.updates || {}) },
+      desktop_push: { ...(cur.desktop_push || {}), ...(newConfig.desktop_push || {}) },
       mobile_push: { ...(cur.mobile_push || {}), ...(newConfig.mobile_push || {}) }
     };
 

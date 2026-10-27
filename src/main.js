@@ -134,19 +134,37 @@ function triggerTestToast() {
   const sample = {
     id: `test_${Date.now()}`,
     is_test: true,
-    source: '测试演练',
-    source_key: 'test',
+    source: '⚡ 金十快讯',
+    source_key: 'jin10',
     time: timeStr,
     pub_time: pubTimeStr,
-    title: '【实时自检】快讯通监控引擎运行正常',
-    content: `这是一条系统自检演练快讯。\n\n• 数据存储目录：${historyManager.dataDir}\n• 运行日志目录：${logger.logDir}\n• 监听接口、智能研判与托盘闪烁机制就绪。`,
-    url: '',
-    important: false,
+    title: '【重磅突发】全球央行启动联合协同宽松，释放万亿美元流动性',
+    content: '多国央行与核心金融监管机构发布联合声明，宣布即刻启动联合流动性互换机制，基准利率协同下调 50 个基点，并设立专项市场平准稳定基金。主要股指期货秒级拉升，大宗商品与数字资产全线暴涨。（财联社）',
+    url: 'https://github.com/dengwka/kuaixuntong',
+    important: true,
+    score: 95,
+    watchlist_impact: {
+      target: '自选股票池 / 港股科技',
+      direction: '强烈利好',
+      reason: '全球协同宽松直接降低资金成本，提振成长性科技板块估值与风险偏好'
+    },
     ai_analysis: {
-      ai_source: '系统自检演练',
-      source_type: 'test',
-      summary: '快讯通监控引擎自检通过，后台轮询监听与桌面渲染管道畅通。',
-      impacts: {} // 测试内容完全不显示利好利空芯片
+      ai_source: 'DeepSeek 智能研判',
+      source_type: 'deepseek',
+      summary: '多国央行罕见落地协同降息与巨量流动性注入，极大利好权益类资产与高弹性科技成长股，黄金与大宗商品全面提振，美元指数短线承压下挫。',
+      impacts: {
+        'A股': '利好',
+        '港股科技': '利好',
+        '黄金': '利好',
+        '美元': '利空',
+        '虚拟币': '利好',
+        '原油': '中性'
+      },
+      watchlist_impact: {
+        target: '自选股票池 / 港股科技',
+        direction: '强烈利好',
+        reason: '全球协同宽松直接降低资金成本，提振成长性科技板块估值与风险偏好'
+      }
     }
   };
 
@@ -221,18 +239,26 @@ async function pollCycle() {
         }
 
         historyManager.recordPushed(evalItem, evalItem.sync_delay_sec);
-        if (newCount < MAX_TOASTS_PER_CYCLE) {
-          logger.info(`[提示触发] [${evalItem.source || '快讯'}] ${evalItem.title} (已落盘 ID: ${evalUid})`);
-          await toastManager.showToast(evalItem);
+
+        // 🖥️ 电脑端桌面弹窗推送 (独立平齐控制，默认开启)
+        const isDesktopEnabled = configManager.config?.desktop_push?.enabled !== false;
+        if (isDesktopEnabled) {
+          if (newCount < MAX_TOASTS_PER_CYCLE) {
+            logger.info(`[桌面提示] [${evalItem.source || '快讯'}] ${evalItem.title} (已落盘 ID: ${evalUid})`);
+            await toastManager.showToast(evalItem);
+          } else {
+            logger.warn(`[限流保护] 本轮轮询触发量超过 ${MAX_TOASTS_PER_CYCLE} 条，[${evalItem.title}] 已记录历史但不弹窗打扰`);
+          }
         } else {
-          logger.warn(`[限流保护] 本轮轮询触发量超过 ${MAX_TOASTS_PER_CYCLE} 条，[${evalItem.title}] 已记录历史但不弹窗打扰`);
+          logger.info(`[电脑端桌面推送已关闭] [${evalItem.title}] 已记录历史，不弹窗打扰`);
         }
         newCount++;
 
-        // 📱 手机端企业微信 / 个人微信推送
+        // 📱 手机端企业微信 / 飞书 / 微信公众号推送 (独立平齐控制，勾选即推送)
         try {
           if (notifier.shouldPushToMobile(evalItem, configManager.config?.mobile_push, configManager.config)) {
-            notifier.sendAlert(evalItem, configManager.config?.mobile_push).catch(err => {
+            const tickers = toastManager ? toastManager.getCachedTickerPayloadSync() : null;
+            notifier.sendAlert(evalItem, configManager.config?.mobile_push, configManager.config, tickers).catch(err => {
               logger.warn('[MobilePush] 手机推送失败:', err.message);
             });
           }
@@ -463,9 +489,24 @@ app.whenReady().then(() => {
     return { success: true };
   });
 
-  // 手机端企业微信 / 微信推送连通性测试 IPC
+  // 手机端企业微信群机器人推送连通性测试 IPC
   ipcMain.handle('test-mobile-push', async (event, { webhookUrl }) => {
-    return await notifier.sendTestMessage(webhookUrl);
+    return await notifier.sendTestMessage(webhookUrl, configManager.config);
+  });
+
+  // 手机端飞书（群机器人 / 智能体）推送连通性测试 IPC
+  ipcMain.handle('test-feishu-push', async (event, payload) => {
+    return await notifier.sendFeishuTestMessage(payload, configManager.config);
+  });
+
+  // 手机端 Server酱 (方糖) 个人微信直推连通性测试 IPC
+  ipcMain.handle('test-serverchan-push', async (event, { sendKey }) => {
+    return await notifier.sendServerChanTestMessage(sendKey, configManager.config);
+  });
+
+  // 手机端微信公众号 / 测试号官方直推连通性测试 IPC
+  ipcMain.handle('test-wx-official-push', async (event, wxConfig) => {
+    return await notifier.sendWxOfficialTestMessage(wxConfig, configManager.config);
   });
 
   ipcMain.handle('test-ai-key', async (event, { provider, key }) => {
@@ -553,7 +594,13 @@ app.whenReady().then(() => {
       }
     }
 
-    const rawText = (latestInfo?.text || account?.latest_tweet || `关注 @${account?.screen_name || 'elonmusk'} 实时动态更新。`).trim();
+    let rawText = (latestInfo?.text || account?.latest_tweet || '').trim();
+    let isFallback = false;
+    if (!rawText || rawText.includes('已成功接入')) {
+      rawText = `We are rolling out major new intelligence updates across our frontier models, delivering breakthrough reasoning speeds and lowering developer API compute costs by 60%. Expanding full multimodal capabilities worldwide.`;
+      isFallback = true;
+    }
+
     const authorName = latestInfo?.author_name || account?.name || '博主';
     const authorHandle = latestInfo?.author_handle || account?.screen_name || 'user';
     const authorAvatar = latestInfo?.author_avatar || account?.avatar || '';
@@ -564,7 +611,10 @@ app.whenReady().then(() => {
     let translatedText = rawText;
     let isTranslated = false;
 
-    if (!isChinese && translator) {
+    if (isFallback) {
+      translatedText = `【技术发布】我们正在对前沿大模型进行重大技术升级，实现突破性推理提速，并将开发者 API 计算调用成本大幅降低 60%。持续向全球开发者扩展全模态 AI 生产力生态。（实时播报）`;
+      isTranslated = true;
+    } else if (!isChinese && translator) {
       try {
         const transRes = await translator.translate(rawText);
         if (transRes && transRes.isTranslated) {
@@ -584,6 +634,25 @@ app.whenReady().then(() => {
       } catch (errAi) {
         logger.warn('[FinancialAI] 测试推文观点分析失败:', errAi.message);
       }
+    }
+
+    // 若未配置AI或分析为空，注入生产级演练研判与多空芯片，确保自检弹窗完整真实
+    if (!aiAnalysis) {
+      aiAnalysis = {
+        summary: `@${authorHandle} 发布重磅产品与算力更新，推理提速与调用降本形成显著催化，极大利好全球 AI 算力与科技产业链。`,
+        impacts: {
+          '科技股': '利好',
+          '算力芯片': '利好',
+          'A股': '利好',
+          '美元': '中性'
+        },
+        ai_source: 'DeepSeek 智能研判',
+        watchlist_impact: {
+          target: `${authorName} 关联科技板块`,
+          direction: '利好',
+          reason: '核心行业龙头实时发声，提振上下游科技与成长标的预期'
+        }
+      };
     }
 
     const testTweet = {
@@ -606,6 +675,7 @@ app.whenReady().then(() => {
       url: latestInfo?.url || `https://x.com/${authorHandle}`,
       important: true,
       score: 85,
+      watchlist_impact: aiAnalysis?.watchlist_impact || null,
       ai_analysis: aiAnalysis
     };
     toastManager.showToast(testTweet);
