@@ -16,6 +16,7 @@ const trayManager = require('./trayManager');
 const updateManager = require('./updater');
 const Translator = require('./translator');
 const XFetcher = require('./fetcherX');
+const notifier = require('./notifier');
 
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
@@ -227,6 +228,17 @@ async function pollCycle() {
           logger.warn(`[限流保护] 本轮轮询触发量超过 ${MAX_TOASTS_PER_CYCLE} 条，[${evalItem.title}] 已记录历史但不弹窗打扰`);
         }
         newCount++;
+
+        // 📱 手机端企业微信 / 个人微信推送
+        try {
+          if (notifier.shouldPushToMobile(evalItem, configManager.config?.mobile_push, configManager.config)) {
+            notifier.sendAlert(evalItem, configManager.config?.mobile_push).catch(err => {
+              logger.warn('[MobilePush] 手机推送失败:', err.message);
+            });
+          }
+        } catch (pushErr) {
+          logger.warn('[MobilePush] 推送判定异常:', pushErr.message);
+        }
       }
     }
 
@@ -449,6 +461,11 @@ app.whenReady().then(() => {
     };
     toastManager.showToast(sampleVip);
     return { success: true };
+  });
+
+  // 手机端企业微信 / 微信推送连通性测试 IPC
+  ipcMain.handle('test-mobile-push', async (event, { webhookUrl }) => {
+    return await notifier.sendTestMessage(webhookUrl);
   });
 
   ipcMain.handle('test-ai-key', async (event, { provider, key }) => {

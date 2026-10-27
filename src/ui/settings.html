@@ -683,7 +683,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.2.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.2.2 · 运行中</span>
     </div>
   </div>
 
@@ -693,6 +693,7 @@
     <div class="tab-item" data-tab="keywords">🎯 关键词规则</div>
     <div class="tab-item" data-tab="ai">💡 AI观点研判</div>
     <div class="tab-item" data-tab="toast">🔔 弹窗与行情</div>
+    <div class="tab-item" data-tab="mobile">📱 手机微信推送</div>
     <div class="tab-item" data-tab="autostart">🚀 开机自启</div>
     <div class="tab-item" data-tab="storage">📂 数据与日志</div>
     <div class="tab-item" data-tab="update" id="tabItemUpdate">
@@ -1251,6 +1252,105 @@
           <button type="button" class="btn btn-secondary btn-sm" id="btnTestCrypto">⚡ 实时测试获取 OKX 报价</button>
         </div>
         <div id="cryptoTestResult" style="font-size: 11.5px; font-weight: 600; margin-top: 6px; display: none;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: 手机微信即时推送 (企业微信群机器人) ==================== -->
+    <div class="tab-pane" id="pane-mobile">
+      <div class="card">
+        <div class="card-title">
+          <span>📱 手机微信即时推送 · 企业微信群机器人</span>
+          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">微信/企微双端直达</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 14px; line-height: 1.6;">
+          离开电脑或外出时，核心突发快讯与自选标的异动秒级推送到手机。<br>
+          通过<b>企业微信群机器人 Webhook</b>，配合企业微信官方【微信插件】，可在普通<b>个人微信</b>聊天列表中直接收到精美卡片提醒！
+        </div>
+
+        <!-- 主推送开关 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
+          <div class="form-row" style="margin-bottom: 0;">
+            <label class="checkbox-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="mobilePushEnabled" />
+                <b style="color: #0F172A; font-size: 13px;">启用手机端推送 (秒级推送到企业微信 / 个人微信)</b>
+              </span>
+              <span id="mobilePushStatusTag" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #E2E8F0; color: #64748B; font-weight: 600;">已关闭</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="mobileConfigDetails" style="transition: opacity 0.2s ease;">
+          <!-- Webhook 配置 -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-weight: 600; color: #1E293B; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+              <span>企业微信群机器人 Webhook 地址:</span>
+              <span style="font-size: 11px; color: #64748B; font-weight: 400;">(格式: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...)</span>
+            </label>
+            <input type="text" id="mobileWeComWebhook" class="form-control" placeholder="请粘贴企业微信群机器人的 Webhook 完整地址" style="font-size: 12px; font-family: monospace;" />
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnTestMobilePush" style="padding: 6px 14px; font-weight: 600;">
+                ⚡ 发送测试消息到手机微信
+              </button>
+              <div id="mobilePushTestNotice" style="font-size: 12px; font-weight: 600; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- 触发策略与降噪过滤 -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 8px; display: flex; align-items: gap: 6px;">
+              <span>🎯 手机推送策略与降噪防打扰</span>
+              <span style="font-size: 11px; color: #64748B; font-weight: normal; margin-left: 6px;">(避免手机频繁震动打扰，建议保持精选策略)</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label class="checkbox-row" style="align-items: flex-start;">
+                <input type="checkbox" id="mobileTriggerWatchlist" checked style="margin-top: 2px;" />
+                <div>
+                  <span style="font-size: 12px; font-weight: 600; color: #0F172A;">🎯 自选股票 / 关注加密货币异动 (强烈推荐)</span>
+                  <div style="font-size: 11px; color: #64748B;">命中您在【弹窗与行情】中关注的股票或加密代币时，秒级推送到手机。</div>
+                </div>
+              </label>
+
+              <label class="checkbox-row" style="align-items: flex-start;">
+                <input type="checkbox" id="mobileTriggerVip" checked style="margin-top: 2px;" />
+                <div>
+                  <span style="font-size: 12px; font-weight: 600; color: #0F172A;">👑 VIP 重大特报 / 全球黑天鹅特级警报 (强烈推荐)</span>
+                  <div style="font-size: 11px; color: #64748B;">命中最高级别宏观决议、地缘军事冲突、极端突发事件时秒级推送。</div>
+                </div>
+              </label>
+
+              <label class="checkbox-row" style="align-items: flex-start;">
+                <input type="checkbox" id="mobileTriggerX" checked style="margin-top: 2px;" />
+                <div>
+                  <span style="font-size: 12px; font-weight: 600; color: #0F172A;">𝕏 (Twitter) 重点大V最新博文播报</span>
+                  <div style="font-size: 11px; color: #64748B;">特朗普、白宫、马斯克等您在 X 监控中关注的重要账号发推时推送。</div>
+                </div>
+              </label>
+
+              <label class="checkbox-row" style="align-items: flex-start;">
+                <input type="checkbox" id="mobileTriggerAll" style="margin-top: 2px;" />
+                <div>
+                  <span style="font-size: 12px; font-weight: 600; color: #B45309;">⚠️ 全量推送：桌面弹出的所有快讯均推送到手机</span>
+                  <div style="font-size: 11px; color: #64748B;">每日约 50~200 条消息，如不需要频繁打扰请勿勾选此项。</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 30秒极速配置图文指南 -->
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 12px 14px; border-radius: 6px;">
+            <div style="font-size: 12px; font-weight: 700; color: #1D4ED8; margin-bottom: 6px;">
+              📖 30秒极速配置指南（手机如何收到通知？）
+            </div>
+            <div style="font-size: 11.5px; color: #1E3A8A; line-height: 1.7;">
+              <b>第 1 步 · 获取机器人 Webhook</b>：<br>
+              在电脑或手机版<b>企业微信</b>中，进入任意群聊（或单独建一个只有您自己的群） ➔ 点击右上角【...】➔【添加群机器人】➔【新建】命名为“快讯通提醒”➔ 复制生成的 <b>Webhook 地址</b> 粘贴到上方。<br>
+              <b>第 2 步 · 在普通个人微信中接收（关键）</b>：<br>
+              在手机企业微信打开【我】➔【设置】➔【微信插件】➔ 扫码关注企业微信插件。完成后，即便手机平时只打开普通<b>个人微信</b>，群机器人的卡片消息也会像微信好友一样实时在<b>微信聊天列表</b>中弹出提醒！
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1886,7 +1986,7 @@
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.2.0';
+      const appVer = payload.appVersion || '1.2.2';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -2065,6 +2165,17 @@
       currentSelectedCoins = Array.isArray(cryptoCfg.selected_coins) ? cryptoCfg.selected_coins : ['BTC/USDT', 'SOL/USDT'];
       customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
       renderCryptoCoins();
+
+      // 9. 手机微信即时推送配置
+      const mobilePush = cfg.mobile_push || {};
+      const mobileEnabled = mobilePush.enabled === true;
+      document.getElementById('mobilePushEnabled').checked = mobileEnabled;
+      document.getElementById('mobileWeComWebhook').value = mobilePush.wecom_webhook_url || '';
+      document.getElementById('mobileTriggerWatchlist').checked = mobilePush.trigger_on_watchlist !== false;
+      document.getElementById('mobileTriggerVip').checked = mobilePush.trigger_on_vip !== false;
+      document.getElementById('mobileTriggerX').checked = mobilePush.trigger_on_x !== false;
+      document.getElementById('mobileTriggerAll').checked = mobilePush.trigger_on_all === true;
+      updateMobilePushUIStatus(mobileEnabled);
     }
 
     // 监听主进程下发的配置推送
@@ -2361,6 +2472,69 @@
       } catch (e) {
         resEl.style.color = '#DC2626';
         resEl.textContent = `❌ 获取失败: ${e.message}`;
+      }
+    });
+
+    // ==================== 手机微信 / 企业微信即时推送交互 ====================
+    function updateMobilePushUIStatus(enabled) {
+      const tag = document.getElementById('mobilePushStatusTag');
+      const container = document.getElementById('mobileConfigDetails');
+      if (!tag || !container) return;
+      if (enabled) {
+        tag.textContent = '🟢 运行中';
+        tag.style.background = '#DCFCE7';
+        tag.style.color = '#166534';
+        container.style.opacity = '1';
+      } else {
+        tag.textContent = '已关闭';
+        tag.style.background = '#E2E8F0';
+        tag.style.color = '#64748B';
+        container.style.opacity = '0.65';
+      }
+    }
+
+    document.getElementById('mobilePushEnabled').addEventListener('change', (e) => {
+      updateMobilePushUIStatus(e.target.checked);
+    });
+
+    document.getElementById('btnTestMobilePush').addEventListener('click', async () => {
+      const webhookUrl = document.getElementById('mobileWeComWebhook').value.trim();
+      const noticeEl = document.getElementById('mobilePushTestNotice');
+      const btn = document.getElementById('btnTestMobilePush');
+
+      if (!webhookUrl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = '⚠️ 请先输入企业微信群机器人 Webhook 地址';
+        return;
+      }
+
+      if (!webhookUrl.startsWith('https://qyapi.weixin.qq.com/cgi-bin/webhook/send')) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = '⚠️ Webhook 格式不正确，必须以 https://qyapi.weixin.qq.com/cgi-bin/webhook/send 开头';
+        return;
+      }
+
+      btn.disabled = true;
+      noticeEl.style.display = 'block';
+      noticeEl.style.color = '#2563EB';
+      noticeEl.textContent = '⏳ 正在向手机企业微信发送测试验证消息...';
+
+      try {
+        const res = await ipcRenderer.invoke('test-mobile-push', { webhookUrl });
+        btn.disabled = false;
+        if (res && res.success) {
+          noticeEl.style.color = '#059669';
+          noticeEl.textContent = `✅ ${res.message}`;
+        } else {
+          noticeEl.style.color = '#DC2626';
+          noticeEl.textContent = `❌ ${res ? res.message : '发送失败'}`;
+        }
+      } catch (err) {
+        btn.disabled = false;
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
       }
     });
 
@@ -3198,6 +3372,15 @@
           strategy: document.getElementById('strategyAuto').checked ? 'auto' : 'manual',
           notify_on_new: document.getElementById('updateNotifyOnNew').checked,
           auto_check: document.getElementById('strategyAuto').checked
+        },
+        mobile_push: {
+          enabled: document.getElementById('mobilePushEnabled').checked,
+          channel: 'wecom',
+          wecom_webhook_url: document.getElementById('mobileWeComWebhook').value.trim(),
+          trigger_on_watchlist: document.getElementById('mobileTriggerWatchlist').checked,
+          trigger_on_vip: document.getElementById('mobileTriggerVip').checked,
+          trigger_on_x: document.getElementById('mobileTriggerX').checked,
+          trigger_on_all: document.getElementById('mobileTriggerAll').checked
         }
       };
     }

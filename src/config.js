@@ -352,6 +352,15 @@ class ConfigManager {
         auto_check: true,
         notify_on_new: true,
         check_interval_hours: 12
+      },
+      mobile_push: {
+        enabled: false,
+        channel: 'wecom',
+        wecom_webhook_url: '',
+        trigger_on_watchlist: true,
+        trigger_on_vip: true,
+        trigger_on_x: true,
+        trigger_on_all: false
       }
     };
   }
@@ -400,7 +409,8 @@ class ConfigManager {
           ai_analysis: { ...defaults.ai_analysis, ...(parsed.ai_analysis || {}) },
           crypto_prices: { ...defaults.crypto_prices, ...(parsed.crypto_prices || {}) },
           storage: { ...defaults.storage, ...(parsed.storage || {}) },
-          updates: { ...defaults.updates, ...(parsed.updates || {}) }
+          updates: { ...defaults.updates, ...(parsed.updates || {}) },
+          mobile_push: { ...defaults.mobile_push, ...(parsed.mobile_push || {}) }
         };
 
         // 增量继承保护：从永久多重备份中补全关键配置
@@ -440,6 +450,9 @@ class ConfigManager {
                 }
                 if (bkParsed.storage && bkParsed.storage.data_dir && (!merged.storage.data_dir || !merged.storage.data_dir.trim())) {
                   merged.storage.data_dir = bkParsed.storage.data_dir;
+                }
+                if (bkParsed.mobile_push && bkParsed.mobile_push.wecom_webhook_url && (!merged.mobile_push.wecom_webhook_url || !merged.mobile_push.wecom_webhook_url.trim())) {
+                  merged.mobile_push.wecom_webhook_url = bkParsed.mobile_push.wecom_webhook_url;
                 }
               }
             } catch (bke) {}
@@ -555,7 +568,8 @@ class ConfigManager {
       ai_analysis: { ...(cur.ai_analysis || {}), ...(newConfig.ai_analysis || {}) },
       storage: { ...(cur.storage || {}), ...(newConfig.storage || {}) },
       crypto_prices: { ...(cur.crypto_prices || {}), ...(newConfig.crypto_prices || {}) },
-      updates: { ...(cur.updates || {}), ...(newConfig.updates || {}) }
+      updates: { ...(cur.updates || {}), ...(newConfig.updates || {}) },
+      mobile_push: { ...(cur.mobile_push || {}), ...(newConfig.mobile_push || {}) }
     };
 
     // 保护 X 账号列表：如果保存时传入的是空数组且未标记 cleared，保留原有已有 accounts
