@@ -389,9 +389,10 @@ async function pollCycle() {
       if (historyManager.isPushed(itemUid)) continue;
 
       // ⏰ 全局时效总闸门：突发快讯工具绝不推送超过时效的过期旧闻（防止接口吐出数天前历史归档）
-      const maxAgeSec = item.source_key === 'local_gov' ? (72 * 3600) : (item.source_key === 'x_twitter' ? (12 * 3600) : (2 * 3600));
+      // local_gov 本地政务与问政最长允许 24 小时（1天），超过 24 小时的一律判定为历史归档直接拦截丢弃
+      const maxAgeSec = item.source_key === 'local_gov' ? (24 * 3600) : (item.source_key === 'x_twitter' ? (12 * 3600) : (2 * 3600));
       if (item.sync_delay_sec && item.sync_delay_sec > maxAgeSec) {
-        logger.warn(`[时效拦截] [${item.source || item.source_key}] ${item.title} 原文发布于 ${item.pub_time || item.time}，延迟已达 ${item.sync_delay_sec}秒 (>2小时)，判定为过期历史归档，已拦截丢弃`);
+        logger.warn(`[时效拦截] [${item.source || item.source_key}] ${item.title} 原文发布于 ${item.pub_time || item.time}，延迟已达 ${item.sync_delay_sec}秒 (>24小时)，判定为过期历史归档，已拦截丢弃`);
         historyManager.pushedIds.add(itemUid);
         continue;
       }

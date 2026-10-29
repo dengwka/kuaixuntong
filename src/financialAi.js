@@ -188,7 +188,21 @@ ${watchlistHint}
 
   async analyzeLocalGov(alertData, availableProviders, timeoutSec) {
     const text = `${alertData.title || ''}\n${alertData.content || ''}`.trim();
-    const systemPrompt = `你是一位专注于城市规划、住建规划、轨道交通与民生问答的政务权威分析顾问。
+    const isPersonnel = (alertData.sub_source === '政务人事' || (alertData.title && (alertData.title.includes('任免') || alertData.title.includes('任职') || alertData.title.includes('公示'))));
+    const systemPrompt = isPersonnel
+      ? `你是一位专注于党政机关领导人事任免与省市班子变动的权威政情分析顾问。
+你的任务是针对最新发布的【党委常委变动、省市府领导班子调整、厅局长任命、干部任前公示】，用大白话提炼出 30 字以内的核心事实结论（包含：主要官员姓名、新任或免去的重要职务）。
+
+【铁律要求】：
+1. 绝对保真：仅基于原文提炼官方任命，严禁脑补任何未提及的个人信息。
+2. 提取核心干货：明确写出“谁 任/免 什么职务”或“谁 进行任前公示”。
+3. 纯净政务信息：不涉及任何金融资产，严禁生成任何金融利好利空分析。
+
+你必须严格返回以下 JSON 格式：
+{
+  "summary": "30字以内的政务人事任免大白话事实结论"
+}`
+      : `你是一位专注于城市规划、住建规划、轨道交通与民生问答的政务权威分析顾问。
 你的任务是针对最新发布的【政府规划公示、控规修改、地铁进展、官方问政答复】，用大白话为普通市民提炼出 30 字以内的确定性核心结论。
 
 【铁律要求】：
@@ -252,7 +266,9 @@ ${watchlistHint}
       ai_source: '本地规则默认分析',
       source_type: 'rule_engine',
       is_pending: false,
-      summary: '官方发布最新规划公示或民生答复，点击卡片可直接调取原网页查看高清图纸与红头答复。',
+      summary: isPersonnel
+        ? ((alertData.title || '').replace(/^【[^】]+】/, '').trim() || '官方发布省市领导干部任免与人事调整通知，点击卡片可查看原文公告。')
+        : '官方发布最新规划公示或民生答复，点击卡片可直接调取原网页查看高清图纸与红头答复。',
       impact_score: 0,
       sentiment_chips: [],
       impacts: null,

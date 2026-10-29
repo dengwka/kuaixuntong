@@ -704,7 +704,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.4.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.4.2 · 运行中</span>
     </div>
   </div>
 
@@ -1207,7 +1207,7 @@
                 <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
                   <div style="display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-weight: 700; color: #1E293B; font-size: 11.5px;">🏛️ 重点关注子栏目（多选，点击卡片即切换）：</span>
-                    <span style="font-size: 11px; color: #64748B;">4 大权威数据源通道独立监控</span>
+                    <span style="font-size: 11px; color: #64748B;">5 大权威数据源通道独立监控</span>
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 7px;">
                     <!-- 规资规划 -->
@@ -1265,9 +1265,23 @@
                         💡 获得：房贷利率 · 公积金 · 契税补贴
                       </div>
                     </label>
+
+                    <!-- 政务人事 -->
+                    <label id="card_sub_personnel" style="display: flex; flex-direction: column; gap: 2px; background: #FAF5FF; border: 1.5px solid #A855F7; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s ease; user-select: none; grid-column: span 2;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <input type="checkbox" id="localSubPersonnel" checked onchange="updateChannelCardStyle('personnel', this.checked)" />
+                          <span style="font-weight: 700; color: #7E22CE; font-size: 12px;">🏛️ 政务人事</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 700; background: #F3E8FF; color: #7E22CE; padding: 1px 5px; border-radius: 3px; border: 1px solid #D8B4FE;">⚡ 省市直通</span>
+                      </div>
+                      <div style="font-size: 10.5px; color: #6B21A8; padding-left: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="获得讯息：省委市委领导班子变动 · 副省长副市长任免 · 核心厅局长调整 · 干部任前公示">
+                        💡 获得：领导班子变动 · 副省长副市长任免 · 厅局长调整 · 干部任前公示
+                      </div>
+                    </label>
                   </div>
-                  <div style="font-size: 11px; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 3px 8px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="💡 全城直通保障：凡涉及全市房产政策/房贷/公积金/契税补贴等重大通知，自动穿透行政区与板块限制第一时间全量推送。">
-                    💡 <b>全城特权直通保障</b>：凡涉及全市房产政策/房贷/公积金/契税补贴等重大通知，自动穿透行政区与板块限制第一时间全量推送。
+                  <div style="font-size: 11px; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 3px 8px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="💡 省市全域直通保障：凡涉及领导班子任免公报、干部任前公示及全市楼市新政，自动穿透行政区与板块限制第一时间全量推送。">
+                    💡 <b>省市全域特权直通保障</b>：凡涉及领导班子任免公报、干部任前公示及全市楼市新政，自动穿透行政区与板块限制第一时间全量推送。
                   </div>
                 </div>
 
@@ -2589,7 +2603,7 @@
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.4.0';
+      const appVer = payload.appVersion || '1.4.2';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -2732,11 +2746,13 @@
       if (document.getElementById('localSubMetro')) document.getElementById('localSubMetro').checked = subLg.metro !== false;
       if (document.getElementById('localSubWenzheng')) document.getElementById('localSubWenzheng').checked = subLg.wenzheng !== false;
       if (document.getElementById('localSubHousing')) document.getElementById('localSubHousing').checked = subLg.housing_policy !== false;
+      if (document.getElementById('localSubPersonnel')) document.getElementById('localSubPersonnel').checked = subLg.personnel !== false;
       if (typeof updateChannelCardStyle === 'function') {
         updateChannelCardStyle('planning', subLg.planning !== false);
         updateChannelCardStyle('metro', subLg.metro !== false);
         updateChannelCardStyle('wenzheng', subLg.wenzheng !== false);
         updateChannelCardStyle('housing', subLg.housing_policy !== false);
+        updateChannelCardStyle('personnel', subLg.personnel !== false);
       }
       if (document.getElementById('localDistrictSelect')) {
         document.getElementById('localDistrictSelect').value = localGov.district_id || '430103';
@@ -4280,6 +4296,16 @@
           card.style.borderColor = '#CBD5E1';
           card.style.opacity = '0.45';
         }
+      } else if (type === 'personnel') {
+        if (isChecked) {
+          card.style.background = '#FAF5FF';
+          card.style.borderColor = '#A855F7';
+          card.style.opacity = '1';
+        } else {
+          card.style.background = '#F8FAFC';
+          card.style.borderColor = '#CBD5E1';
+          card.style.opacity = '0.45';
+        }
       } else {
         if (isChecked) {
           card.style.background = '#EFF6FF';
@@ -4509,7 +4535,7 @@
       btnTestLg.addEventListener('click', async () => {
         const previewBox = document.getElementById('localGovPreviewBox');
         const statusEl = document.getElementById('localGovFetchStatus');
-        if (statusEl) statusEl.textContent = '🔄 正在连接红网问政与自规局数据源...';
+        if (statusEl) statusEl.textContent = '🔄 正在连接红网问政、省市任免与自规局数据源...';
         btnTestLg.disabled = true;
         try {
           const districtSelect = document.getElementById('localDistrictSelect');
@@ -4520,7 +4546,8 @@
             planning: document.getElementById('localSubPlanning')?.checked !== false,
             metro: document.getElementById('localSubMetro')?.checked !== false,
             wenzheng: document.getElementById('localSubWenzheng')?.checked !== false,
-            housing_policy: document.getElementById('localSubHousing')?.checked !== false
+            housing_policy: document.getElementById('localSubHousing')?.checked !== false,
+            personnel: document.getElementById('localSubPersonnel')?.checked !== false
           };
           const sectorKeywords = parseKeywords(document.getElementById('localSectorKeywords')?.value || '');
           const customKeywords = document.getElementById('localCustomKeywords')?.value.trim() || '';
@@ -4946,7 +4973,8 @@
               planning: document.getElementById('localSubPlanning')?.checked !== false,
               metro: document.getElementById('localSubMetro')?.checked !== false,
               wenzheng: document.getElementById('localSubWenzheng')?.checked !== false,
-              housing_policy: document.getElementById('localSubHousing')?.checked !== false
+              housing_policy: document.getElementById('localSubHousing')?.checked !== false,
+              personnel: document.getElementById('localSubPersonnel')?.checked !== false
             },
             preset_sector: document.getElementById('localSectorSelect')?.value || window._currentLocalSectorPreset || 'custom',
             sector_keywords: parseKeywords(document.getElementById('localSectorKeywords')?.value || ''),

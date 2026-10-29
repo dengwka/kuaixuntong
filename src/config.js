@@ -331,7 +331,8 @@ class ConfigManager {
             planning: true,       // 规资局规划公示/控规修改
             wenzheng: true,       // 问政湖南官方民生问答
             metro: true,          // 地铁与轨道交通
-            housing_policy: true  // 全市楼市新政/房产调控/公积金（无视片区限制特权直通）
+            housing_policy: true, // 全市楼市新政/房产调控/公积金（无视片区限制特权直通）
+            personnel: true       // 省市领导班子与政务人事任免（全省全城特权直通）
           },
           preset_sector: 'tianxin_shengfu', // 天心·省政府板块
           sector_keywords: ['省政府', '省府', '湘府', '友谊', '新韶', '天悦', '黑石铺', '暮云', '先锋', '大托', '地铁8号线', '地铁7号线'],

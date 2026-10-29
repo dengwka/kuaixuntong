@@ -156,6 +156,9 @@ class NotifierService {
       sourceTag = '💼 脉脉职言';
     } else if (alertData.source_key === 'jin10_topic') {
       sourceTag = '🔥 重要事件';
+    } else if (alertData.source_key === 'local_gov' || alertData.source === '本地周边' || (typeof alertData.source === 'string' && alertData.source.includes('本地周边'))) {
+      const sub = alertData.sub_source || '民生问答';
+      sourceTag = `📍 本地周边 · ${sub}`;
     }
 
     const title = (alertData.title || alertData.content || '').trim().replace(/[\r\n]+/g, ' ');
@@ -297,6 +300,9 @@ class NotifierService {
       sourcePrefix = '💼脉脉';
     } else if (alertData.source_key === 'jin10_topic') {
       sourcePrefix = '🔥重要事件';
+    } else if (alertData.source_key === 'local_gov' || alertData.source === '本地周边' || (typeof alertData.source === 'string' && alertData.source.includes('本地周边'))) {
+      const sub = alertData.sub_source || '民生问答';
+      sourcePrefix = `📍本地·${sub}`;
     }
 
     const rawTitle = (alertData.title || alertData.content || '').trim().replace(/[\r\n]+/g, ' ');
@@ -434,8 +440,12 @@ class NotifierService {
    */
   formatFeishuCard(alertData, tickerPayload) {
     const isVip = alertData.is_vip || false;
-    const titlePrefix = isVip ? '👑【VIP重大特报】' : '⚡【突发快讯】';
-    const cardTemplate = isVip ? 'red' : (alertData.source_key === 'x_twitter' ? 'turquoise' : 'blue');
+    const isLocalGov = (alertData.source_key === 'local_gov' || alertData.source === '本地周边' || (typeof alertData.source === 'string' && alertData.source.includes('本地周边')));
+    let titlePrefix = isVip ? '👑【VIP重大特报】' : '⚡【突发快讯】';
+    if (isLocalGov) {
+      titlePrefix = `📍【本地周边·${alertData.sub_source || '民生问答'}】`;
+    }
+    const cardTemplate = isVip ? 'red' : (isLocalGov ? 'purple' : (alertData.source_key === 'x_twitter' ? 'turquoise' : 'blue'));
 
     let cleanTitle = (alertData.title || alertData.content || '').trim().replace(/[\r\n]+/g, ' ');
     cleanTitle = cleanTitle.replace(/\u{1D54F}/gu, 'X').replace(/𝕏/g, 'X');
@@ -928,7 +938,11 @@ class NotifierService {
 
     const cleanTitle = (alertData.title || alertData.content || '').trim().replace(/[\r\n]+/g, ' ').substring(0, 80);
     const isVip = alertData.is_vip || false;
-    const prefix = isVip ? '👑【VIP重大特报】' : '⚡【快讯】';
+    const isLocalGov = (alertData.source_key === 'local_gov' || alertData.source === '本地周边' || (typeof alertData.source === 'string' && alertData.source.includes('本地周边')));
+    let prefix = isVip ? '👑【VIP重大特报】' : '⚡【快讯】';
+    if (isLocalGov) {
+      prefix = `📍【本地周边·${alertData.sub_source || '民生问答'}】`;
+    }
 
     const aiSummary = alertData.ai_analysis?.summary || '无特殊AI研判';
     const rawImpacts = this.parseImpactsList(alertData.ai_analysis?.impacts);

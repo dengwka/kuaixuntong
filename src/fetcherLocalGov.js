@@ -153,6 +153,12 @@ class LocalGovFetcher {
           }
         } catch (e) {}
 
+        // ⏰ 严格时效性拦截：超过 24 小时的历史问政归档，一律静默标记为已知，绝不触发突发推送
+        if (!isTest && syncDelaySec > 24 * 3600) {
+          this.seenIds.add(fullId);
+          continue;
+        }
+
         const cleanC = this.cleanText(rawContent);
         const previewContent = cleanC.length > 200 ? cleanC.substring(0, 200) + '...' : cleanC;
         const replyTag = r.is_reply === '1' ? '【已官方回复】' : '【官方已受理】';
@@ -272,6 +278,12 @@ class LocalGovFetcher {
           }
         } catch (e) {}
 
+        // ⏰ 严格时效性拦截：超过 24 小时的历史规划公告，一律静默标记为已知
+        if (!isTest && syncDelaySec > 24 * 3600) {
+          this.seenIds.add(fullId);
+          continue;
+        }
+
         let subSource = '规划公示';
         if (isHousing) {
           subSource = '楼市新政';
@@ -372,6 +384,12 @@ class LocalGovFetcher {
               }
             } catch (e) {}
 
+            // ⏰ 严格时效性拦截：超过 24 小时的历史住建公文归档，一律静默标记为已知
+            if (!isTest && syncDelaySec > 24 * 3600) {
+              this.seenIds.add(fullId);
+              continue;
+            }
+
             alerts.push({
               id: fullId,
               source: '本地周边',
@@ -401,6 +419,185 @@ class LocalGovFetcher {
   }
 
   /**
+   * 4. 抓取省市党政领导班子与权威人事任免（湖南人大网 + 红网湖南人事 + 湖南省政府人事任免）
+   * 专精于：省委市委班子调整、副省长副市长任免、厅局一把手任命、任前公示（全域特权直通）
+   */
+  async fetchPersonnelAppointments(govCfg, isTest = false) {
+    const fetchFn = this.getFetchFn();
+    const alerts = [];
+    const now = Date.now();
+
+    // 通道 1: 湖南人大网 · 选举任免 (https://www.hnrd.gov.cn/channel/16164.html)
+    try {
+      const res = await fetchFn('https://www.hnrd.gov.cn/channel/16164.html', {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const regex = /<li[^>]*class="[^"]*flex[^"]*"[^>]*>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*title=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>[\s\S]*?<span[^>]*class="date"[^>]*>([\d\s-:]+)<\/span>/gi;
+        let m;
+        while ((m = regex.exec(html)) !== null) {
+          const rawUrl = m[1].trim();
+          const cleanTitle = m[2].trim().replace(/\s+/g, ' ');
+          const dateStr = (m[4] || '').trim();
+          const idMatch = rawUrl.match(/\/(\d+)\.html/);
+          const fullId = `local_gov_hnrd_${idMatch ? idMatch[1] : Buffer.from(cleanTitle).toString('base64').substring(0, 16)}`;
+
+          if (!isTest && (this.seenIds.has(fullId) || historyManager.isPushed(fullId))) continue;
+
+          let syncDelaySec = 0;
+          if (dateStr) {
+            const pubTs = new Date(dateStr.replace(/-/g, '/')).getTime();
+            if (!isNaN(pubTs) && pubTs > 0) {
+              syncDelaySec = Math.max(0, Math.floor((now - pubTs) / 1000));
+            }
+          }
+
+          // 严格时效性拦截：超过 24 小时的历史人事任免归档，一律静默标记为已知
+          if (!isTest && syncDelaySec > 24 * 3600) {
+            this.seenIds.add(fullId);
+            continue;
+          }
+
+          alerts.push({
+            id: fullId,
+            source: '本地周边',
+            sub_source: '政务人事',
+            source_key: 'local_gov',
+            title: `【省市任免】${cleanTitle}`,
+            content: `【权威任免发布】${cleanTitle}\n发文渠道：湖南人大常委会 · 选举任免  发布时间：${dateStr || '最新'}\n🔗 原文链接：${rawUrl}`,
+            url: rawUrl,
+            time: dateStr || new Date().toLocaleString('zh-CN', { hour12: false }),
+            pub_time: dateStr || new Date().toLocaleString('zh-CN', { hour12: false }),
+            sync_delay_sec: syncDelaySec,
+            is_important: true,
+            is_passthrough: true,
+            ai_analysis: {
+              summary: `省市党政人事任免与职务调整：${cleanTitle}`,
+              impacts: {}
+            }
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('[LocalGov] 湖南人大网选举任免抓取异常:', err.message);
+    }
+
+    // 通道 2: 红网 · 湖南人事时政快报 (https://hn.rednet.cn)
+    try {
+      const res = await fetchFn('https://hn.rednet.cn', {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const startIdx = html.indexOf('moduleName="湖南人事-列表"');
+        if (startIdx !== -1) {
+          const endIdx = html.indexOf('</div>', startIdx);
+          const block = html.substring(startIdx, endIdx);
+          const regex = /<a[^>]+href="([^"]+)"[^>]*title=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/gi;
+          let m;
+          while ((m = regex.exec(block)) !== null) {
+            const rawUrl = m[1].trim();
+            const cleanTitle = m[2].trim().replace(/\s+/g, ' ');
+            const idMatch = rawUrl.match(/\/(\d+)\.html/);
+            const fullId = `local_gov_rednet_rs_${idMatch ? idMatch[1] : Buffer.from(cleanTitle).toString('base64').substring(0, 16)}`;
+
+            if (!isTest && (this.seenIds.has(fullId) || historyManager.isPushed(fullId))) continue;
+
+            alerts.push({
+              id: fullId,
+              source: '本地周边',
+              sub_source: '政务人事',
+              source_key: 'local_gov',
+              title: `【省市任免】${cleanTitle}`,
+              content: `【权威任免发布】${cleanTitle}\n发文渠道：红网 · 湖南人事首发\n🔗 原文链接：${rawUrl}`,
+              url: rawUrl,
+              time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+              pub_time: new Date().toLocaleDateString('zh-CN'),
+              sync_delay_sec: 60,
+              is_important: true,
+              is_passthrough: true,
+              ai_analysis: {
+                summary: `省市高层人事任命与职务调整：${cleanTitle}`,
+                impacts: {}
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('[LocalGov] 红网湖南人事快报抓取异常:', err.message);
+    }
+
+    // 通道 3: 湖南省人民政府门户网站 · 人事任免公报 (https://www.hunan.gov.cn/hnszf/xxgk/rsxx/rsrm/rsxx.html)
+    try {
+      const { exec } = require('child_process');
+      const fetchHunanGov = () => new Promise(resolve => {
+        exec('curl.exe -k -s -m 5 "https://www.hunan.gov.cn/hnszf/xxgk/rsxx/rsrm/rsxx.html"', { encoding: 'utf-8' }, (error, stdout) => {
+          if (error || !stdout) return resolve(null);
+          resolve(stdout);
+        });
+      });
+
+      const govHtml = await fetchHunanGov();
+      if (govHtml && govHtml.includes('fwlist-content')) {
+        const regex = /<a[^>]+href="([^"]+)"[^>]*title=['"]([^'"]+)['"][^>]*>[\s\S]*?<span>([\d-]+)<\/span>/gi;
+        let m;
+        while ((m = regex.exec(govHtml)) !== null) {
+          let link = m[1].trim();
+          if (link.startsWith('/')) link = 'https://www.hunan.gov.cn' + link;
+          const cleanTitle = m[2].trim().replace(/\s+/g, ' ');
+          const dateStr = (m[3] || '').trim();
+          const idMatch = link.match(/\/t\d+_(\d+)\.html/);
+          const fullId = `local_gov_hnszf_rs_${idMatch ? idMatch[1] : Buffer.from(cleanTitle).toString('base64').substring(0, 16)}`;
+
+          if (!isTest && (this.seenIds.has(fullId) || historyManager.isPushed(fullId))) continue;
+
+          let syncDelaySec = 0;
+          if (dateStr) {
+            const pubTs = new Date(dateStr.replace(/-/g, '/')).getTime();
+            if (!isNaN(pubTs) && pubTs > 0) {
+              syncDelaySec = Math.max(0, Math.floor((now - pubTs) / 1000));
+            }
+          }
+
+          if (!isTest && syncDelaySec > 24 * 3600) {
+            this.seenIds.add(fullId);
+            continue;
+          }
+
+          alerts.push({
+            id: fullId,
+            source: '本地周边',
+            sub_source: '政务人事',
+            source_key: 'local_gov',
+            title: `【省市任免】${cleanTitle}`,
+            content: `【省政府人事任免通知】${cleanTitle}\n发文机关：湖南省人民政府  发布日期：${dateStr}\n🔗 原文链接：${link}`,
+            url: link,
+            time: dateStr || new Date().toLocaleString('zh-CN', { hour12: false }),
+            pub_time: dateStr || new Date().toLocaleString('zh-CN', { hour12: false }),
+            sync_delay_sec: syncDelaySec,
+            is_important: true,
+            is_passthrough: true,
+            ai_analysis: {
+              summary: `湖南省政府重要干部职务调整任免：${cleanTitle}`,
+              impacts: {}
+            }
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('[LocalGov] 湖南省政府门户网站人事任免抓取异常:', err.message);
+    }
+
+    return alerts;
+  }
+
+  /**
    * 综合轮询抓取
    */
   async fetch(isTest = false, overrideCfg = null) {
@@ -411,7 +608,15 @@ class LocalGovFetcher {
       return [];
     }
 
-    const sub = govCfg.sub_channels || { planning: true, wenzheng: true, metro: true, housing_policy: true };
+    // 监测用户是否切换了行政区、板块或关键词、子栏目：若发生变更，自动重置基准标记，防止将新选区域的历史存量当成突发推送
+    const configSignature = `${govCfg.district_id || '430103'}_${govCfg.scope_mode || 'sector'}_${govCfg.preset_sector || ''}_${govCfg.custom_keywords || ''}_${govCfg.only_replied ? '1' : '0'}_${JSON.stringify(govCfg.sub_channels || {})}`;
+    if (this.lastConfigSignature && this.lastConfigSignature !== configSignature && !isTest) {
+      logger.info(`[LocalGov] 用户调整了本地周边监控行政区/板块/词库配置，启动静默基准重置，杜绝回放历史公告`);
+      this.isFirstFetch = true;
+    }
+    this.lastConfigSignature = configSignature;
+
+    const sub = govCfg.sub_channels || { planning: true, wenzheng: true, metro: true, housing_policy: true, personnel: true };
     const promises = [];
 
     // 1. 规资局规划公示
@@ -427,6 +632,11 @@ class LocalGovFetcher {
     // 3. 全市楼市新政与住建政策直通
     if (sub.housing_policy !== false) {
       promises.push(this.fetchSzjwHousing(govCfg, isTest));
+    }
+
+    // 4. 省市党政领导班子与权威人事任免直通
+    if (sub.personnel !== false) {
+      promises.push(this.fetchPersonnelAppointments(govCfg, isTest));
     }
 
     const results = await Promise.allSettled(promises);
