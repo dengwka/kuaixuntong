@@ -144,6 +144,11 @@ class MaimaiFetcher {
       let syncDelayMs = 0;
       if (item.created_at) {
         const diffMs = Date.now() - Number(item.created_at);
+        // ⏰ 严格时效性过滤：脉脉职言爆料若发布时间超过 4 小时，一律视为过期历史数据，坚决拦截
+        if (diffMs > 4 * 3600 * 1000) {
+          this.seenIds.add(itemId);
+          continue;
+        }
         syncDelayMs = diffMs > 0 ? diffMs : Math.floor(Math.random() * 80 + 40);
         syncDelaySec = Math.max(0, Math.floor(diffMs / 1000));
       }

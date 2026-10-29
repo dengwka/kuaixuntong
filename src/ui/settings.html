@@ -571,6 +571,10 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      z-index: 10;
     }
     .source-nav-card {
       background: #FFFFFF;
@@ -654,6 +658,23 @@
     .sources-detail-pane {
       flex: 1;
       min-width: 0;
+      max-height: calc(100vh - 225px);
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+    .sources-detail-pane::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sources-detail-pane::-webkit-scrollbar-track {
+      background: #F1F5F9;
+      border-radius: 4px;
+    }
+    .sources-detail-pane::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    .sources-detail-pane::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
     }
     .source-detail-panel {
       display: none;
@@ -714,7 +735,7 @@
           <span id="radarNetText" style="color: #166534; font-weight: 700;">🟢 互联网连接畅通 (<span id="radarNetPing">--</span>ms)</span>
         </div>
         <div class="radar-summary-text" id="radarSummaryText">
-          📡 已启用 <b id="radarEnabledCount" style="color: #0284C7;">--</b>/5 个数据源 · 累计轮询心跳 <b id="radarCyclesCount" style="color: #0F172A;">--</b> 次 · 上次同步: <span id="radarLastPollTime">--</span>
+          📡 已启用 <b id="radarEnabledCount" style="color: #0284C7;">--</b>/6 个数据源 · 累计轮询心跳 <b id="radarCyclesCount" style="color: #0F172A;">--</b> 次 · 上次同步: <span id="radarLastPollTime">--</span>
         </div>
       </div>
 
@@ -780,6 +801,18 @@
               <span class="health-pill health-pill-ok" id="pill_maimai">🟢 正常 --ms</span>
             </div>
             <div class="snc-sub" id="sub_maimai">等待就绪 · 企业爆料商业情报</div>
+          </div>
+
+          <!-- 6. 本地周边 -->
+          <div class="source-nav-card" data-source="local_gov" onclick="switchSourcePanel('local_gov')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_local_gov" checked onchange="syncNavSourceCheck('local_gov', this.checked)" />
+                <span class="snc-title">📍 本地周边</span>
+              </label>
+              <span class="health-pill health-pill-ok" id="pill_local_gov">🟢 正常 --ms</span>
+            </div>
+            <div class="snc-sub" id="sub_local_gov">长沙 · 天心区省府</div>
           </div>
 
           <!-- ⚡ 下方：一键存活诊断操作按钮 -->
@@ -1157,6 +1190,167 @@
                     </div>
                   </div>
                 </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- F. 本地周边面板 -->
+          <div class="source-detail-panel" id="detail-panel-local_gov">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title">📍 本地周边 · 规划局公告与民生问政</div>
+              <div class="source-panel-banner" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 10px; margin-bottom: 8px;">
+                <span>📡 官方通道: <code>红网问政湖南 (wzapi.rednet.cn)</code> + <code>长沙自然资源与规划局</code></span>
+              </div>
+              <div id="localGovOptionsSub" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; margin-top: 6px;">
+                <!-- 1. 关注子栏目 -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-weight: 700; color: #1E293B; font-size: 11.5px;">🏛️ 重点关注子栏目（多选，点击卡片即切换）：</span>
+                    <span style="font-size: 11px; color: #64748B;">4 大权威数据源通道独立监控</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 7px;">
+                    <!-- 规资规划 -->
+                    <label id="card_sub_planning" style="display: flex; flex-direction: column; gap: 2px; background: #EFF6FF; border: 1.5px solid #3B82F6; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <input type="checkbox" id="localSubPlanning" checked onchange="updateChannelCardStyle('planning', this.checked)" />
+                          <span style="font-weight: 700; color: #1D4ED8; font-size: 12px;">📜 规资规划</span>
+                        </div>
+                        <span style="font-size: 10px; background: #DBEAFE; color: #1E40AF; padding: 1px 5px; border-radius: 3px; font-weight: 600;">自规局公示</span>
+                      </div>
+                      <div style="font-size: 10.5px; color: #475569; padding-left: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="获得讯息：用地调整 · 批前批后公示 · 规划许可证核发">
+                        💡 获得：用地调整 · 批前公示 · 规划核发
+                      </div>
+                    </label>
+
+                    <!-- 地铁规划 -->
+                    <label id="card_sub_metro" style="display: flex; flex-direction: column; gap: 2px; background: #EFF6FF; border: 1.5px solid #3B82F6; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <input type="checkbox" id="localSubMetro" checked onchange="updateChannelCardStyle('metro', this.checked)" />
+                          <span style="font-weight: 700; color: #1D4ED8; font-size: 12px;">🚇 地铁规划</span>
+                        </div>
+                        <span style="font-size: 10px; background: #DBEAFE; color: #1E40AF; padding: 1px 5px; border-radius: 3px; font-weight: 600;">重大工程</span>
+                      </div>
+                      <div style="font-size: 10.5px; color: #475569; padding-left: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="获得讯息：线网批复 · 环评公示 · 站点开工通车进展">
+                        💡 获得：线网批复 · 环评公示 · 站点通车
+                      </div>
+                    </label>
+
+                    <!-- 问政民生 -->
+                    <label id="card_sub_wenzheng" style="display: flex; flex-direction: column; gap: 2px; background: #EFF6FF; border: 1.5px solid #3B82F6; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <input type="checkbox" id="localSubWenzheng" checked onchange="updateChannelCardStyle('wenzheng', this.checked)" />
+                          <span style="font-weight: 700; color: #1D4ED8; font-size: 12px;">💬 问政民生</span>
+                        </div>
+                        <span style="font-size: 10px; background: #DBEAFE; color: #1E40AF; padding: 1px 5px; border-radius: 3px; font-weight: 600;">红网答复</span>
+                      </div>
+                      <div style="font-size: 10.5px; color: #475569; padding-left: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="获得讯息：官方明确答复学位划分 · 拆迁安置 · 投诉维权">
+                        💡 获得：学位划分 · 拆迁安置 · 投诉维权
+                      </div>
+                    </label>
+
+                    <!-- 楼市新政 -->
+                    <label id="card_sub_housing" style="display: flex; flex-direction: column; gap: 2px; background: #FFFBEB; border: 1.5px solid #F59E0B; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <input type="checkbox" id="localSubHousing" checked onchange="updateChannelCardStyle('housing', this.checked)" />
+                          <span style="font-weight: 700; color: #B45309; font-size: 12px;">🏠 楼市新政</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 700; background: #FEF3C7; color: #B45309; padding: 1px 5px; border-radius: 3px; border: 1px solid #FCD34D;">⚡ 全城直通</span>
+                      </div>
+                      <div style="font-size: 10.5px; color: #92400E; padding-left: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="获得讯息：全市房贷利率 · 首付公积金 · 购房契税补贴 (特权直通)">
+                        💡 获得：房贷利率 · 公积金 · 契税补贴
+                      </div>
+                    </label>
+                  </div>
+                  <div style="font-size: 11px; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 3px 8px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="💡 全城直通保障：凡涉及全市房产政策/房贷/公积金/契税补贴等重大通知，自动穿透行政区与板块限制第一时间全量推送。">
+                    💡 <b>全城特权直通保障</b>：凡涉及全市房产政策/房贷/公积金/契税补贴等重大通知，自动穿透行政区与板块限制第一时间全量推送。
+                  </div>
+                </div>
+
+                <!-- 2. 目标行政区 -->
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                  <span style="font-weight: 700; color: #334155; width: 68px; flex-shrink: 0; font-size: 11.5px;">目标行政区:</span>
+                  <select id="localDistrictSelect" style="padding: 4px 8px; font-size: 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font-weight: 600; cursor: pointer; flex-shrink: 0;">
+                    <option value="430100" data-name="全市">🌐 长沙市 (全市跨区/重大工程)</option>
+                    <option value="430103" data-name="天心区" selected>🏛️ 长沙市 - 天心区</option>
+                    <option value="430104" data-name="岳麓区">🏛️ 长沙市 - 岳麓区 (含湘江新区)</option>
+                    <option value="430111" data-name="雨花区">🏛️ 长沙市 - 雨花区</option>
+                    <option value="430105" data-name="开福区">🏛️ 长沙市 - 开福区</option>
+                    <option value="430102" data-name="芙蓉区">🏛️ 长沙市 - 芙蓉区</option>
+                    <option value="430112" data-name="望城区">🏛️ 长沙市 - 望城区</option>
+                    <option value="430121" data-name="长沙县">🏛️ 长沙市 - 长沙县 (星沙)</option>
+                  </select>
+                  <span class="tip-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;">按所选行政区抓取官方问政与自规局公告</span>
+                </div>
+
+                <!-- 3. 过滤精度控制 -->
+                <div style="display: flex; align-items: center; gap: 10px; background: #F1F5F9; border-radius: 6px; padding: 5px 10px; white-space: nowrap;">
+                  <span style="font-weight: 700; color: #1E293B; font-size: 11.5px; flex-shrink: 0;">过滤精度:</span>
+                  <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11.5px; margin: 0; white-space: nowrap; flex-shrink: 0;">
+                    <input type="radio" name="localScopeMode" id="scopeModeSector" value="sector" checked onchange="toggleLocalScopeMode(this.value)" />
+                    <span style="font-weight: 700; color: #2563EB;">🎯 精准板块 (仅推所选板块)</span>
+                  </label>
+                  <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11.5px; margin: 0; white-space: nowrap; flex-shrink: 0;">
+                    <input type="radio" name="localScopeMode" id="scopeModeDistrict" value="district" onchange="toggleLocalScopeMode(this.value)" />
+                    <span style="font-weight: 600; color: #475569;">🏛️ 全区通报 (无死角全量推送)</span>
+                  </label>
+                  <span id="localScopeModeTip" style="font-size: 11px; color: #2563EB; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto;">(仅推送命中板块地标与街道词汇的情报)</span>
+                </div>
+
+                <!-- 4. 片区/板块：支持下拉快速选择与直接手工修改输入 -->
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                  <span style="font-weight: 700; color: #334155; width: 68px; flex-shrink: 0; font-size: 11.5px;">片区/板块:</span>
+                  <select id="localSectorSelect" onchange="onLocalSectorSelectChange(this.value)" style="padding: 4px 6px; font-size: 11.5px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font-weight: 600; cursor: pointer; flex-shrink: 0; width: 148px;">
+                    <option value="tianxin_shengfu">⭐️ 天心 · 省政府板块</option>
+                    <option value="yuelu_meixihu">岳麓 · 梅溪湖板块</option>
+                    <option value="yuelu_yanghu">岳麓 · 洋湖新城</option>
+                    <option value="yuelu_binjiang">岳麓 · 滨江新城</option>
+                    <option value="yuelu_shifu">岳麓 · 市政府/八方</option>
+                    <option value="yuhua_gaotie">雨花 · 高铁新城</option>
+                    <option value="kaifu_malanshan">开福 · 北辰/马栏山</option>
+                    <option value="furong_wuyi">芙蓉 · 五一商圈</option>
+                    <option value="changsha_metro">🚇 全市地铁重大工程</option>
+                    <option value="custom">✍️ 自定义片区 (手工)</option>
+                  </select>
+                  <input type="text" id="localSectorKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 4px 8px; border: 1px solid #CBD5E1; border-radius: 6px;" placeholder="支持下拉选择，亦可直接在此手工修改或输入地标/道路/商圈 (逗号隔开)" />
+                  <span class="tip-text" style="white-space: nowrap; flex-shrink: 0; font-size: 11px;">可下拉或手工改词</span>
+                </div>
+
+                <!-- 5. 自定义专属关注 -->
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                  <span style="font-weight: 700; color: #334155; width: 68px; flex-shrink: 0; font-size: 11.5px;">自定义关注:</span>
+                  <input type="text" id="localCustomKeywords" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 4px 8px; border: 1px solid #CBD5E1; border-radius: 6px;" placeholder="选填，如自家小区、意向学校名 (例如: 师大附中双语, 中建钰和祥云)" />
+                  <span class="tip-text" style="white-space: nowrap; flex-shrink: 0; font-size: 11px;">(选填，命中优先推送)</span>
+                </div>
+
+                <!-- 6. 过滤选项与抓取频次 -->
+                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed #E2E8F0; padding-top: 6px; white-space: nowrap;">
+                  <label class="checkbox-row" style="cursor: pointer; margin: 0; white-space: nowrap; flex-shrink: 0;">
+                    <input type="checkbox" id="localOnlyReplied" />
+                    <span style="font-weight: 600; color: #475569; font-size: 11.5px;">仅推送官方已答复的民生问答 (过滤待办理信访)</span>
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
+                    <span style="color: #64748B; font-size: 11.5px;">轮询周期:</span>
+                    <input type="number" id="localPollInterval" min="60" max="1800" style="width: 55px; padding: 2px 6px; font-size: 11.5px;" value="180" />
+                    <span class="tip-text" style="white-space: nowrap; font-size: 11px;">秒 (建议180秒)</span>
+                  </div>
+                </div>
+
+                <!-- 7. 立即拉取并预览本地最新情报 -->
+                <div style="border-top: 1px solid #E2E8F0; padding-top: 6px; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <button type="button" class="btn btn-secondary" id="btnTestFetchLocalGov" style="padding: 4px 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-size: 11.5px;">
+                      <span>⚡ 立即拉取并预览本地最新情报</span>
+                    </button>
+                    <span id="localGovFetchStatus" style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 10px;">点击即可真实调取规划局与问政湖南接口自检</span>
+                  </div>
+                  <div id="localGovPreviewBox" style="display: none; max-height: 180px; overflow-y: auto; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px; font-size: 11.5px;">
+                    <!-- 预览列表动态载入 -->
+                  </div>
                 </div>
               </div>
             </div>
@@ -2522,6 +2716,59 @@
       }
       renderXAccountsList();
 
+      // 6. 本地周边配置渲染
+      const localGov = sources.local_gov || {};
+      const navCbLg = document.getElementById('navCb_local_gov');
+      if (navCbLg) navCbLg.checked = localGov.enabled !== false;
+      const subLg = localGov.sub_channels || {};
+      if (document.getElementById('localSubPlanning')) document.getElementById('localSubPlanning').checked = subLg.planning !== false;
+      if (document.getElementById('localSubMetro')) document.getElementById('localSubMetro').checked = subLg.metro !== false;
+      if (document.getElementById('localSubWenzheng')) document.getElementById('localSubWenzheng').checked = subLg.wenzheng !== false;
+      if (document.getElementById('localSubHousing')) document.getElementById('localSubHousing').checked = subLg.housing_policy !== false;
+      if (typeof updateChannelCardStyle === 'function') {
+        updateChannelCardStyle('planning', subLg.planning !== false);
+        updateChannelCardStyle('metro', subLg.metro !== false);
+        updateChannelCardStyle('wenzheng', subLg.wenzheng !== false);
+        updateChannelCardStyle('housing', subLg.housing_policy !== false);
+      }
+      if (document.getElementById('localDistrictSelect')) {
+        document.getElementById('localDistrictSelect').value = localGov.district_id || '430103';
+      }
+      const scopeMode = localGov.scope_mode || 'sector';
+      if (scopeMode === 'district') {
+        const rDis = document.getElementById('scopeModeDistrict');
+        if (rDis) rDis.checked = true;
+        if (typeof toggleLocalScopeMode === 'function') toggleLocalScopeMode('district');
+      } else {
+        const rSec = document.getElementById('scopeModeSector');
+        if (rSec) rSec.checked = true;
+        if (typeof toggleLocalScopeMode === 'function') toggleLocalScopeMode('sector');
+      }
+      if (document.getElementById('localSectorKeywords')) {
+        const secKws = Array.isArray(localGov.sector_keywords) ? localGov.sector_keywords : ['省政府', '省府', '湘府', '友谊', '新韶', '天悦', '黑石铺', '暮云', '先锋', '大托', '地铁8号线', '地铁7号线'];
+        document.getElementById('localSectorKeywords').value = secKws.join(', ');
+      }
+      if (document.getElementById('localCustomKeywords')) {
+        document.getElementById('localCustomKeywords').value = localGov.custom_keywords || '';
+      }
+      if (document.getElementById('localOnlyReplied')) {
+        document.getElementById('localOnlyReplied').checked = !!localGov.only_replied;
+      }
+      if (document.getElementById('localPollInterval')) {
+        document.getElementById('localPollInterval').value = localGov.poll_interval_sec || 180;
+      }
+      window._currentLocalSectorPreset = localGov.preset_sector || 'tianxin_shengfu';
+      const secSel = document.getElementById('localSectorSelect');
+      if (secSel) {
+        secSel.value = window._currentLocalSectorPreset;
+        if (!secSel.value) secSel.value = 'custom';
+      }
+      const subLgEl = document.getElementById('sub_local_gov');
+      if (subLgEl) {
+        const p = LOCAL_SECTOR_PRESETS[window._currentLocalSectorPreset];
+        subLgEl.textContent = '长沙 · ' + (p ? (p.presetName || p.districtName) : (localGov.district_name || '本地周边'));
+      }
+
       // 同步左侧数据源状态树勾选框
       const navCbJ10 = document.getElementById('navCb_jin10');
       if (navCbJ10) navCbJ10.checked = jin10.enabled !== false;
@@ -2584,7 +2831,7 @@
       // 8. 虚拟币行情
       const cryptoCfg = cfg.crypto_prices || {};
       document.getElementById('cryptoEnabled').checked = cryptoCfg.enabled !== false;
-      currentSelectedCoins = Array.isArray(cryptoCfg.selected_coins) ? cryptoCfg.selected_coins : ['BTC/USDT', 'SOL/USDT'];
+      currentSelectedCoins = Array.isArray(cryptoCfg.selected_coins) ? cryptoCfg.selected_coins : ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BZ/USDT'];
       customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
       renderCryptoCoins();
 
@@ -2751,14 +2998,34 @@
       }
     });
 
-    // 虚拟币管理逻辑
+    // 虚拟币与大宗合约管理逻辑
+    const COIN_NAMES = {
+      'BTC': '比特币',
+      'ETH': '以太坊',
+      'SOL': '索拉纳',
+      'BZ': '布伦特原油',
+      'CRCL': 'WTI原油',
+      'BNB': '币安币',
+      'DOGE': '狗狗币',
+      'XRP': '瑞波币',
+      'SUI': 'Sui',
+      'PEPE': '佩佩蛙',
+      'ADA': '艾达币',
+      'AVAX': '雪崩',
+      'DOT': '波卡',
+      'LINK': 'Chainlink',
+      'TRX': '波场',
+      'LTC': '莱特币',
+      'NEAR': 'NEAR',
+      'SHIB': '柴犬币',
+      'TON': 'Toncoin'
+    };
     const PRESET_COINS = [
-      'BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BNB/USDT',
-      'DOGE/USDT', 'XRP/USDT', 'SUI/USDT',
-      'BZ/USDT', 'ZEC/USDT', 'CRCL/USDT'
+      'BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BZ/USDT', 'BNB/USDT',
+      'DOGE/USDT', 'XRP/USDT', 'SUI/USDT', 'PEPE/USDT', 'CRCL/USDT'
     ];
     let customCoinsList = [];
-    let currentSelectedCoins = ['BTC/USDT', 'SOL/USDT'];
+    let currentSelectedCoins = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BZ/USDT'];
 
     function renderCryptoCoins(newlyAddedCoin) {
       const container = document.getElementById('cryptoCoinsContainer');
@@ -2790,8 +3057,10 @@
           handleCoinChange(cb);
         });
 
+        const baseSym = coin.split('/')[0].toUpperCase();
+        const cnName = COIN_NAMES[baseSym] || '';
         const span = document.createElement('span');
-        span.innerHTML = `<b>${coin}</b>`;
+        span.innerHTML = `<b>${coin}</b>${cnName ? ` <span style="font-size: 11px; color: #64748B;">(${cnName})</span>` : ''}`;
 
         label.appendChild(cb);
         label.appendChild(span);
@@ -2834,10 +3103,13 @@
       if (summaryEl) summaryEl.textContent = `已选: ${currentSelectedCoins.length}/7个 (按住 ⠿ 可拖拽调整弹窗展示先后顺序)`;
 
       container.innerHTML = currentSelectedCoins.map((coin, idx) => {
+        const baseSym = coin.split('/')[0].toUpperCase();
+        const cnName = COIN_NAMES[baseSym] || '';
         return `
           <div class="crypto-order-pill" data-index="${idx}" draggable="true" style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #F59E0B; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: grab; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: transform 0.15s, box-shadow 0.15s;">
             <span class="crypto-drag-handle" style="cursor: grab; color: #D97706; font-size: 13px;" title="按住拖拽排序">⠿</span>
             <b style="color: #92400E;">${escapeHtml(coin)}</b>
+            ${cnName ? `<span style="font-size: 11px; color: #B45309;">${escapeHtml(cnName)}</span>` : ''}
             <span style="cursor: pointer; color: #94A3B8; font-weight: bold; font-size: 14px; margin-left: 2px; line-height: 1;" title="取消展示该币种" onclick="event.stopPropagation(); unselectCryptoCoin('${escapeHtml(coin)}')">×</span>
           </div>
         `;
@@ -2952,7 +3224,7 @@
         noticeEl.style.display = 'block';
         noticeEl.style.background = '#FEE2E2';
         noticeEl.style.color = '#991B1B';
-        noticeEl.textContent = '⚠️ 请先输入币种代码或交易对（如 ZEC、BZ、CRCL 或 PEPE/USDT）';
+        noticeEl.textContent = '⚠️ 请先输入币种代码或交易对（如 BTC、ETH、SOL 或 PEPE/USDT）';
         return;
       }
 
@@ -2969,7 +3241,9 @@
           const coinPair = res.pair;
           noticeEl.style.background = '#DCFCE7';
           noticeEl.style.color = '#166534';
-          noticeEl.textContent = `✅ OKX 校验通过！交易对: ${coinPair} (${res.type}) 最新价: ${res.priceStr}`;
+          const namePart = res.name ? ` (${res.name})` : '';
+          const cnyPart = res.cnyStr ? ` [折合约 ${res.cnyStr}]` : '';
+          noticeEl.textContent = `✅ OKX 校验通过！交易对: ${coinPair}${namePart} (${res.type}) 最新价: ${res.priceStr}${cnyPart}`;
 
           if (!PRESET_COINS.includes(coinPair) && !customCoinsList.includes(coinPair)) {
             customCoinsList.push(coinPair);
@@ -3011,27 +3285,60 @@
     });
 
     document.getElementById('btnTestCrypto').addEventListener('click', async () => {
-      const checked = Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value);
+      const checked = (currentSelectedCoins && currentSelectedCoins.length > 0)
+        ? currentSelectedCoins
+        : Array.from(document.querySelectorAll('input[name="cryptoCoin"]:checked')).map(cb => cb.value);
+
       if (checked.length === 0) {
-        showNotice('请先至少勾选一个币种');
+        showNotice('请先至少勾选一个展示币种');
         return;
       }
       const resEl = document.getElementById('cryptoTestResult');
       resEl.style.display = 'block';
-      resEl.style.color = '#2563EB';
-      resEl.textContent = '正在连接 OKX 获取最新价格...';
+      resEl.innerHTML = '<div style="padding: 8px 12px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; color: #1D4ED8; font-size: 12px;">⏳ 正在连接 OKX / Binance 实时行情接口拉取最新真实价格...</div>';
       try {
-        const str = await ipcRenderer.invoke('test-crypto-price', checked);
-        if (str) {
-          resEl.style.color = '#059669';
-          resEl.textContent = `✅ OKX 实时价格: ${str}`;
+        const res = await ipcRenderer.invoke('test-crypto-price', checked);
+        if (res && res.success && Array.isArray(res.items) && res.items.length > 0) {
+          let html = `
+            <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 12px; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 700; color: #166534; font-size: 12.5px;">✅ 官方实时行情数据校验成功（国际标准：美元/USDT 计价）</span>
+                <span style="font-size: 11px; color: #15803D; background: #DCFCE7; padding: 2px 7px; border-radius: 4px; font-weight: 600;">OKX / Binance 实时直连</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 5px;">
+          `;
+          res.items.forEach(it => {
+            const chgColor = (it.change24h && it.change24h.startsWith('+')) ? '#16A34A' : ((it.change24h && it.change24h.startsWith('-')) ? '#DC2626' : '#64748B');
+            html += `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 6px 10px; border-radius: 6px; font-size: 12px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-weight: 700; color: #1E293B;">${escapeHtml(it.symbol)}</span>
+                  <span style="font-size: 11px; color: #64748B;">(${escapeHtml(it.name || it.pair)})</span>
+                  <span style="font-size: 10px; background: #F1F5F9; color: #475569; padding: 1px 5px; border-radius: 3px;">${escapeHtml(it.type || '现货')}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-weight: 700; color: #0F172A; font-size: 13px;">${escapeHtml(it.priceStr)}</span>
+                  <span style="font-size: 11px; color: #64748B;">折合约 <b>${escapeHtml(it.cnyStr)}</b></span>
+                  <span style="font-weight: 700; color: ${chgColor}; min-width: 52px; text-align: right;">${escapeHtml(it.change24h || '--')}</span>
+                </div>
+              </div>
+            `;
+          });
+          html += `
+              </div>
+              <div style="font-size: 11px; color: #475569; margin-top: 8px; line-height: 1.6; border-top: 1px dashed #CBD5E1; padding-top: 6px;">
+                💡 <b>数据说明</b>：加密货币在 OKX/币安等全球交易所统一采用 <b>美元（USDT $）</b> 计价。国内折算按 <b>新浪财经/银行间外汇实时汇率 (1 USD ≈ ${res.liveRate ? Number(res.liveRate).toFixed(4) : '6.6621'} CNY)</b> 自动换算，数据与百度/OKX实时汇率完全一致。
+              </div>
+            </div>
+          `;
+          resEl.innerHTML = html;
+        } else if (typeof res === 'string' && res) {
+          resEl.innerHTML = `<div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 6px; padding: 8px 12px; color: #166534;">✅ 实时价格: ${escapeHtml(res)}</div>`;
         } else {
-          resEl.style.color = '#DC2626';
-          resEl.textContent = '❌ 未获取到报价，请检查网络或代理';
+          resEl.innerHTML = '<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 8px 12px; color: #DC2626;">❌ 未获取到报价，请检查网络或本地代理是否开启</div>';
         }
       } catch (e) {
-        resEl.style.color = '#DC2626';
-        resEl.textContent = `❌ 获取失败: ${e.message}`;
+        resEl.innerHTML = `<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 8px 12px; color: #DC2626;">❌ 获取失败: ${escapeHtml(e.message)}</div>`;
       }
     });
 
@@ -3803,7 +4110,151 @@
     // ==========================================
     // P0: 监控数据源与存活诊断工作台联动逻辑
     // ==========================================
-    const SOURCE_KEYS = ['jin10', 'jin10_topic', 'xueqiu', 'x_twitter', 'maimai'];
+    const SOURCE_KEYS = ['jin10', 'jin10_topic', 'xueqiu', 'x_twitter', 'maimai', 'local_gov'];
+
+    // 本地周边精选板块字典定义
+    const LOCAL_SECTOR_PRESETS = {
+      tianxin_shengfu: {
+        districtId: '430103',
+        districtName: '天心区',
+        scopeMode: 'sector',
+        presetName: '天心 · 省政府板块',
+        keywords: ['省政府', '省府', '湘府', '友谊', '新韶', '天悦', '黑石铺', '暮云', '先锋', '大托', '地铁8号线', '地铁7号线']
+      },
+      yuelu_meixihu: {
+        districtId: '430104',
+        districtName: '岳麓区',
+        scopeMode: 'sector',
+        presetName: '岳麓 · 梅溪湖板块',
+        keywords: ['梅溪湖', '麓谷', '雷锋', '梅溪湖二期', '梅溪湖一期', '地铁2号线西延', '地铁6号线', '步步高新天地']
+      },
+      yuelu_yanghu: {
+        districtId: '430104',
+        districtName: '岳麓区',
+        scopeMode: 'sector',
+        presetName: '岳麓 · 洋湖新城',
+        keywords: ['洋湖', '洋湖新城', '洋湖湿地', '含浦', '学士', '地铁3号线', '宜家', '洋湖水街']
+      },
+      yuelu_binjiang: {
+        districtId: '430104',
+        districtName: '岳麓区',
+        scopeMode: 'sector',
+        presetName: '岳麓 · 滨江新城',
+        keywords: ['滨江新城', '银盆岭', '观沙岭', '茶子山', '金融中心', '地铁4号线', '凯德壹中心']
+      },
+      yuelu_shifu: {
+        districtId: '430104',
+        districtName: '岳麓区',
+        scopeMode: 'sector',
+        presetName: '岳麓 · 市政府/八方',
+        keywords: ['市政府', '八方小区', '钰龙天下', '长郡双语', '金星北', '观沙岭', '地铁9号线']
+      },
+      yuhua_gaotie: {
+        districtId: '430111',
+        districtName: '雨花区',
+        scopeMode: 'sector',
+        presetName: '雨花 · 高铁新城',
+        keywords: ['高铁新城', '长沙南站', '黎托', '花桥', '平阳', '武广', '地铁4号线', '地铁2号线']
+      },
+      kaifu_malanshan: {
+        districtId: '430105',
+        districtName: '开福区',
+        scopeMode: 'sector',
+        presetName: '开福 · 北辰/马栏山',
+        keywords: ['北辰三角洲', '马栏山', '鸭子铺', '四方坪', '广电', '开福寺', '地铁1号线北延']
+      },
+      furong_wuyi: {
+        districtId: '430102',
+        districtName: '芙蓉区',
+        scopeMode: 'sector',
+        presetName: '芙蓉 · 五一商圈',
+        keywords: ['五一广场', '国金中心', '芙蓉广场', '定王台', '火车站', '袁家岭', '地铁2号线']
+      },
+      changsha_metro: {
+        districtId: '430100',
+        districtName: '全市',
+        scopeMode: 'sector',
+        presetName: '全市地铁重大工程',
+        keywords: ['地铁', '轨道交通', '磁浮', '过江通道', '重大项目', '快速路', '长赣高铁']
+      }
+    };
+
+    window.toggleLocalScopeMode = function(mode) {
+      const secBox = document.getElementById('localSectorKeywords');
+      const secSel = document.getElementById('localSectorSelect');
+      const tipBox = document.getElementById('localScopeModeTip');
+      if (mode === 'district') {
+        if (secBox) {
+          secBox.style.opacity = '0.45';
+          secBox.disabled = true;
+        }
+        if (secSel) {
+          secSel.style.opacity = '0.45';
+          secSel.disabled = true;
+        }
+        if (tipBox) tipBox.textContent = '(🏛️ 全区通报模式：推送全区所有部门规划与民生答复)';
+      } else {
+        if (secBox) {
+          secBox.style.opacity = '1';
+          secBox.disabled = false;
+        }
+        if (secSel) {
+          secSel.style.opacity = '1';
+          secSel.disabled = false;
+        }
+        if (tipBox) tipBox.textContent = '(🎯 仅推送命中板块地标与街道词汇的情报)';
+      }
+    };
+
+    window.onLocalSectorSelectChange = function(presetKey) {
+      if (!presetKey || presetKey === 'custom') {
+        window._currentLocalSectorPreset = 'custom';
+        return;
+      }
+      const p = LOCAL_SECTOR_PRESETS[presetKey];
+      if (!p) return;
+      window._currentLocalSectorPreset = presetKey;
+      const distSelect = document.getElementById('localDistrictSelect');
+      if (distSelect && p.districtId) distSelect.value = p.districtId;
+
+      const rSec = document.getElementById('scopeModeSector');
+      if (rSec) rSec.checked = true;
+      toggleLocalScopeMode('sector');
+
+      const kwInput = document.getElementById('localSectorKeywords');
+      if (kwInput) kwInput.value = p.keywords.join(', ');
+      const subEl = document.getElementById('sub_local_gov');
+      if (subEl) subEl.textContent = '长沙 · ' + (p.presetName || p.districtName);
+      showNotice('已快速切换为【' + (p.presetName || p.districtName) + '】板块');
+    };
+    window.applyLocalSectorPreset = window.onLocalSectorSelectChange;
+
+    // 重点子栏目卡片醒目高亮与状态切换逻辑
+    window.updateChannelCardStyle = function(type, isChecked) {
+      const card = document.getElementById(`card_sub_${type}`);
+      if (!card) return;
+      if (type === 'housing') {
+        if (isChecked) {
+          card.style.background = '#FFFBEB';
+          card.style.borderColor = '#F59E0B';
+          card.style.opacity = '1';
+        } else {
+          card.style.background = '#F8FAFC';
+          card.style.borderColor = '#CBD5E1';
+          card.style.opacity = '0.45';
+        }
+      } else {
+        if (isChecked) {
+          card.style.background = '#EFF6FF';
+          card.style.borderColor = '#3B82F6';
+          card.style.opacity = '1';
+        } else {
+          card.style.background = '#F8FAFC';
+          card.style.borderColor = '#CBD5E1';
+          card.style.opacity = '0.45';
+        }
+      }
+    };
 
     // 切换右侧配置面板
     function switchSourcePanel(sourceKey) {
@@ -3890,6 +4341,13 @@
       if (xtSub) {
         xtSub.style.opacity = xt ? '1' : '0.45';
         xtSub.style.pointerEvents = xt ? 'auto' : 'none';
+      }
+
+      const lg = document.getElementById('navCb_local_gov')?.checked;
+      const lgSub = document.getElementById('localGovOptionsSub');
+      if (lgSub) {
+        lgSub.style.opacity = lg ? '1' : '0.45';
+        lgSub.style.pointerEvents = lg ? 'auto' : 'none';
       }
     }
 
@@ -4007,6 +4465,90 @@
 
     const btnDiagnose = document.getElementById('btnDiagnoseSources');
     if (btnDiagnose) btnDiagnose.addEventListener('click', triggerSourcesDiagnosis);
+
+    // ==================== 本地周边与规划局测试拉取交互 ====================
+    const btnTestLg = document.getElementById('btnTestFetchLocalGov');
+    if (btnTestLg) {
+      btnTestLg.addEventListener('click', async () => {
+        const previewBox = document.getElementById('localGovPreviewBox');
+        const statusEl = document.getElementById('localGovFetchStatus');
+        if (statusEl) statusEl.textContent = '🔄 正在连接红网问政与自规局数据源...';
+        btnTestLg.disabled = true;
+        try {
+          const districtSelect = document.getElementById('localDistrictSelect');
+          const districtId = districtSelect ? districtSelect.value : '430103';
+          const districtName = districtSelect ? (districtSelect.selectedOptions[0]?.getAttribute('data-name') || '天心区') : '天心区';
+          const scopeMode = document.getElementById('scopeModeDistrict')?.checked ? 'district' : 'sector';
+          const subChannels = {
+            planning: document.getElementById('localSubPlanning')?.checked !== false,
+            metro: document.getElementById('localSubMetro')?.checked !== false,
+            wenzheng: document.getElementById('localSubWenzheng')?.checked !== false,
+            housing_policy: document.getElementById('localSubHousing')?.checked !== false
+          };
+          const sectorKeywords = parseKeywords(document.getElementById('localSectorKeywords')?.value || '');
+          const customKeywords = document.getElementById('localCustomKeywords')?.value.trim() || '';
+
+          const items = await ipcRenderer.invoke('test-local-gov-fetch', {
+            district_id: districtId,
+            district_name: districtName,
+            scope_mode: scopeMode,
+            sub_channels: subChannels,
+            sector_keywords: sectorKeywords,
+            custom_keywords: customKeywords
+          });
+
+          if (previewBox) {
+            previewBox.style.display = 'block';
+            if (Array.isArray(items) && items.length > 0) {
+              if (statusEl) statusEl.textContent = '✅ 成功检索到 ' + items.length + ' 条一手权威本地情报（已同步触发桌面弹窗与通知）';
+              showNotice('✅ 成功拉取最新情报，已同步触发桌面弹窗与通知！');
+              previewBox.innerHTML = items.map(it => {
+                const badge = it.sub_source || it.channel_name || (it.channel === 'planning' ? '规划局' : (it.channel === 'metro' ? '地铁规划' : (it.channel === 'housing' ? '楼市新政' : '民生问政')));
+                const time = it.created_at ? new Date(it.created_at).toLocaleString('zh-CN', { hour12: false }) : '';
+                return '<div style="padding: 6px 0; border-bottom: 1px dashed #CBD5E1; display: flex; flex-direction: column; gap: 3px;">' +
+                  '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+                    '<span style="font-weight: 700; color: #1E293B;">[' + escapeHtml(badge) + '] ' + escapeHtml(it.title) + '</span>' +
+                    '<span style="color: #94A3B8; font-size: 10.5px;">' + time + '</span>' +
+                  '</div>' +
+                  '<div style="color: #64748B; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + escapeHtml(it.content || '') + '</div>' +
+                  '<div style="font-size: 10.5px;"><a href="javascript:void(0)" onclick="require(\'electron\').shell.openExternal(\'' + escapeHtml(it.url) + '\')" style="color: #2563EB; text-decoration: none;">🔗 原文链接: ' + escapeHtml(it.url) + '</a></div>' +
+                '</div>';
+              }).join('');
+            } else {
+              if (statusEl) statusEl.textContent = 'ℹ️ 检索完成，当前关键词暂无新公开件（已触发自检通畅弹窗）';
+              showNotice('ℹ️ 当前暂无新件，已触发官方数据源连通测试弹窗！');
+              previewBox.innerHTML = '<div style="color: #94A3B8; text-align: center; padding: 10px;">未检索到新条目，建议核对片区道路关键词。</div>';
+            }
+          }
+        } catch (e) {
+          if (statusEl) statusEl.textContent = '❌ 拉取失败: ' + (e.message || e);
+        } finally {
+          btnTestLg.disabled = false;
+        }
+      });
+    }
+
+    // 片区关键词输入框监听：手动修改或输入时，下拉选择框自动变更为“自定义片区”
+    const localSecInput = document.getElementById('localSectorKeywords');
+    if (localSecInput) {
+      localSecInput.addEventListener('input', () => {
+        const sel = document.getElementById('localSectorSelect');
+        if (sel && sel.value !== 'custom') {
+          sel.value = 'custom';
+          window._currentLocalSectorPreset = 'custom';
+        }
+      });
+    }
+
+    // 目标行政区变更监听：同步更新左侧导航卡片小字
+    const localDistEl = document.getElementById('localDistrictSelect');
+    if (localDistEl) {
+      localDistEl.addEventListener('change', () => {
+        const selName = localDistEl.selectedOptions[0]?.getAttribute('data-name') || '长沙';
+        const subEl = document.getElementById('sub_local_gov');
+        if (subEl) subEl.textContent = '长沙 · ' + selName;
+      });
+    }
 
     // 折叠高级配置
     document.getElementById('xAdvToggleHeader').addEventListener('click', () => {
@@ -4355,6 +4897,25 @@
             keywords: parseKeywords(document.getElementById('maimaiKeywords').value),
             impact_filter_enabled: document.getElementById('maimaiImpactFilterEnabled').checked,
             impact_min_score: parseInt(document.getElementById('maimaiImpactMinScore').value) || 0
+          },
+          local_gov: {
+            enabled: document.getElementById('navCb_local_gov')?.checked !== false,
+            city: 'changsha',
+            city_name: '长沙市',
+            district_id: document.getElementById('localDistrictSelect')?.value || '430103',
+            district_name: document.getElementById('localDistrictSelect')?.selectedOptions[0]?.getAttribute('data-name') || '天心区',
+            scope_mode: document.getElementById('scopeModeDistrict')?.checked ? 'district' : 'sector',
+            sub_channels: {
+              planning: document.getElementById('localSubPlanning')?.checked !== false,
+              metro: document.getElementById('localSubMetro')?.checked !== false,
+              wenzheng: document.getElementById('localSubWenzheng')?.checked !== false,
+              housing_policy: document.getElementById('localSubHousing')?.checked !== false
+            },
+            preset_sector: document.getElementById('localSectorSelect')?.value || window._currentLocalSectorPreset || 'custom',
+            sector_keywords: parseKeywords(document.getElementById('localSectorKeywords')?.value || ''),
+            custom_keywords: document.getElementById('localCustomKeywords')?.value.trim() || '',
+            only_replied: document.getElementById('localOnlyReplied')?.checked === true,
+            poll_interval_sec: Math.max(30, parseInt(document.getElementById('localPollInterval')?.value) || 180)
           },
           x_twitter: {
             enabled: document.getElementById('navCb_x_twitter').checked,

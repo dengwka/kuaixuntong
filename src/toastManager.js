@@ -175,6 +175,13 @@ class ToastManager {
       if (cfg.crypto_prices?.enabled !== false) {
         cryptoText = cryptoPriceManager.getCachedSummary(cfg.crypto_prices?.selected_coins || []);
       }
+      // 如果即时缓存暂时为空，用上次成功拉取的记忆兜底，保证弹窗0延迟展示时不空白
+      if (!stockText && this.lastKnownStockPrices) {
+        stockText = this.lastKnownStockPrices;
+      }
+      if (!cryptoText && this.lastKnownCryptoPrices) {
+        cryptoText = this.lastKnownCryptoPrices;
+      }
       const list = [stockText, cryptoText].map(s => (s || '').trim()).filter(Boolean);
       return {
         combinedPrices: list.join('    '),
@@ -219,21 +226,20 @@ class ToastManager {
   }
 
   /**
-   * 异步获取行情（带 600ms 快速超时竞速保护，超时立即回退至本地内存缓存）
+   * 异步获取行情（充裕异步拉取，并以内存缓存作为优雅托底）
    */
   async getTickerPayload() {
     try {
-      const fetchPromise = Promise.all([
+      const [stockText, cryptoText] = await Promise.all([
         this.getStockPricesText(),
         this.getCryptoPricesText()
       ]);
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(['', '']), 600));
-
-      const [stockText, cryptoText] = await Promise.race([fetchPromise, timeoutPromise]);
       const cached = this.getCachedTickerPayloadSync();
 
       const finalStock = (stockText && stockText.trim()) || cached.stockPrices;
       const finalCrypto = (cryptoText && cryptoText.trim()) || cached.cryptoPrices;
+      if (finalStock) this.lastKnownStockPrices = finalStock;
+      if (finalCrypto) this.lastKnownCryptoPrices = finalCrypto;
       const list = [finalStock, finalCrypto].map(s => (s || '').trim()).filter(Boolean);
 
       return {

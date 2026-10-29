@@ -8,6 +8,7 @@ const Jin10Fetcher = require('./fetcherJin10');
 const Jin10TopicFetcher = require('./fetcherTopic');
 const XueqiuFetcher = require('./fetcherXueqiu');
 const MaimaiFetcher = require('./fetcherMaimai');
+const LocalGovFetcher = require('./fetcherLocalGov');
 const storageCleaner = require('./cleaner');
 const StrategyEngine = require('./strategy');
 const FinancialAIEngine = require('./financialAi');
@@ -37,6 +38,7 @@ let topicFetcher = null;
 let xueqiuFetcher = null;
 let maimaiFetcher = null;
 let xFetcher = null;
+let localGovFetcher = null;
 let translator = null;
 let strategyEngine = null;
 let financialAi = null;
@@ -45,6 +47,84 @@ sourceHealthManager.setConfigProvider(() => configManager.config);
 
 let pollTimer = null;
 let pollCount = 0;
+
+const DOMESTIC_PROXY_BYPASS_LIST = [
+  '<local>',
+  '127.0.0.1',
+  'localhost',
+  '*.cn',               // 统统直连：所有 .cn 域名（包含 .gov.cn, .edu.cn, .com.cn 等）
+  '*jin10.com',         // 金十快讯主站及 API
+  '*xueqiu.com',        // 雪球财经
+  '*eastmoney.com',     // 东方财富
+  '*qq.com',            // 腾讯全系
+  '*gtimg.cn',          // 腾讯股票与行情
+  '*sina.com.cn',       // 新浪财经
+  '*sinajs.cn',         // 新浪股票与贵金属黄金行情
+  '*baidu.com',         // 百度
+  '*aliyun.com',        // 阿里云
+  '*aliyuncs.com',      // 阿里云
+  '*tencent.com',       // 腾讯云
+  '*rednet.cn',         // 问政湖南红网
+  '*changsha.gov.cn',   // 长沙市政府/规资局/住建局
+  '*hunan.gov.cn',      // 湖南省政务服务
+  '*maimai.cn',         // 脉脉
+  '*10jqka.com.cn',     // 同花顺
+  '*cls.cn',            // 财联社
+  '*yicai.com',         // 第一财经
+  '*deepseek.com',      // 国内 DeepSeek AI 官方直连
+  '*bigmodel.cn'        // 智谱 GLM AI 官方直连
+].join(';');
+
+function detectSystemProxyOnWindows() {
+  if (process.platform !== 'win32') return null;
+  try {
+    const { execSync } = require('child_process');
+    const output = execSync('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"', { encoding: 'utf8', timeout: 2000 });
+    const enabledMatch = output.match(/ProxyEnable\s+REG_DWORD\s+0x([0-9a-fA-F]+)/);
+    const isEnabled = enabledMatch && parseInt(enabledMatch[1], 16) === 1;
+    if (!isEnabled) return null;
+
+    const serverMatch = output.match(/ProxyServer\s+REG_SZ\s+([^\r\n]+)/);
+    if (serverMatch && serverMatch[1]) {
+      let server = serverMatch[1].trim();
+      if (!server.startsWith('http://') && !server.startsWith('https://') && !server.startsWith('socks5://')) {
+        server = 'http://' + server;
+      }
+      return server;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function configureSmartProxy(sess, cfgMgr) {
+  if (!sess || !sess.defaultSession) return;
+  const cfg = cfgMgr ? cfgMgr.config : {};
+  let proxySetting = (cfg.sources?.x_twitter?.proxy || '').trim();
+  
+  if (!proxySetting) {
+    proxySetting = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.ALL_PROXY || '';
+  }
+  
+  if (!proxySetting) {
+    proxySetting = detectSystemProxyOnWindows() || '';
+  }
+
+  if (proxySetting) {
+    sess.defaultSession.setProxy({
+      proxyRules: proxySetting,
+      proxyBypassRules: DOMESTIC_PROXY_BYPASS_LIST
+    }).then(() => {
+      logger.info(`[Proxy] 智能网络分流已激活: 海外服务走 ${proxySetting}，国内股票/政务/快讯 100% 强制 DIRECT 直连 (0 代理流量)`);
+    }).catch(err => {
+      logger.warn('[Proxy] session.setProxy 异常:', err.message);
+    });
+  } else {
+    sess.defaultSession.setProxy({
+      proxyRules: 'direct://',
+      proxyBypassRules: DOMESTIC_PROXY_BYPASS_LIST
+    }).catch(() => {});
+  }
+}
 
 function getSettingsPayload(targetTab = null) {
   return {
@@ -218,13 +298,22 @@ async function pollCycle() {
     const xueqiuItems = await fetchWithHealth('xueqiu', cfgSources.xueqiu?.enabled !== false, () => xueqiuFetcher.fetch());
     const maimaiItems = await fetchWithHealth('maimai', cfgSources.maimai?.enabled !== false, () => maimaiFetcher.fetch());
     const xItems = await fetchWithHealth('x_twitter', cfgSources.x_twitter?.enabled === true, () => (xFetcher ? xFetcher.fetch() : []));
-    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems];
+    const localGovItems = await fetchWithHealth('local_gov', cfgSources.local_gov?.enabled !== false, () => (localGovFetcher ? localGovFetcher.fetch() : []));
+    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems, ...localGovItems];
 
     let newCount = 0;
     const MAX_TOASTS_PER_CYCLE = 3; // 单轮轮询心跳最多弹出 3 条桌面卡片，防止突发洪峰刷屏
     for (const item of allItems) {
       const itemUid = historyManager.getItemUniqueId(item);
       if (historyManager.isPushed(itemUid)) continue;
+
+      // ⏰ 全局时效总闸门：突发快讯工具绝不推送超过时效的过期旧闻（防止接口吐出数天前历史归档）
+      const maxAgeSec = item.source_key === 'local_gov' ? (72 * 3600) : (item.source_key === 'x_twitter' ? (12 * 3600) : (2 * 3600));
+      if (item.sync_delay_sec && item.sync_delay_sec > maxAgeSec) {
+        logger.warn(`[时效拦截] [${item.source || item.source_key}] ${item.title} 原文发布于 ${item.pub_time || item.time}，延迟已达 ${item.sync_delay_sec}秒 (>2小时)，判定为过期历史归档，已拦截丢弃`);
+        historyManager.pushedIds.add(itemUid);
+        continue;
+      }
 
       const evalRes = strategyEngine.evaluate(item);
       if (evalRes.matched) {
@@ -247,6 +336,18 @@ async function pollCycle() {
         evalItem.impact_score = impactScore;
         if (evalItem.ai_analysis) {
           evalItem.ai_analysis.impact_score = impactScore;
+          if (impactScore === 0) {
+            if (evalItem.ai_analysis.impacts) {
+              for (const k of Object.keys(evalItem.ai_analysis.impacts)) {
+                if (typeof evalItem.ai_analysis.impacts[k] === 'object' && evalItem.ai_analysis.impacts[k] !== null) {
+                  evalItem.ai_analysis.impacts[k].direction = '中性';
+                } else {
+                  evalItem.ai_analysis.impacts[k] = '中性';
+                }
+              }
+            }
+            evalItem.ai_analysis.watchlist_impact = null;
+          }
         }
 
         // 独立数据源【行情级别过滤】检查 (默认不开启，开启后按 0-100 档位过滤)
@@ -327,14 +428,8 @@ function startPolling() {
 }
 
 app.whenReady().then(() => {
-  // 配置全局网络代理 (若用户配置了代理或系统存在 HTTP_PROXY)
-  const proxySetting = configManager.config?.sources?.x_twitter?.proxy || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
-  if (proxySetting && session && session.defaultSession) {
-    session.defaultSession.setProxy({ proxyRules: proxySetting }).catch(e => {
-      logger.warn('[App] session.setProxy 提示:', e.message);
-    });
-    logger.info(`[App] 已配置全局网络代理通道: ${proxySetting}`);
-  }
+  // 配置全局网络代理 (国内金融、政务数据源一律强制直连 bypass，零代理流量损耗)
+  configureSmartProxy(session, configManager);
 
   // 1. 初始化系统托盘（常驻状态栏）
   trayManager.init({
@@ -365,6 +460,7 @@ app.whenReady().then(() => {
   topicFetcher = new Jin10TopicFetcher(configManager);
   xueqiuFetcher = new XueqiuFetcher(configManager);
   maimaiFetcher = new MaimaiFetcher(configManager);
+  localGovFetcher = new LocalGovFetcher(configManager);
 
   // 启动存储与日志自动清理巡检
   storageCleaner.startPeriodicCleanup();
@@ -396,6 +492,9 @@ app.whenReady().then(() => {
         logger.error('[AutoLaunch] 设置开机启动异常:', e);
       }
     }
+
+    // 动态同步网络代理配置 (确保国内接口全量直连绕过)
+    configureSmartProxy(session, configManager);
     startPolling();
     sourceHealthManager.notifyChanged();
   });
@@ -465,7 +564,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('test-crypto-price', async (event, coins) => {
     const cryptoPriceManager = require('./cryptoPrice');
-    return await cryptoPriceManager.getFormattedSummary(coins);
+    return await cryptoPriceManager.testPrices(coins);
   });
 
   ipcMain.handle('validate-okx-coin', async (event, input) => {
@@ -487,6 +586,58 @@ app.whenReady().then(() => {
   ipcMain.handle('test-stock-summary', async (event, stocks) => {
     const stockQuote = require('./stockQuote');
     return await stockQuote.getFormattedSummary(stocks);
+  });
+
+  // 本地周边规划与问政立即拉取测试 IPC
+  ipcMain.handle('test-local-gov-fetch', async (event, previewCfg) => {
+    if (!localGovFetcher) {
+      localGovFetcher = new LocalGovFetcher(configManager);
+    }
+    const items = await localGovFetcher.fetch(true, previewCfg);
+    
+    // 关键优化：用户点击立即拉取后，除了返回列表预览，还立即触发桌面弹窗与通知推送
+    if (Array.isArray(items) && items.length > 0) {
+      const topItem = { ...items[0], is_test: true };
+      try {
+        await toastManager.showToast(topItem);
+        logger.info(`[TestLocalGov] 成功触发本地情报测试桌面弹窗: [${topItem.title}]`);
+      } catch (err) {
+        logger.warn('[TestLocalGov] 桌面弹窗触发异常:', err.message);
+      }
+
+      try {
+        const tickers = toastManager ? toastManager.getCachedTickerPayloadSync() : null;
+        notifier.sendAlert(topItem, configManager.config?.mobile_push, configManager.config, tickers).catch(err => {
+          logger.warn('[TestLocalGov] 手机/外部通知触发异常:', err.message);
+        });
+      } catch (pushErr) {
+        logger.warn('[TestLocalGov] 外部通知判定异常:', pushErr.message);
+      }
+    } else {
+      // 若当前过滤条件下暂无新公开件，构造一条专属自检情报触发弹窗，确认弹窗链路
+      const timeStr = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      const sampleItem = {
+        id: `test_local_gov_${Date.now()}`,
+        source: '本地周边',
+        source_key: 'local_gov',
+        sub_source: '规划局',
+        title: `【政务自检】${previewCfg?.district_name || '本地'}片区官方规划与问政数据源连通正常`,
+        content: `恭喜！红网问政与自然资源局接口抓取链路完全通畅。当前所设板块关键词已生效，若所选片区有新规划公示、用地调整或民生答复，将第一时间以此形态弹窗并推送！`,
+        time: timeStr,
+        pub_time: timeStr,
+        is_test: true,
+        url: 'https://wz.rednet.cn/'
+      };
+      try {
+        await toastManager.showToast(sampleItem);
+      } catch (err) {}
+      try {
+        const tickers = toastManager ? toastManager.getCachedTickerPayloadSync() : null;
+        notifier.sendAlert(sampleItem, configManager.config?.mobile_push, configManager.config, tickers).catch(() => {});
+      } catch (pushErr) {}
+    }
+
+    return items;
   });
 
   // P0: 数据源健康诊断与网络指标 IPC

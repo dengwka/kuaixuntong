@@ -370,6 +370,13 @@
     .badge-maimai {
       background: #0D9488;
     }
+    .badge-local-gov {
+      background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
     .badge-system {
       background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
       color: #FFFFFF;
@@ -537,10 +544,10 @@
 
     /* Content */
     .content-container {
-      padding: 13px 16px 12px 16px !important;
-      flex: 0 0 auto !important; /* 关键：坚决禁止 flex 压缩内容区，保证正文始终自然完整展现 */
+      padding: 13px 16px 10px 16px;
+      flex: 1 1 auto;
       min-height: 50px;
-      overflow-y: hidden;
+      overflow-y: auto;
       overflow-anchor: none; /* 彻底禁止滚动锚定偏移，避免高度计算时向上推挤标题 */
       display: flex;
       flex-direction: column;
@@ -789,7 +796,7 @@
       flex-direction: column;
       border-top: 1px solid #F1F5F9;
       gap: 6px;
-      flex-shrink: 0;
+      flex-shrink: 0 !important;
       width: 100%;
       box-sizing: border-box;
     }
@@ -882,12 +889,14 @@
     .coin-sym-eth { color: #4F46E5; font-weight: 800; }
     .coin-sym-sol { color: #7C3AED; font-weight: 800; }
     .coin-sym-bz { color: #0284C7; font-weight: 800; }
-    .coin-sym-zec { color: #CA8A04; font-weight: 800; }
     .coin-sym-crcl { color: #059669; font-weight: 800; }
     .coin-sym-doge { color: #EA580C; font-weight: 800; }
     .coin-sym-xrp { color: #2563EB; font-weight: 800; }
     .coin-sym-sui { color: #0891B2; font-weight: 800; }
     .coin-sym-bnb { color: #D97706; font-weight: 800; }
+    .coin-sym-pepe { color: #16A34A; font-weight: 800; }
+    .coin-sym-ada { color: #0284C7; font-weight: 800; }
+    .coin-sym-avax { color: #DC2626; font-weight: 800; }
     .coin-sym-def { color: #2563EB; font-weight: 800; }
     .coin-val {
       color: #0F172A;
@@ -1216,12 +1225,14 @@
       'ETH': 'coin-sym-eth',
       'SOL': 'coin-sym-sol',
       'BZ': 'coin-sym-bz',
-      'ZEC': 'coin-sym-zec',
       'CRCL': 'coin-sym-crcl',
+      'BNB': 'coin-sym-bnb',
       'DOGE': 'coin-sym-doge',
       'XRP': 'coin-sym-xrp',
       'SUI': 'coin-sym-sui',
-      'BNB': 'coin-sym-bnb'
+      'PEPE': 'coin-sym-pepe',
+      'ADA': 'coin-sym-ada',
+      'AVAX': 'coin-sym-avax'
     };
 
     function categorizeQuotes(stockPrices, cryptoPrices) {
@@ -1252,6 +1263,16 @@
       if (!items || items.length === 0) return '';
       return items.map(item => {
         const parts = item.trim().split(/\s+/);
+        if (parts.length >= 3 && /^[+-]?\d+(\.\d+)?%$/.test(parts[parts.length - 1])) {
+          const pct = parts[parts.length - 1];
+          const price = parts.slice(1, parts.length - 1).join(' ');
+          const sym = parts[0].toUpperCase();
+          const cls = COIN_COLOR_MAP[sym] || 'coin-sym-def';
+          let pctCls = 'stock-val';
+          if (pct.startsWith('+')) pctCls = 'stock-up';
+          else if (pct.startsWith('-')) pctCls = 'stock-down';
+          return `<span class="coin-pill"><span class="${cls}">${escapeHtml(sym)}</span> <span class="coin-val">${escapeHtml(price)}</span> <span class="${pctCls}" style="font-size: 11px; font-weight: 600;">${escapeHtml(pct)}</span></span>`;
+        }
         if (parts.length >= 2) {
           const sym = parts[0].toUpperCase();
           const val = parts.slice(1).join(' ');
@@ -1317,6 +1338,7 @@
       if (footerEl) {
         footerEl.style.display = (hasQuotes || hasBacklog) ? 'flex' : 'none';
       }
+      adjustLayoutToWindow();
     }
 
     function adjustLayoutToWindow() {
@@ -1332,19 +1354,37 @@
       // 窗口内卡片可用的最大高度，严格贴合padding与margin，杜绝任何外部滚动条或空隙
       const availH = window.innerHeight - padTop - padBottom - mt - mb;
       if (availH > 100) {
-        c.style.maxHeight = `${Math.ceil(availH)}px`;
+        c.style.maxHeight = `${Math.floor(availH)}px`;
+        c.style.height = `${Math.floor(availH)}px`;
       }
+
       const contentEl = document.getElementById('contentArea');
       if (contentEl) {
-        // 仅当卡片内容自然总高度确实超过当前可用窗口高度（即达到系统设定的最大封顶高度）时才开启局部滚动
-        if (c.scrollHeight > availH + 2) {
+        // 关键修复：重置 flexShrink 为 1，允许在视口有限时弹性收缩，绝对不可挤占底部行情栏
+        contentEl.style.flexShrink = '1';
+
+        // 动态精确测量非主体区域的总高度（头部、AI研判区、底部行情栏、进度条）
+        const headerEl = document.querySelector('.header');
+        const aiEl = document.getElementById('aiBox');
+        const footerEl = document.getElementById('toastFooter') || document.querySelector('.footer');
+        const progressEl = document.querySelector('.progress-track');
+
+        let nonContentH = 0;
+        if (headerEl && headerEl.offsetHeight) nonContentH += headerEl.offsetHeight;
+        if (aiEl && aiEl.offsetHeight && aiEl.style.display !== 'none') nonContentH += aiEl.offsetHeight;
+        if (footerEl && footerEl.offsetHeight && footerEl.style.display !== 'none') nonContentH += footerEl.offsetHeight;
+        if (progressEl && progressEl.offsetHeight) nonContentH += progressEl.offsetHeight;
+
+        // 给 contentArea 动态限制最大高度，预留余量，确保底部行情栏 100% 完整显示在卡片底部
+        const maxContentH = Math.max(80, Math.floor(availH - nonContentH - 8));
+        contentEl.style.maxHeight = `${maxContentH}px`;
+
+        // 当正文超长超过可用区域时，开启局部垂直平滑滚动
+        if (contentEl.scrollHeight > maxContentH + 2) {
           contentEl.style.overflowY = 'auto';
-          contentEl.style.flexShrink = '1';
         } else {
           contentEl.style.overflowY = 'hidden';
-          contentEl.style.flexShrink = '0';
         }
-        contentEl.scrollTop = 0;
       }
     }
 
@@ -1390,12 +1430,15 @@
         const padTop = parseFloat(bodyStyle.paddingTop) || 4;
         const padBottom = parseFloat(bodyStyle.paddingBottom) || 4;
 
-        // 真实所需总高度：卡片自然高度 + 外边距 + body上下内边距 + 6px 呼吸裕量，彻底防止底行字体切削
-        const totalNeededH = Math.ceil(cardNaturalH + mb + mt + padTop + padBottom + 6);
+        // 真实所需总高度：卡片自然高度 + 外边距 + body上下内边距 + 12px 呼吸裕量，彻底防止底行字体切削
+        const totalNeededH = Math.ceil(cardNaturalH + mb + mt + padTop + padBottom + 12);
         const exactH = Math.max(160, totalNeededH);
 
         // 测量完毕后恢复 contentEl 正常样式（防备极端超长文本超过屏幕最大高度时仍能滚动）
         if (contentEl) {
+          contentEl.style.maxHeight = '';
+          contentEl.style.height = '';
+          contentEl.style.flexShrink = '1';
           contentEl.style.overflowY = '';
         }
 
@@ -1492,6 +1535,10 @@
         } else if (alertData.source_key === 'maimai' || srcName.includes('脉脉')) {
           badge.textContent = '💼 脉脉职言';
           badge.className = 'badge badge-maimai';
+        } else if (alertData.source_key === 'local_gov' || srcName.includes('本地周边')) {
+          const sub = alertData.sub_source || '规划民生';
+          badge.textContent = `📍 本地周边 · ${sub}`;
+          badge.className = 'badge badge-local-gov';
         } else if (srcName.includes('重要') || alertData.source_key === 'jin10_topic') {
           badge.textContent = '🔥 重要事件';
           badge.className = 'badge badge-important';
@@ -1742,9 +1789,15 @@
 
           aiSummary.textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
 
-          // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性，严防 [object Object]）
-          chipsRow.innerHTML = '';
-          let normalizedList = [];
+          // 关键需求：针对“本地周边”规划与问政，完全不展示利好利空胶囊，保持纯净大白话解读
+          const isLocalGov = (alertData.source_key === 'local_gov' || (alertData.source && alertData.source.includes('本地周边')));
+          if (isLocalGov) {
+            chipsRow.innerHTML = '';
+            chipsRow.style.display = 'none';
+          } else {
+            // 渲染利多利空芯片（完整呈现核心资产影响方向：利好/利空/中性，严防 [object Object]）
+            chipsRow.innerHTML = '';
+            let normalizedList = [];
 
           if (Array.isArray(aiData.impacts)) {
             normalizedList = aiData.impacts.map(it => {
@@ -1774,7 +1827,8 @@
           let hasScoreChip = false;
           if (rawScore !== null && rawScore !== undefined) {
             const scoreNum = Math.max(0, Math.min(100, Number(rawScore)));
-            if (!isNaN(scoreNum)) {
+            // 当分数为 0 分时，彻底不显示打分胶囊（符合用户要求：【行情影响 0分】不用显示）
+            if (!isNaN(scoreNum) && scoreNum > 0) {
               hasScoreChip = true;
               const scoreChip = document.createElement('span');
               let scoreClass = 'chip-score-normal';
@@ -1782,9 +1836,6 @@
               if (scoreNum >= 80) {
                 scoreClass = 'chip-score-high';
                 icon = '🔥';
-              } else if (scoreNum === 0) {
-                scoreClass = 'chip-score-neutral';
-                icon = '⚪';
               }
               scoreChip.className = `chip chip-score ${scoreClass}`;
               scoreChip.innerHTML = `<span>${icon}</span> <span>行情影响</span> <b>${scoreNum}分</b>`;
@@ -1794,9 +1845,11 @@
 
           // 智能精炼多空标的展示：
           // 1. 若存在明确的【利好】或【利空】标的，聚焦呈现有实际方向的核心标的，彻底清除无关“中性”噪点
-          // 2. 若全部资产均无剧烈倾向（全中性），则精简为单个“⚪ 多空情绪 均衡平稳”胶囊，绝不堆叠冗余灰色框
+          // 2. 若全部资产均无剧烈倾向（全中性），仅在有明确行情分且非零时简要呈现，0分时彻底隐藏整行
           const activeList = normalizedList.filter(it => it.dir.includes('利好') || it.dir.includes('利空'));
-          const displayList = activeList.length > 0 ? activeList : (normalizedList.length > 0 ? [{ asset: '多空情绪', dir: '均衡平稳' }] : []);
+          const displayList = activeList.length > 0 
+            ? activeList 
+            : ((normalizedList.length > 0 && hasScoreChip) ? [{ asset: '多空情绪', dir: '均衡平稳' }] : []);
 
           if (displayList.length > 0) {
             displayList.sort((a, b) => {
@@ -1825,6 +1878,7 @@
           } else {
             chipsRow.style.display = 'none';
           }
+        } // 结束 if (!isLocalGov)
         } else {
           aiTag.style.display = 'none';
           aiSummary.style.display = 'none';
@@ -1986,6 +2040,7 @@
       if (!payload) return;
       const uCount = document.getElementById('unreadCountSpan')?.textContent;
       renderTickerAndBacklog(payload.stockPrices, payload.cryptoPrices, Number(uCount) || 0);
+      adjustLayoutToWindow();
     });
 
     ipcRenderer.on('update-unread-count', (event, count) => {

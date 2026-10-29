@@ -316,6 +316,27 @@ class ConfigManager {
           cookie: '',
           auto_translate: true,
           proxy: ''
+        },
+        local_gov: {
+          name: '本地周边',
+          enabled: true,
+          poll_interval_sec: 180, // 3分钟低频温和轮询
+          weight: 90,
+          city: 'changsha',
+          city_name: '长沙市',
+          district_id: '430103', // 天心区
+          district_name: '天心区',
+          scope_mode: 'sector', // 'sector' (精准板块/街道) 或 'district' (全区/全市通报)
+          sub_channels: {
+            planning: true,       // 规资局规划公示/控规修改
+            wenzheng: true,       // 问政湖南官方民生问答
+            metro: true,          // 地铁与轨道交通
+            housing_policy: true  // 全市楼市新政/房产调控/公积金（无视片区限制特权直通）
+          },
+          preset_sector: 'tianxin_shengfu', // 天心·省政府板块
+          sector_keywords: ['省政府', '省府', '湘府', '友谊', '新韶', '天悦', '黑石铺', '暮云', '先锋', '大托', '地铁8号线', '地铁7号线'],
+          custom_keywords: '',
+          only_replied: false // 是否仅推送已官方正式答复的件
         }
       },
       rules: {
@@ -430,7 +451,8 @@ class ConfigManager {
             jin10_topic: { ...defaults.sources.jin10_topic, ...((parsed.sources && parsed.sources.jin10_topic) || {}) },
             xueqiu: { ...defaults.sources.xueqiu, ...((parsed.sources && parsed.sources.xueqiu) || {}) },
             maimai: { ...defaults.sources.maimai, ...((parsed.sources && parsed.sources.maimai) || {}) },
-            x_twitter: { ...defaults.sources.x_twitter, ...((parsed.sources && parsed.sources.x_twitter) || {}) }
+            x_twitter: { ...defaults.sources.x_twitter, ...((parsed.sources && parsed.sources.x_twitter) || {}) },
+            local_gov: { ...defaults.sources.local_gov, ...((parsed.sources && parsed.sources.local_gov) || {}) }
           },
           rules: { ...defaults.rules, ...(parsed.rules || {}) },
           watchlist: { ...defaults.watchlist, ...(parsed.watchlist || {}) },
@@ -625,7 +647,8 @@ class ConfigManager {
         jin10_topic: { ...((cur.sources && cur.sources.jin10_topic) || {}), ...((newConfig.sources && newConfig.sources.jin10_topic) || {}) },
         xueqiu: { ...((cur.sources && cur.sources.xueqiu) || {}), ...((newConfig.sources && newConfig.sources.xueqiu) || {}) },
         maimai: { ...((cur.sources && cur.sources.maimai) || {}), ...((newConfig.sources && newConfig.sources.maimai) || {}) },
-        x_twitter: { ...((cur.sources && cur.sources.x_twitter) || {}), ...((newConfig.sources && newConfig.sources.x_twitter) || {}) }
+        x_twitter: { ...((cur.sources && cur.sources.x_twitter) || {}), ...((newConfig.sources && newConfig.sources.x_twitter) || {}) },
+        local_gov: { ...((cur.sources && cur.sources.local_gov) || {}), ...((newConfig.sources && newConfig.sources.local_gov) || {}) }
       },
       rules: { ...(cur.rules || {}), ...(newConfig.rules || {}) },
       watchlist: { ...(cur.watchlist || {}), ...(newConfig.watchlist || {}) },

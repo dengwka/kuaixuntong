@@ -283,6 +283,11 @@ class Jin10Fetcher {
           const pubMs = Date.parse(String(item.time).replace(/-/g, '/'));
           if (!isNaN(pubMs)) {
             const diffMs = Date.now() - pubMs;
+            // ⏰ 严格时效性过滤：快讯若发布时间超过 2 小时，一律视为过期历史数据，坚决拦截
+            if (diffMs > 2 * 3600 * 1000) {
+              this.seenIds.add(itemId);
+              continue;
+            }
             syncDelayMs = diffMs > 0 ? diffMs : Math.floor(Math.random() * 80 + 40);
             syncDelaySec = Math.max(0, Math.floor(diffMs / 1000));
           }

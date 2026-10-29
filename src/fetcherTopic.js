@@ -156,6 +156,12 @@ class Jin10TopicFetcher {
           const pubMs = Date.parse(String(dataWrap.time).replace(/-/g, '/'));
           if (!isNaN(pubMs)) {
             const diffMs = Date.now() - pubMs;
+            // ⏰ 严格时效性过滤：专栏接口若返回超过 2 小时的历史旧闻（如数天前加精文章），坚决丢弃，绝不作为突发快讯推送
+            if (diffMs > 2 * 3600 * 1000) {
+              this.seenIds.add(itemId);
+              this.seenIds.add(fullId);
+              continue;
+            }
             syncDelayMs = diffMs > 0 ? diffMs : Math.floor(Math.random() * 80 + 40);
             syncDelaySec = Math.max(0, Math.floor(diffMs / 1000));
           }

@@ -189,22 +189,25 @@ class NotifierService {
       const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
         ? alertData.impact_score
         : (ai && ai.impact_score !== undefined && ai.impact_score !== null ? ai.impact_score : null);
-      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore)) && Number(rawScore) > 0) ? `【行情影响 ${Number(rawScore)}分】` : '';
 
-      if (impactsList.length > 0) {
-        const impactStrs = impactsList.map(it => {
-          const isBearish = it.dir.includes('利空');
-          const isBullish = it.dir.includes('利好');
-          if (isBearish) {
-            return `🔴 **${it.asset} ${it.dir}**`;
-          } else if (isBullish) {
-            return `🟢 <font color="info">${it.asset} ${it.dir}</font>`;
-          }
-          return `⚪ <font color="comment">${it.asset} ${it.dir}</font>`;
-        }).join(' · ');
-        lines.push(`> 📊 **多空研判**：${scorePrefix}${impactStrs}`);
-      } else if (scorePrefix) {
-        lines.push(`> 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
+      const isLocalGov = (alertData.source_key === 'local_gov' || alertData.source === '本地周边');
+      if (!isLocalGov) {
+        if (impactsList.length > 0) {
+          const impactStrs = impactsList.map(it => {
+            const isBearish = it.dir.includes('利空');
+            const isBullish = it.dir.includes('利好');
+            if (isBearish) {
+              return `🔴 **${it.asset} ${it.dir}**`;
+            } else if (isBullish) {
+              return `🟢 <font color="info">${it.asset} ${it.dir}</font>`;
+            }
+            return `⚪ <font color="comment">${it.asset} ${it.dir}</font>`;
+          }).join(' · ');
+          lines.push(`> 📊 **多空研判**：${scorePrefix}${impactStrs}`);
+        } else if (scorePrefix) {
+          lines.push(`> 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
+        }
       }
       lines.push(`>`);
     }
@@ -327,16 +330,19 @@ class NotifierService {
       const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
         ? alertData.impact_score
         : (ai && ai.impact_score !== undefined && ai.impact_score !== null ? ai.impact_score : null);
-      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+      const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore)) && Number(rawScore) > 0) ? `【行情影响 ${Number(rawScore)}分】` : '';
 
-      if (impactsList.length > 0) {
-        const impactStrs = impactsList.map(it => {
-          const icon = it.dir.includes('利好') ? '🟢' : (it.dir.includes('利空') ? '🔴' : '⚪');
-          return `${icon} ${it.asset} ${it.dir}`;
-        }).join('  ');
-        despLines.push(`- 📊 **多空研判**：${scorePrefix}${impactStrs}`);
-      } else if (scorePrefix) {
-        despLines.push(`- 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
+      const isLocalGov = (alertData.source_key === 'local_gov' || alertData.source === '本地周边');
+      if (!isLocalGov) {
+        if (impactsList.length > 0) {
+          const impactStrs = impactsList.map(it => {
+            const icon = it.dir.includes('利好') ? '🟢' : (it.dir.includes('利空') ? '🔴' : '⚪');
+            return `${icon} ${it.asset} ${it.dir}`;
+          }).join('  ');
+          despLines.push(`- 📊 **多空研判**：${scorePrefix}${impactStrs}`);
+        } else if (scorePrefix) {
+          despLines.push(`- 📊 **多空研判**：${scorePrefix}多空情绪平稳`);
+        }
       }
     }
 
@@ -444,7 +450,7 @@ class NotifierService {
     const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
       ? alertData.impact_score
       : (alertData.ai_analysis?.impact_score !== undefined && alertData.ai_analysis?.impact_score !== null ? alertData.ai_analysis.impact_score : null);
-    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore)) && Number(rawScore) > 0) ? `【行情影响 ${Number(rawScore)}分】` : '';
 
     let impactStr = '';
     if (impactsList.length > 0) {
@@ -931,7 +937,7 @@ class NotifierService {
     const rawScore = (alertData.impact_score !== undefined && alertData.impact_score !== null)
       ? alertData.impact_score
       : (alertData.ai_analysis?.impact_score !== undefined && alertData.ai_analysis?.impact_score !== null ? alertData.ai_analysis.impact_score : null);
-    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore))) ? `【行情影响 ${Number(rawScore)}分】` : '';
+    const scorePrefix = (rawScore !== null && !isNaN(Number(rawScore)) && Number(rawScore) > 0) ? `【行情影响 ${Number(rawScore)}分】` : '';
 
     const impactStrs = impactsList.length > 0 
       ? `${scorePrefix}${impactsList.map(it => `${it.asset} ${it.dir}`).join(' · ')}`

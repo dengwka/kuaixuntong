@@ -80,6 +80,19 @@ class SourceHealthManager {
         totalFailures: 0,
         errorMsg: null,
         apiUrl: 'https://maimai.cn / 36kr'
+      },
+      local_gov: {
+        key: 'local_gov',
+        name: '本地周边',
+        icon: '📍',
+        status: 'idle',
+        latencyMs: 0,
+        lastSyncTime: '--',
+        lastCount: 0,
+        totalSuccess: 0,
+        totalFailures: 0,
+        errorMsg: null,
+        apiUrl: 'wzapi.rednet.cn / zygh.changsha.gov.cn'
       }
     };
 

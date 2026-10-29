@@ -415,30 +415,16 @@ class XFetcher {
   }
 
   /**
-   * 统一双引擎时间线拉取器：
-   * 引擎 1: 官方 x.com/${screenName} SSR 直连 (支持所有人包括小号/普通账号/新号)
-   * 引擎 2: 官方 Syndication 管道兜底 (适用于特朗普/马斯克等超级大号)
+   * 统一轻量时间线拉取器：
+   * 引擎 1: 官方 Syndication 轻量管道 (首推！单次仅约 15~25 KB，流量消耗降低 98%，解析极速)
+   * 引擎 2: FxTwitter 轻量 JSON API 兜底 (单次约 5 KB)
+   * 引擎 3: x.com 主页直连 (单次高达 1~2 MB，极耗流量，仅作为极端保底)
    */
   async fetchAccountTimeline(screenName, account = {}) {
     const cleanName = this.cleanScreenName(screenName);
     if (!cleanName) return { success: false, tweets: [] };
 
-    // 1. 尝试引擎 1: x.com 直连
-    try {
-      const resp = await this.makeRequest(`https://x.com/${cleanName}`);
-      if (resp.statusCode === 200) {
-        const tweets = this.parseTweetsFromXProfileHtml(resp.body);
-        if (tweets.length > 0) {
-          return { success: true, engine: 'x_direct', tweets };
-        }
-      } else if (resp.statusCode === 429) {
-        return { success: false, statusCode: 429, msg: 'X 平台主页临时频控' };
-      }
-    } catch (e) {
-      logger.warn(`[XFetcher] x.com 直连拉取 @${cleanName} 受阻:`, e.message);
-    }
-
-    // 2. 尝试引擎 2: Syndication 管道兜底
+    // 1. 尝试引擎 1: Syndication 轻量管道 (首选，极省流量)
     try {
       const synUrl = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${cleanName}`;
       const synResp = await this.makeRequest(synUrl);
@@ -493,7 +479,50 @@ class XFetcher {
         return { success: false, statusCode: 429, msg: 'X 平台 Syndication 临时频控' };
       }
     } catch (e) {
-      logger.warn(`[XFetcher] Syndication 拉取 @${cleanName} 受阻:`, e.message);
+      logger.warn(`[XFetcher] Syndication 轻量拉取 @${cleanName} 受阻:`, e.message);
+    }
+
+    // 2. 尝试引擎 2: FxTwitter 轻量 JSON API (仅约 5 KB，极其节省流量)
+    try {
+      const fxUrl = `https://api.fxtwitter.com/${cleanName}`;
+      const fxResp = await this.makeRequest(fxUrl);
+      if (fxResp.statusCode === 200) {
+        const parsed = JSON.parse(fxResp.body);
+        if (parsed && Array.isArray(parsed.tweets) && parsed.tweets.length > 0) {
+          const tweets = parsed.tweets.map(t => ({
+            id_str: t.id || t.id_str,
+            text: this.cleanTweetText(t.text || ''),
+            raw_text: t.text || '',
+            created_at_ms: t.created_at ? new Date(t.created_at).getTime() : (t.epoch ? t.epoch * 1000 : Date.now()),
+            created_at: t.created_at || new Date().toISOString(),
+            pics: (t.media && t.media.photos) ? t.media.photos.map(p => p.url).slice(0, 4) : [],
+            author_name: t.author?.name || account.name || cleanName,
+            author_handle: t.author?.screen_name || cleanName,
+            author_avatar: t.author?.avatar_url || account.avatar || '',
+            is_reply: !!t.replying_to,
+            is_retweet: false,
+            is_note_tweet: (t.text || '').length > 280
+          }));
+          return { success: true, engine: 'fxtwitter', tweets };
+        }
+      }
+    } catch (errFx) {
+      logger.warn(`[XFetcher] FxTwitter 轻量兜底拉取 @${cleanName} 受阻:`, errFx.message);
+    }
+
+    // 3. 尝试引擎 3: x.com 主页直连 (单次高达 1~2 MB，极度消耗流量，仅作为极端保底)
+    try {
+      const resp = await this.makeRequest(`https://x.com/${cleanName}`);
+      if (resp.statusCode === 200) {
+        const tweets = this.parseTweetsFromXProfileHtml(resp.body);
+        if (tweets.length > 0) {
+          return { success: true, engine: 'x_direct', tweets };
+        }
+      } else if (resp.statusCode === 429) {
+        return { success: false, statusCode: 429, msg: 'X 平台主页临时频控' };
+      }
+    } catch (e) {
+      logger.warn(`[XFetcher] x.com 主页直连拉取 @${cleanName} 受阻:`, e.message);
     }
 
     return { success: false, tweets: [] };
@@ -728,9 +757,10 @@ class XFetcher {
           continue;
         }
 
-        // 单账号轮询间隔保护：避免单个博主 15 秒内高频重复发起主页抓取
+        // 单账号轮询间隔保护：避免单个博主高频重复抓取（至少 45 秒间隔，深度节省代理流量）
         const lastPolled = this.lastPolledMap.get(screenName.toLowerCase()) || 0;
-        if (now - lastPolled < 15000) {
+        const minAccountInterval = Math.max(45000, ((xCfg.poll_interval_sec || 45) * 1000));
+        if (now - lastPolled < minAccountInterval) {
           continue;
         }
 
