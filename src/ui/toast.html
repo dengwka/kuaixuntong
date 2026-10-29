@@ -1551,6 +1551,69 @@
         }
       }
 
+      // 格式化显示延迟：<1000毫秒显示毫秒，>=1000毫秒按秒显示，>=60秒按分秒自动进位（如1分、1分15秒），>=1小时按时分秒进位（如1小时3分38秒）
+      function formatDisplayLatency(delaySec, delayMs, pubTime) {
+        let sec = Math.floor(Number(delaySec)) || 0;
+        let ms = Math.floor(Number(delayMs)) || 0;
+
+        // 若未提供有效秒数和毫秒数，尝试根据原文发布时间逆向推算
+        if (sec <= 0 && ms <= 0 && pubTime) {
+          const p = Date.parse(String(pubTime).replace(/-/g, '/'));
+          if (!isNaN(p)) {
+            const diff = Date.now() - p;
+            if (diff > 0) {
+              if (diff < 1000) ms = diff;
+              else sec = Math.floor(diff / 1000);
+            }
+          }
+        }
+
+        // 毫秒数超过 1000ms 自动折算为秒
+        if (sec <= 0 && ms >= 1000) {
+          sec = Math.floor(ms / 1000);
+        }
+
+        // 1. 小于 1000 毫秒：显示毫秒（如 120毫秒）
+        if (sec <= 0) {
+          if (ms <= 0) {
+            ms = Math.floor(Math.random() * 120 + 80);
+          }
+          return `${ms}毫秒`;
+        }
+
+        // 2. 1秒 ~ 59秒：显示秒（如 1秒、45秒）
+        if (sec < 60) {
+          return `${sec}秒`;
+        }
+
+        // 3. 60秒 ~ 3599秒：显示分和秒，若秒数为0则省略（如 60秒->1分，65秒->1分5秒）
+        if (sec < 3600) {
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          return s === 0 ? `${m}分` : `${m}分${s}秒`;
+        }
+
+        // 4. 1小时 ~ 24小时：显示小时、分、秒，整点自动省略0项（如 3818秒->1小时3分38秒，3600秒->1小时，3660秒->1小时1分）
+        if (sec < 86400) {
+          const h = Math.floor(sec / 3600);
+          const m = Math.floor((sec % 3600) / 60);
+          const s = sec % 60;
+          let res = `${h}小时`;
+          if (m > 0) res += `${m}分`;
+          if (s > 0) res += `${s}秒`;
+          return res;
+        }
+
+        // 5. 超过24小时（天级别自动进位）
+        const d = Math.floor(sec / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        let res = `${d}天`;
+        if (h > 0) res += `${h}小时`;
+        if (m > 0 && h === 0) res += `${m}分`;
+        return res;
+      }
+
       const pubTime = alertData.pub_time || alertData.time || alertData.pubTime || (isTest ? new Date().toLocaleTimeString('zh-CN', { hour12: false }) : '');
       if (isTest) {
         // 测试演练不显示延迟数据
@@ -1558,25 +1621,7 @@
       } else if (isUpdate) {
         document.getElementById('timeLbl').textContent = `发布时间：${pubTime}`;
       } else {
-        const delaySec = alertData.sync_delay_sec !== undefined ? Number(alertData.sync_delay_sec) : 0;
-        let delayText = '';
-        if (delaySec > 0) {
-          delayText = `${delaySec}秒`;
-        } else {
-          // 若为 0 秒，则显示具体毫秒数
-          let delayMs = alertData.sync_delay_ms !== undefined ? Number(alertData.sync_delay_ms) : 0;
-          if (delayMs <= 0 && pubTime) {
-            const p = Date.parse(String(pubTime).replace(/-/g, '/'));
-            if (!isNaN(p)) {
-              const d = Date.now() - p;
-              if (d > 0 && d < 1000) delayMs = d;
-            }
-          }
-          if (delayMs <= 0) {
-            delayMs = Math.floor(Math.random() * 120 + 80);
-          }
-          delayText = `${delayMs}毫秒`;
-        }
+        const delayText = formatDisplayLatency(alertData.sync_delay_sec, alertData.sync_delay_ms, pubTime);
         document.getElementById('timeLbl').textContent = `原文发布时间：${pubTime} · 显示延迟 ${delayText}`;
       }
 

@@ -21,6 +21,7 @@ config.json
 # 个人私人研究笔记或本地调试临时脚本
 *投资研究报告.md
 tmp*/
+scratch/
 
 # 系统与编辑器缓存
 .DS_Store

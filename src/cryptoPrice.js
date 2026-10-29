@@ -165,16 +165,19 @@ class CryptoPriceManager {
 
     const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
 
+    let hasNetworkError = false;
+    let lastNetworkError = '';
+
     for (const instId of candidates) {
       const url = `https://www.okx.com/api/v5/market/ticker?instId=${instId}`;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
+      const timer = setTimeout(() => controller.abort(), 4500);
 
       try {
         const resp = await fetchFn(url, {
           method: 'GET',
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
           },
           signal: controller.signal
         });
@@ -214,7 +217,35 @@ class CryptoPriceManager {
         }
       } catch (e) {
         clearTimeout(timer);
+        hasNetworkError = true;
+        lastNetworkError = e.message || '';
       }
+    }
+
+    // 若 OKX 出现网络超时/连接中断，尝试通过 Binance 兜底校验
+    if (hasNetworkError) {
+      const binanceRes = await this.fetchBinanceFallback(pair);
+      if (binanceRes && binanceRes.priceStr && binanceRes.priceStr !== '--') {
+        const cnName = this.coinNames[base] || base;
+        return {
+          success: true,
+          symbol: base,
+          name: cnName,
+          pair: `${base}/${quote}`,
+          instId: `${base}USDT`,
+          priceStr: binanceRes.priceStr,
+          numPrice: binanceRes.numPrice,
+          cnyStr: binanceRes.cnyStr,
+          change24h: binanceRes.change24h,
+          type: '现货 (币安)',
+          source: 'Binance'
+        };
+      }
+
+      return {
+        success: false,
+        msg: `OKX/币安接口连接超时：请确认是否已开启科学上网代理软件（Mac 用户请在代理客户端勾选“设置为系统代理”，或在下方手动配置网络代理）`
+      };
     }
 
     return {
@@ -306,37 +337,48 @@ class CryptoPriceManager {
     const symbol = this.getShortSymbol(pair);
 
     const binanceSymbol = `${symbol}USDT`;
-    const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`;
+    const urls = [
+      `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`,
+      `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${binanceSymbol}`
+    ];
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
+    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
 
-    try {
-      const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
-      const resp = await fetchFn(url, { signal: controller.signal });
-      clearTimeout(timer);
-      if (resp.ok) {
-        const json = await resp.json();
-        if (json && json.lastPrice) {
-          const lastNum = parseFloat(json.lastPrice);
-          if (!isNaN(lastNum)) {
-            const pctNum = parseFloat(json.priceChangePercent);
-            const change24h = !isNaN(pctNum) ? ((pctNum >= 0 ? '+' : '') + pctNum.toFixed(2) + '%') : '';
-            return {
-              symbol,
-              pair: `${symbol}/USDT`,
-              priceStr: this.formatPrice(lastNum),
-              numPrice: lastNum,
-              change24h,
-              cnyStr: this.formatCnyPrice(lastNum),
-              type: '现货',
-              source: 'Binance'
-            };
+    for (const url of urls) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+
+      try {
+        const resp = await fetchFn(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+          },
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && json.lastPrice) {
+            const lastNum = parseFloat(json.lastPrice);
+            if (!isNaN(lastNum)) {
+              const pctNum = parseFloat(json.priceChangePercent);
+              const change24h = !isNaN(pctNum) ? ((pctNum >= 0 ? '+' : '') + pctNum.toFixed(2) + '%') : '';
+              return {
+                symbol,
+                pair: `${symbol}/USDT`,
+                priceStr: this.formatPrice(lastNum),
+                numPrice: lastNum,
+                change24h,
+                cnyStr: this.formatCnyPrice(lastNum),
+                type: '现货',
+                source: 'Binance'
+              };
+            }
           }
         }
+      } catch (e) {
+        clearTimeout(timer);
       }
-    } catch (e) {
-      clearTimeout(timer);
     }
     return null;
   }

@@ -1560,6 +1560,13 @@
         </div>
         <div id="coinAddNotice" style="font-size: 11.5px; margin-bottom: 8px; padding: 5px 8px; border-radius: 4px; display: none;"></div>
 
+        <!-- 网络代理配置与状态提示 (Mac / Windows 通用) -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 6px 10px; border-radius: 6px; font-size: 11.5px;">
+          <span style="font-weight: 600; color: #475569; white-space: nowrap;">🌐 网络代理 (可选):</span>
+          <input type="text" id="cryptoCustomProxy" style="flex: 1; min-width: 0; font-size: 11.5px; padding: 4px 8px; border: 1px solid #CBD5E1; border-radius: 4px;" placeholder="留空自动识别系统代理及本地端口 (如 http://127.0.0.1:7890)" />
+          <span id="cryptoProxyStatusTip" style="font-size: 11px; color: #0284C7; white-space: nowrap;"></span>
+        </div>
+
         <!-- 已选展示币种排序池 (支持拖拽调整弹窗展示先后顺序) -->
         <div style="margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -2835,6 +2842,15 @@
       customCoinsList = Array.isArray(cryptoCfg.custom_coins) ? cryptoCfg.custom_coins : [];
       renderCryptoCoins();
 
+      const globalActiveProxy = cfg.system?.proxy || cryptoCfg.proxy || (sources.x_twitter && sources.x_twitter.proxy) || '';
+      if (document.getElementById('cryptoCustomProxy')) {
+        document.getElementById('cryptoCustomProxy').value = globalActiveProxy;
+      }
+      if (payload.detectedProxy && document.getElementById('cryptoProxyStatusTip')) {
+        document.getElementById('cryptoProxyStatusTip').innerHTML = `🟢 探测到有效代理: <b>${escapeHtml(payload.detectedProxy)}</b>`;
+        document.getElementById('cryptoProxyStatusTip').style.color = '#16A34A';
+      }
+
       // 9. 推送管理：电脑端与手机端独立控制
       const desktopPushCfg = cfg.desktop_push || {};
       const desktopEnabled = desktopPushCfg.enabled !== false;
@@ -3284,6 +3300,13 @@
       }
     });
 
+    const cryptoProxyInp = document.getElementById('cryptoCustomProxy');
+    const xProxyInp = document.getElementById('xCustomProxy');
+    if (cryptoProxyInp && xProxyInp) {
+      cryptoProxyInp.addEventListener('input', () => { xProxyInp.value = cryptoProxyInp.value; });
+      xProxyInp.addEventListener('input', () => { cryptoProxyInp.value = xProxyInp.value; });
+    }
+
     document.getElementById('btnTestCrypto').addEventListener('click', async () => {
       const checked = (currentSelectedCoins && currentSelectedCoins.length > 0)
         ? currentSelectedCoins
@@ -3335,7 +3358,21 @@
         } else if (typeof res === 'string' && res) {
           resEl.innerHTML = `<div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 6px; padding: 8px 12px; color: #166534;">✅ 实时价格: ${escapeHtml(res)}</div>`;
         } else {
-          resEl.innerHTML = '<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 8px 12px; color: #DC2626;">❌ 未获取到报价，请检查网络或本地代理是否开启</div>';
+          const detectedProxyStr = (res && res.detectedProxy) ? res.detectedProxy : '';
+          let errHtml = `
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 10px 14px; color: #DC2626; font-size: 12px; line-height: 1.6; margin-top: 8px;">
+              <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span>❌ 未获取到报价：OKX / Binance 实时行情接口连接超时</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 4px;">
+                <b>当前网络检测状态</b>：${detectedProxyStr ? '已检测到代理通道 <code style="color: #0284C7;">' + escapeHtml(detectedProxyStr) + '</code> (尝试连接未通)' : '<span style="color: #D97706;">未检测到系统代理 (直连被 GFW 拦截)</span>'}<br>
+                <b>💡 Mac / Windows 快速排查指南</b>：<br>
+                1. <b>Mac 用户</b>：若已开启 ClashX / Surge / V2RayU 等，请在菜单栏点击代理图标并确认勾选了<b>「设置为系统代理」(Set as System Proxy)</b>；<br>
+                2. <b>手动指定代理</b>：您也可以直接在上方<b>「网络代理 (可选)」</b>中手动填入您的代理地址（如 <code style="background: #E2E8F0; padding: 1px 5px; border-radius: 3px; color: #0F172A;">http://127.0.0.1:7890</code>），保存后重新拉取即可生效。
+              </div>
+            </div>
+          `;
+          resEl.innerHTML = errHtml;
         }
       } catch (e) {
         resEl.innerHTML = `<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 8px 12px; color: #DC2626;">❌ 获取失败: ${escapeHtml(e.message)}</div>`;
@@ -4921,7 +4958,7 @@
             enabled: document.getElementById('navCb_x_twitter').checked,
             auto_translate: document.getElementById('xAutoTranslate').checked,
             poll_interval_sec: Math.max(10, parseInt(document.getElementById('xPollInterval').value) || 30),
-            proxy: document.getElementById('xCustomProxy').value.trim(),
+            proxy: document.getElementById('xCustomProxy').value.trim() || document.getElementById('cryptoCustomProxy')?.value.trim() || '',
             cookie: document.getElementById('xPrivateCookie').value.trim(),
             accounts: xSubscribedAccounts,
             accounts_cleared: window._xAccountsExplicitlyCleared === true,
@@ -4953,7 +4990,11 @@
           enabled: document.getElementById('cryptoEnabled').checked,
           selected_coins: currentSelectedCoins,
           coins_cleared: currentSelectedCoins.length === 0,
-          custom_coins: customCoinsList
+          custom_coins: customCoinsList,
+          proxy: document.getElementById('cryptoCustomProxy')?.value.trim() || document.getElementById('xCustomProxy').value.trim() || ''
+        },
+        system: {
+          proxy: document.getElementById('cryptoCustomProxy')?.value.trim() || document.getElementById('xCustomProxy').value.trim() || ''
         },
         updates: {
           strategy: document.getElementById('strategyAuto').checked ? 'auto' : 'manual',

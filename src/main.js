@@ -75,6 +75,8 @@ const DOMESTIC_PROXY_BYPASS_LIST = [
   '*bigmodel.cn'        // 智谱 GLM AI 官方直连
 ].join(';');
 
+let currentDetectedProxy = null;
+
 function detectSystemProxyOnWindows() {
   if (process.platform !== 'win32') return null;
   try {
@@ -96,33 +98,111 @@ function detectSystemProxyOnWindows() {
   return null;
 }
 
-function configureSmartProxy(sess, cfgMgr) {
+// 专用于 macOS 系统的原生系统代理自动探测 (无需任何额外依赖，原生支持 ClashX, Surge, Shadowrocket, V2rayU 等)
+function detectSystemProxyOnMac() {
+  if (process.platform !== 'darwin') return null;
+  try {
+    const { execSync } = require('child_process');
+    const output = execSync('scutil --proxy', { encoding: 'utf8', timeout: 2000 });
+    
+    // 1. 检查 HTTP 代理 (HTTPEnable : 1)
+    const isHttpEnabled = /HTTPEnable\s*:\s*1/.test(output);
+    const httpProxy = output.match(/HTTPProxy\s*:\s*([^\s\r\n]+)/);
+    const httpPort = output.match(/HTTPPort\s*:\s*(\d+)/);
+    if (isHttpEnabled && httpProxy && httpPort) {
+      return `http://${httpProxy[1]}:${httpPort[1]}`;
+    }
+
+    // 2. 检查 HTTPS 代理 (HTTPSEnable : 1)
+    const isHttpsEnabled = /HTTPSEnable\s*:\s*1/.test(output);
+    const httpsProxy = output.match(/HTTPSProxy\s*:\s*([^\s\r\n]+)/);
+    const httpsPort = output.match(/HTTPSPort\s*:\s*(\d+)/);
+    if (isHttpsEnabled && httpsProxy && httpsPort) {
+      return `http://${httpsProxy[1]}:${httpsPort[1]}`;
+    }
+
+    // 3. 检查 SOCKS 代理 (SOCKSEnable : 1)
+    const isSocksEnabled = /SOCKSEnable\s*:\s*1/.test(output);
+    const socksProxy = output.match(/SOCKSProxy\s*:\s*([^\s\r\n]+)/);
+    const socksPort = output.match(/SOCKSPort\s*:\s*(\d+)/);
+    if (isSocksEnabled && socksProxy && socksPort) {
+      return `socks5://${socksProxy[1]}:${socksPort[1]}`;
+    }
+  } catch (e) {}
+  return null;
+}
+
+// 快速探测本机常见科学上网代理端口 (Clash/Surge/v2ray: 7890, 7892, 10809, 6152, 10808)
+function checkLocalPort(port, timeoutMs = 150) {
+  return new Promise((resolve) => {
+    const net = require('net');
+    const s = new net.Socket();
+    s.setTimeout(timeoutMs);
+    s.once('connect', () => {
+      s.destroy();
+      resolve(port);
+    });
+    s.once('timeout', () => {
+      s.destroy();
+      resolve(null);
+    });
+    s.once('error', () => {
+      resolve(null);
+    });
+    s.connect(port, '127.0.0.1');
+  });
+}
+
+async function findOpenLocalProxy() {
+  const commonPorts = [7890, 7892, 10809, 6152, 10808];
+  try {
+    const results = await Promise.all(commonPorts.map(p => checkLocalPort(p, 150)));
+    const openPort = results.find(p => p !== null);
+    if (openPort) {
+      return `http://127.0.0.1:${openPort}`;
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function configureSmartProxy(sess, cfgMgr) {
   if (!sess || !sess.defaultSession) return;
   const cfg = cfgMgr ? cfgMgr.config : {};
-  let proxySetting = (cfg.sources?.x_twitter?.proxy || '').trim();
+  let proxySetting = (cfg.system?.proxy || cfg.sources?.x_twitter?.proxy || cfg.crypto_prices?.proxy || '').trim();
   
   if (!proxySetting) {
-    proxySetting = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.ALL_PROXY || '';
+    proxySetting = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.ALL_PROXY || 
+                   process.env.http_proxy || process.env.https_proxy || process.env.all_proxy || '';
   }
   
   if (!proxySetting) {
-    proxySetting = detectSystemProxyOnWindows() || '';
+    proxySetting = detectSystemProxyOnWindows() || detectSystemProxyOnMac() || '';
   }
 
+  if (!proxySetting) {
+    proxySetting = (await findOpenLocalProxy()) || '';
+  }
+
+  currentDetectedProxy = proxySetting || null;
+
   if (proxySetting) {
-    sess.defaultSession.setProxy({
-      proxyRules: proxySetting,
-      proxyBypassRules: DOMESTIC_PROXY_BYPASS_LIST
-    }).then(() => {
+    try {
+      await sess.defaultSession.setProxy({
+        proxyRules: proxySetting,
+        proxyBypassRules: DOMESTIC_PROXY_BYPASS_LIST
+      });
       logger.info(`[Proxy] 智能网络分流已激活: 海外服务走 ${proxySetting}，国内股票/政务/快讯 100% 强制 DIRECT 直连 (0 代理流量)`);
-    }).catch(err => {
+    } catch (err) {
       logger.warn('[Proxy] session.setProxy 异常:', err.message);
-    });
+    }
   } else {
-    sess.defaultSession.setProxy({
-      proxyRules: 'direct://',
-      proxyBypassRules: DOMESTIC_PROXY_BYPASS_LIST
-    }).catch(() => {});
+    try {
+      // 关键修复：未检测到显式独立代理时，采用操作系统原生代理模式 (mode: system)，绝不使用 direct:// 阻断 Mac 底层系统代理或 TUN/VPN
+      await sess.defaultSession.setProxy({
+        mode: 'system'
+      });
+      logger.info('[Proxy] 未配置独立代理，已启用操作系统原生代理模式 (mode: system)');
+    } catch (e) {}
   }
 }
 
@@ -134,7 +214,8 @@ function getSettingsPayload(targetTab = null) {
     updateInfo: updateManager.lastCheckResult || null,
     appVersion: app.getVersion(),
     defaultDataDir: configManager.getDefaultDataDir(),
-    sourcesHealth: sourceHealthManager.getHealthReport(configManager.config)
+    sourcesHealth: sourceHealthManager.getHealthReport(configManager.config),
+    detectedProxy: currentDetectedProxy
   };
 }
 
@@ -563,13 +644,23 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('test-crypto-price', async (event, coins) => {
+    await configureSmartProxy(session, configManager);
     const cryptoPriceManager = require('./cryptoPrice');
-    return await cryptoPriceManager.testPrices(coins);
+    const res = await cryptoPriceManager.testPrices(coins);
+    return {
+      ...res,
+      detectedProxy: currentDetectedProxy
+    };
   });
 
   ipcMain.handle('validate-okx-coin', async (event, input) => {
+    await configureSmartProxy(session, configManager);
     const cryptoPriceManager = require('./cryptoPrice');
-    return await cryptoPriceManager.validateOkxCoin(input);
+    const res = await cryptoPriceManager.validateOkxCoin(input);
+    return {
+      ...res,
+      detectedProxy: currentDetectedProxy
+    };
   });
 
   // 股票行情与自选标的搜索 IPC
