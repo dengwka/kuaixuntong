@@ -548,9 +548,223 @@ class NotifierService {
   }
 
   /**
+   * 弹性 HTTP 请求发送器：
+   * 1. 优先使用 Electron/Node 标准 Fetch
+   * 2. 若遭遇内网行为管理/证书弱算法拦截 (net::ERR_CERT_WEAK_SIGNATURE_ALGORITHM 等)，自动降级走 Node 级底层通道
+   * 3. 自动支持企业代理（如 127.0.0.1:7892）与自签证书宽容（rejectUnauthorized: false）
+   */
+  async safeHttpRequest(targetUrl, options = {}, config = null) {
+    const isFeishu = targetUrl.includes('feishu.cn') || targetUrl.includes('larksuite.com');
+    if (isFeishu) {
+      // 飞书请求遵循用户独立的「是否走代理 / 手工或跟随系统」设置，统一由底层弹性通道进行精准分流
+      return await this.nodeFallbackRequest(targetUrl, options, config);
+    }
+
+    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+    const controller = new AbortController();
+    const timeoutMs = options.timeout || 8000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetchFn(targetUrl, {
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: options.body,
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+
+      let text = '';
+      try { text = await res.text(); } catch (e) {}
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch (e) {}
+
+      return {
+        ok: res.ok,
+        status: res.status,
+        text,
+        json
+      };
+    } catch (err) {
+      clearTimeout(timer);
+      logger.warn(`[Notifier] 顶层 Fetch 异常 (${err.message})，自动启动企业内网容错通道...`);
+      return await this.nodeFallbackRequest(targetUrl, options, config);
+    }
+  }
+
+  async nodeFallbackRequest(targetUrl, options = {}, config = null) {
+    const http = require('http');
+    const https = require('https');
+    const { URL } = require('url');
+
+    const isFeishu = targetUrl.includes('feishu.cn') || targetUrl.includes('larksuite.com');
+    let proxyUrl = null;
+
+    if (isFeishu) {
+      const mobilePush = (config && config.mobile_push) || {};
+      const useProxy = mobilePush.feishu_use_proxy !== false; // 默认走代理
+      if (useProxy) {
+        if (mobilePush.feishu_proxy && typeof mobilePush.feishu_proxy === 'string' && mobilePush.feishu_proxy.trim()) {
+          // 手工指定代理地址
+          let customProxy = mobilePush.feishu_proxy.trim();
+          if (!customProxy.startsWith('http://') && !customProxy.startsWith('https://')) {
+            customProxy = 'http://' + customProxy;
+          }
+          proxyUrl = customProxy;
+        } else {
+          // 跟随系统代理
+          proxyUrl = (config && config.system && config.system.proxy) ||
+                     (config && config.sources && config.sources.x_twitter && config.sources.x_twitter.proxy) ||
+                     process.env.GLOBAL_AGENT_HTTP_PROXY ||
+                     process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+
+          if (!proxyUrl && process.platform === 'win32') {
+            try {
+              const { execSync } = require('child_process');
+              const output = execSync('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"', { encoding: 'utf8', timeout: 1000 });
+              const enabledMatch = output.match(/ProxyEnable\s+REG_DWORD\s+0x([0-9a-fA-F]+)/);
+              if (enabledMatch && parseInt(enabledMatch[1], 16) === 1) {
+                const serverMatch = output.match(/ProxyServer\s+REG_SZ\s+([^\r\n]+)/);
+                if (serverMatch && serverMatch[1]) {
+                  let s = serverMatch[1].trim();
+                  if (!s.startsWith('http')) s = 'http://' + s;
+                  proxyUrl = s;
+                }
+              }
+            } catch (e) {}
+          }
+          if (!proxyUrl) {
+            proxyUrl = 'http://127.0.0.1:7897';
+          }
+        }
+      } else {
+        // 用户显式关闭走代理：纯直连
+        proxyUrl = null;
+      }
+    } else {
+      proxyUrl = (config && config.system && config.system.proxy) ||
+                 (config && config.sources && config.sources.x_twitter && config.sources.x_twitter.proxy) ||
+                 process.env.GLOBAL_AGENT_HTTP_PROXY ||
+                 process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+
+      if (!proxyUrl && process.platform === 'win32') {
+        try {
+          const { execSync } = require('child_process');
+          const output = execSync('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"', { encoding: 'utf8', timeout: 1000 });
+          const enabledMatch = output.match(/ProxyEnable\s+REG_DWORD\s+0x([0-9a-fA-F]+)/);
+          if (enabledMatch && parseInt(enabledMatch[1], 16) === 1) {
+            const serverMatch = output.match(/ProxyServer\s+REG_SZ\s+([^\r\n]+)/);
+            if (serverMatch && serverMatch[1]) {
+              let s = serverMatch[1].trim();
+              if (!s.startsWith('http')) s = 'http://' + s;
+              proxyUrl = s;
+            }
+          }
+        } catch (e) {}
+      }
+      if (!proxyUrl) {
+        proxyUrl = 'http://127.0.0.1:7897';
+      }
+    }
+
+    const urlObj = new URL(targetUrl);
+    const timeoutMs = options.timeout || 8000;
+
+    return new Promise((resolve, reject) => {
+      let timer = null;
+      let parsedProxy = null;
+      if (proxyUrl && proxyUrl.startsWith('http')) {
+        try {
+          parsedProxy = new URL(proxyUrl);
+        } catch (e) {}
+      }
+
+      const reqHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        ...(options.headers || {})
+      };
+
+      const handleResponse = (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          if (timer) clearTimeout(timer);
+          let json = null;
+          try {
+            json = body ? JSON.parse(body) : null;
+          } catch (e) {}
+
+          const location = res.headers.location || '';
+          const isInterception = res.statusCode === 302 && (location.includes('disable.htm') || location.includes('严控') || location.includes('172.22.') || body.includes('Moved'));
+
+          resolve({
+            ok: !isInterception && res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            isInterception,
+            interceptionMsg: isInterception ? '检测到当前办公网络防火墙（网关 172.22.0.73）开启了【办公OA/飞书 严控】拦截。请在代理软件（如 Clash Verge）中开启【全局模式】或将 feishu.cn 加入代理规则，即可绕过公司内网封锁！' : null,
+            text: body,
+            json
+          });
+        });
+      };
+
+      timer = setTimeout(() => {
+        reject(new Error(`请求超时 (${timeoutMs / 1000}s)`));
+      }, timeoutMs);
+
+      if (parsedProxy && urlObj.protocol === 'https:') {
+        const connectReq = http.request({
+          host: parsedProxy.hostname,
+          port: parsedProxy.port || 80,
+          method: 'CONNECT',
+          path: `${urlObj.hostname}:${urlObj.port || 443}`
+        });
+
+        connectReq.on('connect', (res, socket) => {
+          const agent = new https.Agent({ socket, rejectUnauthorized: false });
+          const httpsReq = https.request(targetUrl, {
+            method: options.method || 'GET',
+            headers: reqHeaders,
+            agent
+          }, handleResponse);
+          httpsReq.on('error', err => { if (timer) clearTimeout(timer); reject(err); });
+          if (options.body) httpsReq.write(options.body);
+          httpsReq.end();
+        });
+
+        connectReq.on('error', () => {
+          const directAgent = new https.Agent({ rejectUnauthorized: false });
+          const directReq = https.request(targetUrl, {
+            method: options.method || 'GET',
+            headers: reqHeaders,
+            agent: directAgent
+          }, handleResponse);
+          directReq.on('error', err => { if (timer) clearTimeout(timer); reject(err); });
+          if (options.body) directReq.write(options.body);
+          directReq.end();
+        });
+
+        connectReq.end();
+      } else {
+        const isHttps = urlObj.protocol === 'https:';
+        const client = isHttps ? https : http;
+        const agent = isHttps ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+        const req = client.request(targetUrl, {
+          method: options.method || 'GET',
+          headers: reqHeaders,
+          agent
+        }, handleResponse);
+        req.on('error', err => { if (timer) clearTimeout(timer); reject(err); });
+        if (options.body) req.write(options.body);
+        req.end();
+      }
+    });
+  }
+
+  /**
    * 发送卡片到飞书群机器人 Webhook (支持可选签名校验)
    */
-  async sendFeishuMessage(webhookUrl, cardPayload, secret) {
+  async sendFeishuMessage(webhookUrl, cardPayload, secret, fullConfig = null) {
     const url = (webhookUrl || '').trim();
     if (!url || !url.startsWith('http')) {
       throw new Error('飞书 Webhook 地址无效，请填写正确的飞书自定义机器人 Webhook URL');
@@ -565,39 +779,31 @@ class NotifierService {
       body.sign = sign;
     }
 
-    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await this.safeHttpRequest(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }, fullConfig);
 
-    try {
-      const res = await fetchFn(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-
-      if (!res.ok) {
-        throw new Error(`飞书接口网络返回异常: HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.isInterception) {
+        throw new Error(res.interceptionMsg);
       }
-
-      const json = await res.json();
-      if (json && json.code && json.code !== 0) {
-        throw new Error(`飞书接口错误 [${json.code}]: ${json.msg || '发送失败'}`);
-      }
-
-      return { success: true };
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
+      throw new Error(`飞书接口网络返回异常: HTTP ${res.status}`);
     }
+
+    const json = res.json;
+    if (json && json.code && json.code !== 0) {
+      throw new Error(`飞书接口错误 [${json.code}]: ${json.msg || '发送失败'}`);
+    }
+
+    return { success: true };
   }
 
   /**
    * 获取飞书开放平台 Tenant Access Token (带本地内存缓存，有效期 2 小时)
    */
-  async getFeishuTenantToken(appId, appSecret) {
+  async getFeishuTenantToken(appId, appSecret, fullConfig = null) {
     const cleanAppId = (appId || '').trim();
     const cleanAppSecret = (appSecret || '').trim();
     const cacheKey = `${cleanAppId}:${cleanAppSecret}`;
@@ -610,48 +816,40 @@ class NotifierService {
       }
     }
 
-    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await this.safeHttpRequest('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        app_id: cleanAppId,
+        app_secret: cleanAppSecret
+      })
+    }, fullConfig);
 
-    try {
-      const res = await fetchFn('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({
-          app_id: cleanAppId,
-          app_secret: cleanAppSecret
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-
-      if (!res.ok) {
-        throw new Error(`飞书鉴权网络返回异常: HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.isInterception) {
+        throw new Error(res.interceptionMsg);
       }
-
-      const json = await res.json();
-      if (json && json.code !== 0) {
-        throw new Error(`飞书凭据获取失败 [${json.code}]: ${json.msg || '请检查 App ID 与 Secret'}`);
-      }
-
-      if (!this._feishuTokenCache) this._feishuTokenCache = {};
-      this._feishuTokenCache[cacheKey] = {
-        token: json.tenant_access_token,
-        expireTime: now + (json.expire || 7140) * 1000
-      };
-
-      return json.tenant_access_token;
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
+      throw new Error(`飞书鉴权网络返回异常: HTTP ${res.status}`);
     }
+
+    const json = res.json;
+    if (json && json.code !== 0) {
+      throw new Error(`飞书凭据获取失败 [${json.code}]: ${json.msg || '请检查 App ID 与 Secret'}`);
+    }
+
+    if (!this._feishuTokenCache) this._feishuTokenCache = {};
+    this._feishuTokenCache[cacheKey] = {
+      token: json.tenant_access_token,
+      expireTime: now + (json.expire || 7140) * 1000
+    };
+
+    return json.tenant_access_token;
   }
 
   /**
    * 通过飞书开放平台自建应用 / 智能体 API 发送富交互卡片 (支持单聊直推 / 任意群聊)
    */
-  async sendFeishuAppMessage(appId, appSecret, receiveId, cardPayload) {
+  async sendFeishuAppMessage(appId, appSecret, receiveId, cardPayload, fullConfig = null) {
     const cleanAppId = (appId || '').trim();
     const cleanAppSecret = (appSecret || '').trim();
     const cleanReceiveId = (receiveId || '').trim();
@@ -660,7 +858,7 @@ class NotifierService {
       throw new Error('请完整填写飞书 App ID、App Secret 和 接收目标 ID');
     }
 
-    const token = await this.getFeishuTenantToken(cleanAppId, cleanAppSecret);
+    const token = await this.getFeishuTenantToken(cleanAppId, cleanAppSecret, fullConfig);
 
     let receiveIdType = 'user_id';
     if (cleanReceiveId.startsWith('oc_')) {
@@ -674,55 +872,52 @@ class NotifierService {
     }
 
     const url = `https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=${receiveIdType}`;
-    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-
     const cardContent = cardPayload.card ? JSON.stringify(cardPayload.card) : JSON.stringify(cardPayload);
 
-    try {
-      const res = await fetchFn(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify({
-          receive_id: cleanReceiveId,
-          msg_type: 'interactive',
-          content: cardContent
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
+    const res = await this.safeHttpRequest(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json; charset=utf-8'
+      },
+      body: JSON.stringify({
+        receive_id: cleanReceiveId,
+        msg_type: 'interactive',
+        content: cardContent
+      })
+    }, fullConfig);
 
-      let json = null;
-      try {
-        json = await res.json();
-      } catch (je) {}
-
-      if (!res.ok) {
-        const errorDetail = json?.msg || json?.error || (json ? JSON.stringify(json) : `HTTP ${res.status}`);
-        throw new Error(`飞书 API 报错 [${res.status}]: ${errorDetail}`);
+    const json = res.json;
+    if (!res.ok) {
+      if (res.isInterception) {
+        throw new Error(res.interceptionMsg);
       }
-
-      if (json && json.code !== 0) {
-        throw new Error(`飞书智能体发送失败 [${json.code}]: ${json.msg || '未知错误'}`);
-      }
-
-      return { success: true };
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
+      const errorDetail = json?.msg || json?.error || (json ? JSON.stringify(json) : `HTTP ${res.status}`);
+      throw new Error(`飞书 API 报错 [${res.status}]: ${errorDetail}`);
     }
+
+    if (json && json.code !== 0) {
+      throw new Error(`飞书智能体发送失败 [${json.code}]: ${json.msg || '未知错误'}`);
+    }
+
+    return { success: true };
   }
 
   /**
-   * 发送测试验证消息到飞书 (支持 Webhook 与 智能体模式)
+   * 发送测试验证消息到飞书 (支持 Webhook 与 智能体模式，支持独立代理配置)
    */
   async sendFeishuTestMessage(testParams, fullConfig) {
+    const effectiveConfig = JSON.parse(JSON.stringify(fullConfig || {}));
+    if (!effectiveConfig.mobile_push) effectiveConfig.mobile_push = {};
+    if (testParams && testParams.useProxy !== undefined) {
+      effectiveConfig.mobile_push.feishu_use_proxy = testParams.useProxy;
+    }
+    if (testParams && testParams.proxy !== undefined) {
+      effectiveConfig.mobile_push.feishu_proxy = testParams.proxy;
+    }
+
     const now = new Date().toLocaleString('zh-CN', { hour12: false });
-    const tickers = await this.getLiveTickerPayload(fullConfig);
+    const tickers = await this.getLiveTickerPayload(effectiveConfig);
     const mode = (testParams && testParams.mode) || 'webhook';
 
     const testAlert = {
@@ -745,11 +940,11 @@ class NotifierService {
 
     try {
       if (mode === 'agent') {
-        await this.sendFeishuAppMessage(testParams.appId, testParams.appSecret, testParams.receiveId, card);
+        await this.sendFeishuAppMessage(testParams.appId, testParams.appSecret, testParams.receiveId, card, effectiveConfig);
         return { success: true, message: '测试消息已成功送达飞书智能体！请在飞书查收。' };
       } else {
         const webhookUrl = testParams.webhookUrl || testParams;
-        await this.sendFeishuMessage(webhookUrl, card, testParams.secret);
+        await this.sendFeishuMessage(webhookUrl, card, testParams.secret, effectiveConfig);
         return { success: true, message: '测试消息已成功发送！请打开飞书客户端查收卡片。' };
       }
     } catch (err) {
@@ -848,7 +1043,8 @@ class NotifierService {
             mobileConfig.feishu_app_id,
             mobileConfig.feishu_app_secret,
             mobileConfig.feishu_receive_id,
-            card
+            card,
+            fullConfig
           );
           logger.info(`[MobilePush] 成功通过飞书智能体推送快讯: [${alertData.source || '快讯'}] ${alertData.title || alertData.content}`);
         } catch (err) {
@@ -857,7 +1053,7 @@ class NotifierService {
       } else if (mode !== 'agent' && mobileConfig.feishu_webhook_url) {
         try {
           const card = this.formatFeishuCard(alertData, tickers);
-          await this.sendFeishuMessage(mobileConfig.feishu_webhook_url, card, mobileConfig.feishu_secret);
+          await this.sendFeishuMessage(mobileConfig.feishu_webhook_url, card, mobileConfig.feishu_secret, fullConfig);
           logger.info(`[MobilePush] 成功推送快讯到飞书群机器人: [${alertData.source || '快讯'}] ${alertData.title || alertData.content}`);
         } catch (err) {
           logger.warn('[MobilePush] 推送快讯到飞书群机器人异常:', err.message);

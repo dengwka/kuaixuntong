@@ -166,6 +166,15 @@ ${watchlistHint}
         if (parsed && parsed.summary) {
           return parsed;
         }
+      } else {
+        let errDesc = '';
+        try {
+          const errJson = await resp.json();
+          errDesc = errJson.error ? (errJson.error.message || JSON.stringify(errJson.error)) : JSON.stringify(errJson);
+        } catch (e) {
+          errDesc = `HTTP ${resp.status}`;
+        }
+        throw new Error(`${resp.status}: ${errDesc}`);
       }
     } catch (e) {
       clearTimeout(timeoutId);
@@ -324,7 +333,7 @@ ${watchlistHint}
     if (deepseekKey) {
       availableProviders.push({
         id: 'deepseek',
-        name: 'DeepSeek 大模型',
+        name: 'DeepSeek',
         url: deepseekUrl,
         key: deepseekKey,
         model: deepseekModel
@@ -333,7 +342,7 @@ ${watchlistHint}
     if (zhipuKey) {
       availableProviders.push({
         id: 'zhipu',
-        name: '智谱 GLM 大模型',
+        name: '智谱 GLM',
         url: zhipuUrl,
         key: zhipuKey,
         model: zhipuModel
@@ -348,6 +357,8 @@ ${watchlistHint}
     let finalResult = null;
 
     // 2. 如果配置了大模型（支持单模型、双模型动态负载均衡/轮询与失败自动切换）
+    let lastErrorReason = null;
+
     if (availableProviders.length > 0 && aiCfg.enabled !== false) {
       // 动态选择首选模型（如果都配置了，双向轮流调度）
       let primaryIdx = 0;
@@ -371,7 +382,14 @@ ${watchlistHint}
           };
         }
       } catch (e) {
-        console.warn(`[FinancialAI] ${first.name} 调用异常，尝试备用通道:`, e.message);
+        console.warn(`[FinancialAI] ${first.name} 调用异常:`, e.message);
+        if (e.message.includes('402') || e.message.includes('Insufficient Balance')) {
+          lastErrorReason = `${first.name}余额不足`;
+        } else if (e.message.includes('401')) {
+          lastErrorReason = `${first.name}Key无效`;
+        } else if (e.message.includes('abort') || e.message.includes('timeout')) {
+          lastErrorReason = `${first.name}超时`;
+        }
       }
 
       // 如果首选失败且配置了第二模型，动态无缝切换至备选模型
@@ -388,17 +406,25 @@ ${watchlistHint}
               impacts: this.formatImpacts(res2.impacts),
               watchlist_impact: res2.watchlist_impact || null
             };
+            lastErrorReason = null;
           }
         } catch (e2) {
           console.warn(`[FinancialAI] 备选 ${second.name} 亦异常:`, e2.message);
+          if (e2.message.includes('402') || e2.message.includes('Insufficient Balance')) {
+            lastErrorReason = `${second.name}余额不足`;
+          }
         }
       }
     }
 
-    // 3. 都没配置 或 调用均失败时，全自动降级为本地规则默认分析
+    // 3. 都没配置 或 调用均失败时，全自动降级为本地增强策略分析
     if (!finalResult) {
-      finalResult = this.ruleBasedAnalysis(text);
-      finalResult.ai_source = '本地规则默认分析';
+      finalResult = this.ruleBasedAnalysis(text, alertData);
+      if (lastErrorReason) {
+        finalResult.ai_source = `本地策略分析 (${lastErrorReason})`;
+      } else {
+        finalResult.ai_source = '本地策略离线分析';
+      }
       finalResult.source_type = 'rule_engine';
     }
 
@@ -518,7 +544,10 @@ ${watchlistHint}
     if (hasConfirmedAction) {
       localScore = 80;
     } else {
-      const macroKeywords = ['降息', '加息', '非农', 'cpi', '关税', '通胀', '违约', '制裁', '涨停', '跌停', '暴涨', '暴跌', '印花税', '熔断', '崩盘'];
+      const macroKeywords = [
+        '降息', '加息', '非农', 'cpi', '关税', '通胀', '违约', '制裁', '涨停', '跌停', '暴涨', '暴跌', '印花税', '熔断', '崩盘',
+        '就业', '招聘', '失业率', '荣枯线', 'pmi', 'gdp', 'ppi', '停火', '停战', '宣战', '冲突'
+      ];
       const hitMacro = macroKeywords.some(w => fullText.includes(w));
       if (hitMacro) {
         localScore = 50;
@@ -581,8 +610,162 @@ ${watchlistHint}
     return Math.max(0, Math.min(100, finalScore));
   }
 
-  ruleBasedAnalysis(text) {
-    const t = text.toLowerCase();
+  extractSubject(text, alertData = null) {
+    const t = text || '';
+    // 1. 国际主要国家、地区与央行
+    if (/英国|英格兰|rec|kpmg/i.test(t)) return { name: '英国', cb: '英国央行', curr: '英镑' };
+    if (/美联储|鲍威尔|fomc|非农|白宫|美国劳工部|美国cpi|美债/i.test(t)) return { name: '美联储/美国', cb: '美联储', curr: '美元' };
+    if (/欧洲央行|拉加德|欧元区/i.test(t)) return { name: '欧洲央行', cb: '欧洲央行', curr: '欧元' };
+    if (/日本央行|植田和男|日元|日经/i.test(t)) return { name: '日本央行', cb: '日本央行', curr: '日元' };
+    if (/人民银行|中国央行|央行公开市场|mlf|逆回购/i.test(t)) return { name: '中国央行', cb: '人民银行', curr: '人民币' };
+    
+    // 2. 宏观部委与监管
+    if (/财政部|发改委|证监会|工信部|商务部/i.test(t)) {
+      const m = t.match(/财政部|发改委|证监会|工信部|商务部/);
+      return { name: m ? m[0] : '部委宏观政策', cb: '宏观政策层', curr: 'A股' };
+    }
+    
+    // 3. 产油国组织与能源核心
+    if (/欧佩克|opec\+|opec|沙特阿美|产油国/i.test(t)) return { name: 'OPEC+产油国', cb: null, curr: '原油' };
+    
+    // 4. 全球核心硬科技与资产龙头
+    if (/英伟达|nvidia/i.test(t)) return { name: '英伟达', cb: null, curr: '科技股' };
+    if (/微软|microsoft/i.test(t)) return { name: '微软', cb: null, curr: '科技股' };
+    if (/苹果|apple/i.test(t)) return { name: '苹果', cb: null, curr: '消费电子' };
+    if (/特斯拉|tesla/i.test(t)) return { name: '特斯拉', cb: null, curr: '新能源车' };
+    if (/比特币|btc/i.test(t)) return { name: '比特币', cb: null, curr: '加密货币' };
+    if (/以太坊|eth/i.test(t)) return { name: '以太坊', cb: null, curr: '加密货币' };
+    if (/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i.test(t)) {
+      const m = t.match(/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i);
+      return { name: m[0], cb: null, curr: '核心标的' };
+    }
+    
+    // 5. 核心城市楼市
+    if (/广州|深圳|北京|上海|杭州|成都/i.test(t) && /限购|首付|楼市|房贷/i.test(t)) {
+      const city = t.match(/广州|深圳|北京|上海|杭州|成都/)[0];
+      return { name: city + '楼市', cb: null, curr: '房地产' };
+    }
+
+    // 6. 地缘热点国家与区域
+    if (/以色列|内塔尼亚胡|以军/i.test(t)) return { name: '以色列/中东', cb: null, curr: '黄金原油' };
+    if (/伊朗/i.test(t)) return { name: '伊朗', cb: null, curr: '原油' };
+    if (/俄罗斯|普京|俄军/i.test(t)) return { name: '俄罗斯', cb: null, curr: '原油' };
+    if (/乌克兰|泽连斯基/i.test(t)) return { name: '乌克兰', cb: null, curr: '地缘' };
+
+    // 7. 通用企业/机构名称提取
+    const corpMatch = t.match(/[\u4e00-\u9fa5]{2,10}(?:公司|企业|银行|控股|股份|科技|集团|药业|生物|证券|基金)/);
+    if (corpMatch) {
+      return { name: corpMatch[0], cb: null, curr: '个股基本面' };
+    }
+
+    // 8. 标题提取作为主体
+    if (alertData && alertData.title) {
+      const titleMatch = alertData.title.match(/^[^，,。；;\s]{2,8}/);
+      if (titleMatch && titleMatch[0].length >= 2) {
+        return { name: titleMatch[0], cb: null, curr: '相关要闻' };
+      }
+    }
+
+    return null;
+  }
+
+  extractMilestone(text) {
+    if (!text || typeof text !== 'string') return '';
+    const parts = [];
+
+    // 1. 周期/月度首次与极值 (e.g. 四个月来首次萎缩, 创今年5月以来最低)
+    const m1 = text.match(/(?:近|创)?(?:[\d一二三四五六七八九十]+个?月|[\d一二三四五六七八九十]+年)?(?:来)?(?:首次|首度)[^，,。；;\s]{2,10}/);
+    if (m1) parts.push(m1[0].trim());
+
+    // 2. 荣枯线破位/重回 (e.g. 跌破50荣枯线, 重返荣枯线上方)
+    const m2 = text.match(/(?:跌破|跌穿|跌落|重回|升破|站上|处于)?\s*(?:\d+(?:\.\d+)?\s*)?荣枯线/);
+    if (m2 && (!m1 || !m1[0].includes('荣枯线'))) parts.push(m2[0].trim());
+
+    // 3. 政策利率与基点 (e.g. 降息25个基点, 加息50个基点)
+    const m3 = text.match(/(?:降息|加息|降准|上调|下调)\s*\d+(?:\.\d+)?\s*(?:个?基点|个?百分点|%|bps)/i);
+    if (m3) parts.push(m3[0].trim());
+
+    // 4. 行情价格与点位大关 (e.g. 突破90000美元, 站上3000点)
+    const m4 = text.match(/(?:突破|站上|跌破)\s*[\d,]+(?:\.\d+)?\s*(?:点|美元|元)/);
+    if (m4) parts.push(m4[0].trim());
+
+    // 5. 核心地产/实物/能源动作 (e.g. 首套房首付降至15%, 取消限购, 全部售罄, 日均220万桶)
+    const mDownPayment = text.match(/(?:首套房)?首付(?:比例)?(?:降至|下调至)?\s*\d+%/);
+    if (mDownPayment) {
+      parts.push(mDownPayment[0].trim());
+    }
+    const m5 = text.match(/(?:取消限购|降低首付|全部售罄|日均\s*\d+(?:\.\d+)?\s*万桶)/);
+    if (m5 && !parts.some(p => p.includes(m5[0]))) parts.push(m5[0].trim());
+
+    // 6. 资金量级/利润规模 (e.g. 净流入超10亿美元, 增加化债资源10万亿元, 净利润增长超40%)
+    const m6 = text.match(/(?:净流入|流入|成交|净利润|增产|减产|化债资源|自愿减产)?\s*(?:超|达)?\s*[\d,]+(?:\.\d+)?\s*(?:万桶|亿美元|亿元|万亿元|%)/);
+    if (m6 && !m3 && !m4 && !mDownPayment && !parts.some(p => p.includes(m6[0]))) parts.push(m6[0].trim());
+
+    // 7. 专利/资质
+    const m7 = text.match(/获.*?专利授权/);
+    if (m7) parts.push(m7[0].trim());
+
+    return parts.filter(Boolean).slice(0, 2).join('，');
+  }
+
+  formatPrecisionSummary(sub, ms, eventName, transmission) {
+    let sName = sub ? sub.name : '';
+    let part1 = sName;
+    if (eventName) {
+      part1 += eventName;
+    }
+    if (ms) {
+      let cleanMs = ms;
+      if (sName && cleanMs.startsWith(sName)) {
+        cleanMs = cleanMs.slice(sName.length).trim();
+      }
+      if (cleanMs) {
+        part1 += '（' + cleanMs + '）';
+      }
+    }
+    if (part1) {
+      return `${part1}；${transmission}`;
+    }
+    return transmission;
+  }
+
+  extractDynamicHeadlineSummary(text, alertData = null, sub = null, ms = '') {
+    let clean = (alertData && alertData.title ? alertData.title + ' ' : '') + (alertData && alertData.content ? alertData.content : (text || ''));
+    clean = clean
+      .replace(/【(?:快讯|独家|突发|特报|要闻|重磅|盘中|午评|收评|盘前|早报|晚报|简讯|公告)】/g, ' ')
+      .replace(/（(?:新浪财经|财联社|证券时报|第一财经|界面新闻|同花顺|新华社|路透社|彭博社|央视网|央视新闻客户端|中新社)[^）]*）/g, ' ')
+      .replace(/\((?:Reuters|Bloomberg|CNBC|WSJ|AP)[^)]*\)/gi, ' ')
+      .replace(/^\s*\d{1,2}月\d{1,2}日[，,\s]*/, '')
+      .replace(/^(?:据.*?报道|据.*?消息|据.*?称)[，,\s]*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // 优先提取清晰简练的标题
+    if (alertData && alertData.title) {
+      let tClean = alertData.title
+        .replace(/【[^】]+】/g, '')
+        .replace(/（[^）]+）/g, '')
+        .replace(/\([^)]+\)/g, '')
+        .trim();
+      if (tClean.length >= 10 && tClean.length <= 40) {
+        return tClean;
+      }
+    }
+
+    const firstSentence = clean.split(/[。！？\n]/)[0].trim();
+    if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 40) {
+      return firstSentence;
+    }
+
+    if (sub && sub.name && ms) {
+      return `${sub.name}核心要闻（${ms}）；关注后续实际商业化与市场流动性传导`;
+    }
+
+    return firstSentence.substring(0, 36) + (firstSentence.length > 36 ? '...' : '');
+  }
+
+  ruleBasedAnalysis(text, alertData = null) {
+    const t = (text || '').toLowerCase();
     const res = {
       is_pending: false,
       summary: '',
@@ -605,7 +788,7 @@ ${watchlistHint}
     const coreFinancialWords = [
       '降息', '加息', 'cpi', 'gdp', '财报', '利润', '净利润', '营收', '股票', 
       'a股', '大盘', '加税', '关税', '非农', '准备金率', '违约', '破产', '涨停', '跌停',
-      '停战', '停火', '和谈', '原油', '黄金', '石油'
+      '停战', '停火', '和谈', '原油', '黄金', '石油', '就业', '招聘', '失业率', '荣枯线', 'pmi'
     ];
     const hasCoreFinance = coreFinancialWords.some(w => t.includes(w));
     if (!hasCoreFinance && nonFinancialWords.some(w => t.includes(w))) {
@@ -613,6 +796,12 @@ ${watchlistHint}
       res.impact_score = 0;
       return res;
     }
+
+    // 精准金融主体与异动数据智能提取
+    const sub = this.extractSubject(text, alertData);
+    const ms = this.extractMilestone(text);
+    const cbName = sub && sub.cb ? sub.cb : '央行';
+    const currName = sub && sub.curr ? sub.curr : '本币';
 
     // ==========================================
     // 1. 地缘政治与国际安全核心模型（严格区分：缓和停战 VS 冲突升级 VS 谈判破裂）
@@ -632,7 +821,7 @@ ${watchlistHint}
 
     // 1.1 谈判破裂 / 停火撕毁（明确看空权益，看多原油黄金）
     if (geoDeescalationNegation.some(w => t.includes(w))) {
-      res.summary = '地缘停火和谈破裂受阻，避险情绪与原油供给中断担忧再度升温';
+      res.summary = this.formatPrecisionSummary(sub, ms, '地缘和谈受阻破裂', '避险情绪与供给中断担忧再度升温，强化原油黄金避险配置');
       res.impact_score = 80;
       res.impacts['原油'] = '利好';
       res.impacts['黄金'] = '利好';
@@ -642,9 +831,9 @@ ${watchlistHint}
       return res;
     }
 
-    // 1.2 地缘缓和 / 停火草案 / 达成协议（核心关键：原油暴跌利空、黄金避险退潮利空、权益全面回暖利好！）
+    // 1.2 地缘缓和 / 停火草案 / 达成协议
     if (geoDeescalationKeywords.some(w => t.includes(w))) {
-      res.summary = '地缘局势现停火与和解曙光，原油地缘溢价大幅回落，全球市场风险偏好提振回暖';
+      res.summary = this.formatPrecisionSummary(sub, ms, '地缘现停火和解曙光', '原油地缘溢价大幅回落，全球市场风险偏好提振回暖');
       res.impact_score = 75;
       res.impacts['原油'] = '利空';
       res.impacts['黄金'] = '利空';
@@ -654,9 +843,9 @@ ${watchlistHint}
       return res;
     }
 
-    // 1.3 真实冲突与军事打击突发升级（必须有明确动作，排除纯地名实体误伤）
+    // 1.3 真实冲突与军事打击突发升级
     if (geoEscalationKeywords.some(w => t.includes(w))) {
-      res.summary = '地缘局势突发军事冲突升级，原油断供担忧骤起，资金大举涌入黄金与美元避险';
+      res.summary = this.formatPrecisionSummary(sub, ms, '突发军事冲突升级', '原油供给断供担忧骤起，资金大举涌入黄金与美元避险');
       res.impact_score = 85;
       res.impacts['原油'] = '利好';
       res.impacts['黄金'] = '利好';
@@ -674,7 +863,7 @@ ${watchlistHint}
     const tariffWarKeywords = ['加征关税', '提高关税', '征收关税', '关税战', '贸易战', '贸易摩擦', '出口管制', '反倾销税', '实体清单', '对华制裁'];
 
     if (isTariffRelief) {
-      res.summary = '国际关税壁垒趋于缓和豁免，贸易流通预期改善，显著提振出口供应链与风险资产';
+      res.summary = this.formatPrecisionSummary(sub, ms, '关税壁垒趋于豁免缓解', '跨国贸易流通预期改善，显著提振出口供应链与风险资产');
       res.impact_score = 70;
       res.impacts['A股'] = '利好';
       res.impacts['原油'] = '利好';
@@ -685,7 +874,7 @@ ${watchlistHint}
     }
 
     if (tariffWarKeywords.some(w => t.includes(w))) {
-      res.summary = '国际关税与贸易摩擦升级，推升二次通胀隐忧并扰动全球供应链与外需';
+      res.summary = this.formatPrecisionSummary(sub, ms, '关税与贸易摩擦升级', '推升二次通胀隐忧并扰动全球供应链分工，压制外需与权益风险偏好');
       res.impact_score = 75;
       res.impacts['美元'] = '利好';
       res.impacts['黄金'] = '利好';
@@ -698,22 +887,22 @@ ${watchlistHint}
     // ==========================================
     // 3. 宏观货币政策与央行流动性模型（降息宽松 VS 加息紧缩）
     // ==========================================
-    const dovishKeywords = ['降息', '宽松', '降准', '降准降息', '鸽派', '下调存款准备金率', '量化宽松', '公开市场净投放', '通胀放缓', 'cpi回落', '降息25个基点', '降息50个基点'];
-    const hawkishKeywords = ['加息', '紧缩', '鹰派', '上调基准利率', '通胀超预期', '通胀反弹', '维持高利率', '推迟降息', '不急于降息', '收紧银根', '量化紧缩', '缩表'];
+    const dovishKeywords = ['降息', '宽松', '降准', '降准降息', '鸽派', '下调存款准备金率', '量化宽松', '公开市场净投放', '降息25个基点', '降息50个基点'];
+    const hawkishKeywords = ['加息', '紧缩', '鹰派', '上调基准利率', '维持高利率', '推迟降息', '不急于降息', '收紧银根', '量化紧缩', '缩表'];
 
     if (dovishKeywords.some(w => t.includes(w))) {
-      res.summary = '全球流动性宽松预期升温，压低无息资产成本，股、币等高弹性风险资产全面受益';
+      res.summary = this.formatPrecisionSummary(sub, ms, '推进宽松降息', `基准利率调降压低借贷成本，提振黄金与高弹性流动性资产估值`);
       res.impact_score = 80;
       res.impacts['黄金'] = '利好';
       res.impacts['A股'] = '利好';
       res.impacts['虚拟币'] = '利好';
       res.impacts['原油'] = '利好';
-      res.impacts['美元'] = '利空';
+      res.impacts['美元'] = (sub && sub.name && sub.name.includes('美国')) ? '利空' : '中性';
       return res;
     }
 
     if (hawkishKeywords.some(w => t.includes(w))) {
-      res.summary = '央行紧缩立场延续推升美债收益率，无息资产与权益投机品估值承压收缩';
+      res.summary = this.formatPrecisionSummary(sub, ms, '延续紧缩鹰派立场', `推升国债实际收益率，无息资产与权益投机品估值承压收缩`);
       res.impact_score = 80;
       res.impacts['美元'] = '利好';
       res.impacts['黄金'] = '利空';
@@ -724,30 +913,208 @@ ${watchlistHint}
     }
 
     // ==========================================
-    // 4. 加密货币专属行业驱动（生态爆发 VS 暴雷黑天鹅）
+    // 4. 就业市场与劳动力供需模型（降温走弱 VS 强劲韧性）
     // ==========================================
-    const cryptoBullKeywords = ['比特币', '以太坊', 'btc', 'eth', 'sol', '币圈', '加密货币', '虚拟币', '区块链', 'web3', 'sec批准', 'etf资金净流入', '战略储备', '稳定币法案', '比特币减半'];
-    const cryptoBearKeywords = ['交易所爆仓', '黑客攻击', '清洗代币', '清盘', '破产重组', '监管打击', '下架代币', '查封交易所'];
+    const laborCoolingKeywords = [
+      '就业降温', '就业市场降温', '就业走弱', '招聘萎缩', '招工萎缩', '招工放缓', 
+      '首次萎缩', '跌破50荣枯线', '跌破荣枯线', '招聘指数从', '招聘指数', '劳动力市场降温',
+      '裁员潮', '裁员计划', '失业率上升', '申请失业救济人数增加', '初请失业金人数超预期', '非农不及预期'
+    ];
+    const laborHotKeywords = [
+      '就业强劲', '非农超预期', '新增非农超预期', '失业率降至', '失业率创下新低', '劳动力需求旺盛', '招工紧俏', '就业韧性'
+    ];
 
-    if (cryptoBearKeywords.some(w => t.includes(w)) && cryptoBullKeywords.some(w => t.includes(w))) {
-      res.summary = '加密行业监管重拳或安全黑天鹅爆发，链上流动性骤降，代币遭遇恐慌抛售';
-      res.impact_score = 80;
+    if (laborCoolingKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '就业招聘走弱降温', `实体用工快速收缩将倒逼${cbName}加快降息步伐，${currName}汇率承压`);
+      res.impact_score = 58;
+      res.impacts['黄金'] = '利好';
+      res.impacts['美元'] = (sub && sub.name && sub.name.includes('美国')) ? '利空' : '中性';
+      res.impacts['原油'] = '利空';
+      res.impacts['A股'] = '中性';
+      res.impacts['虚拟币'] = '利好';
+      return res;
+    }
+
+    if (laborHotKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '就业数据展现超预期韧性', `劳动力市场紧俏缓解经济硬着陆担忧，或压制激进降息空间`);
+      res.impact_score = 60;
+      res.impacts['美元'] = '利好';
+      res.impacts['黄金'] = '利空';
+      res.impacts['原油'] = '利好';
+      res.impacts['A股'] = '中性';
       res.impacts['虚拟币'] = '利空';
       return res;
     }
-    if (cryptoBullKeywords.some(w => t.includes(w))) {
-      res.summary = '加密核心资产热点催化与资金净流入，链上流动性与情绪显著活跃';
+
+    // ==========================================
+    // 5. 宏观景气与制造业/服务业PMI模型（收缩破位 VS 重回扩张）
+    // ==========================================
+    const pmiContractionKeywords = [
+      '制造业pmi萎缩', '服务业pmi下滑', 'pmi降至', '跌入收缩区间', '景气度低迷', '经济增长放缓', '衰退风险', '外需走弱'
+    ];
+    const pmiExpansionKeywords = [
+      'pmi重回荣枯线', '重回扩张区间', '制造业pmi超预期', '服务业pmi强劲', '景气度显著回升', '经济企稳回升'
+    ];
+
+    if (pmiContractionKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '宏观景气与PMI收缩', `实体总需求动能偏弱，避险情绪升温并打开${cbName}逆周期托底空间`);
+      res.impact_score = 58;
+      res.impacts['美元'] = (sub && sub.name && sub.name.includes('美国')) ? '利空' : '中性';
+      res.impacts['黄金'] = '利好';
+      res.impacts['原油'] = '利空';
+      res.impacts['A股'] = (sub && sub.name && sub.name.includes('中国')) ? '利空' : '中性';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    if (pmiExpansionKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '主要景气指标重返扩张区间', '供需两端共振修复，显著提振顺周期资产配置信心');
       res.impact_score = 65;
+      res.impacts['A股'] = '利好';
+      res.impacts['原油'] = '利好';
+      res.impacts['美元'] = '利好';
+      res.impacts['黄金'] = '中性';
       res.impacts['虚拟币'] = '利好';
       return res;
     }
 
     // ==========================================
-    // 5. 财政刺激与宏观经济复苏（特别国债/化债/实体增长）
+    // 6. 物价指数与通胀预期模型（通胀降温 VS 通胀反弹高企）
+    // ==========================================
+    const inflationCoolingKeywords = ['cpi回落', '通胀放缓', '通胀降温', 'cpi低于预期', '通胀走低', '物价涨幅收窄', '核心cpi放缓', 'ppi降幅扩大'];
+    const inflationHotKeywords = ['cpi超预期', '通胀反弹', '通胀超预期高企', '核心通胀反弹', '再通胀', '通胀顽固', '物价超预期上涨'];
+
+    if (inflationCoolingKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '通胀指标持续走低降温', `物价上行压力显著缓解，为${cbName}后续宽松降息打开更大操作空间`);
+      res.impact_score = 65;
+      res.impacts['黄金'] = '利好';
+      res.impacts['虚拟币'] = '利好';
+      res.impacts['A股'] = '利好';
+      res.impacts['美元'] = (sub && sub.name && sub.name.includes('美国')) ? '利空' : '中性';
+      res.impacts['原油'] = '中性';
+      return res;
+    }
+
+    if (inflationHotKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '物价通胀超预期反弹高企', '通胀高粘性加剧再通胀担忧，降息预期受阻承压');
+      res.impact_score = 70;
+      res.impacts['美元'] = '利好';
+      res.impacts['黄金'] = '利空';
+      res.impacts['虚拟币'] = '利空';
+      res.impacts['A股'] = '利空';
+      res.impacts['原油'] = '利好';
+      return res;
+    }
+
+    // ==========================================
+    // 7. 房地产与城建基建模型（核心松绑支持 VS 债务违约出清）
+    // ==========================================
+    const realEstateSupportKeywords = ['楼市新政', '取消限购', '降低首付', '下调房贷利率', '公积金新政', '白名单项目', '保交楼', '城中村改造', '商品房销售回暖'];
+    const realEstateRiskKeywords = ['房企爆雷', '房企违约', '债务重组', '销售大幅下滑', '断供'];
+
+    if (realEstateSupportKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '信贷与限购松绑落地', '一线与重点城市政策底夯实，加速二手房去化与房企流动性改善');
+      res.impact_score = 65;
+      res.impacts['A股'] = '利好';
+      res.impacts['原油'] = '利好';
+      res.impacts['虚拟币'] = '中性';
+      res.impacts['黄金'] = '中性';
+      res.impacts['美元'] = '中性';
+      return res;
+    }
+
+    if (realEstateRiskKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '房企融资端与债务承压', '行业处于深度调整筑底与信用出清阶段，基本面拐点仍待修复');
+      res.impact_score = 65;
+      res.impacts['A股'] = '利空';
+      res.impacts['原油'] = '利空';
+      res.impacts['美元'] = '中性';
+      res.impacts['黄金'] = '利好';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    // ==========================================
+    // 8. 科技与半导体/AI硬核产业链（算力爆发 VS 出口管制封锁）
+    // ==========================================
+    const techBullKeywords = ['算力爆发', 'ai大模型', '半导体需求', '芯片订单', '先进封装', '资本开支大增', '算力集群', '大模型发布', '智能驾驶方案落地', '芯片已全部售罄', '全部售罄', '售罄'];
+    const techBearKeywords = ['芯片制裁', '先进芯片管制', '半导体出口管制', '技术封锁', '断供', '限制对华出口'];
+
+    if (techBullKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '先进制程与算力爆发', '科技巨头Capex资本开支高位延续，提振半导体与算力产业链高景气');
+      res.impact_score = 68;
+      res.impacts['A股'] = '利好';
+      res.impacts['虚拟币'] = '利好';
+      res.impacts['美元'] = '中性';
+      res.impacts['原油'] = '中性';
+      res.impacts['黄金'] = '中性';
+      return res;
+    }
+
+    if (techBearKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '先进制程供应链限制升级', '短期板块受地缘情绪扰动，中长期加速国产核心技术自主可控替代');
+      res.impact_score = 70;
+      res.impacts['A股'] = '利空';
+      res.impacts['美元'] = '利好';
+      res.impacts['黄金'] = '中性';
+      res.impacts['原油'] = '中性';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    // ==========================================
+    // 9. 能源与工业大宗商品（OPEC减产挺价 VS 累库疲软增产）
+    // ==========================================
+    const oilBullKeywords = ['opec减产', '欧佩克减产', '延长减产', '自愿减产措施延长', '原油库存超预期下降', '天然气供给受限', '原油断供', '自愿减产'];
+    const oilBearKeywords = ['原油库存增加', '原油超预期累库', '原油大幅增产', '提高石油产量', '原油需求疲软'];
+
+    if (oilBullKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '收紧供给自愿减产挺价', '原油现货与供给端偏紧托底油价底线，短期提振大宗现货溢价');
+      res.impact_score = 68;
+      res.impacts['原油'] = '利好';
+      res.impacts['美元'] = '利好';
+      res.impacts['A股'] = '中性';
+      res.impacts['黄金'] = '中性';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    if (oilBearKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '原油大宗超预期累库增产', '下游工业消耗疲软与供应放量，压制国际能源价格中枢');
+      res.impact_score = 60;
+      res.impacts['原油'] = '利空';
+      res.impacts['美元'] = '利空';
+      res.impacts['A股'] = '中性';
+      res.impacts['黄金'] = '中性';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    // ==========================================
+    // 10. 加密货币专属行业驱动（生态爆发 VS 暴雷黑天鹅）
+    // ==========================================
+    const cryptoBullKeywords = ['比特币', '以太坊', 'btc', 'eth', 'sol', '币圈', '加密货币', '虚拟币', '区块链', 'web3', 'sec批准', 'etf资金净流入', '战略储备', '稳定币法案', '比特币减半'];
+    const cryptoBearKeywords = ['交易所爆仓', '黑客攻击', '清洗代币', '清盘', '破产重组', '监管打击', '下架代币', '查封交易所'];
+
+    if (cryptoBearKeywords.some(w => t.includes(w)) && cryptoBullKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '突发监管重拳或链上清算', '链上流动性骤降引发多头踩踏抛售，短线震荡探底寻支撑');
+      res.impact_score = 80;
+      res.impacts['虚拟币'] = '利空';
+      return res;
+    }
+    if (cryptoBullKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '资金持续强势净流入', '机构现货ETF买盘吸筹充沛，维持高位强势多头格局');
+      res.impact_score = 68;
+      res.impacts['虚拟币'] = '利好';
+      return res;
+    }
+
+    // ==========================================
+    // 11. 财政刺激与宏观经济复苏（特别国债/化债/实体增长）
     // ==========================================
     const fiscalStimulusKeywords = ['特别国债', '财政发力', '地方化债', '增量财政', '超长期国债', '扩大内需', '设备更新', '以旧换新', '一揽子增量政策', '稳增长政策'];
     if (fiscalStimulusKeywords.some(w => t.includes(w))) {
-      res.summary = '增量财政与稳增长政策加码发力，提振实体用能需求与核心权益估值信心';
+      res.summary = this.formatPrecisionSummary(sub, ms, '一揽子增量政策加码落地', '大幅置换地方隐性债务缓释流动性压力，利好顺周期资产与权益估值修复');
       res.impact_score = 75;
       res.impacts['A股'] = '利好';
       res.impacts['原油'] = '利好';
@@ -758,19 +1125,23 @@ ${watchlistHint}
     }
 
     // ==========================================
-    // 6. 权益市场（A股/港股）基本面驱动
+    // 12. 权益市场（A股/港股）基本面驱动与资本市场改革
     // ==========================================
-    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '扭亏为盈', '净利润增长', '引导长期资金'].some(w => t.includes(w))) {
-      res.summary = '核心产业链盈利向好或资本市场改革深化，稳固宏观风险偏好与估值修复';
-      res.impact_score = 55;
+    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '扭亏为盈', '净利润增长', '引导长期资金', '市值管理', '分红'].some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(sub, ms, '基本面改善与资本回报提升', '盈利预期稳健或股东增持回购加码，稳固宏观风险偏好与估值修复');
+      res.impact_score = 58;
       res.impacts['A股'] = '利好';
       res.impacts['原油'] = '利好';
       return res;
     }
 
-    // 默认中性兜底
-    res.summary = '宏观政策与产业要闻密集释放，多空力量博弈均衡，资产走势分化';
-    res.impact_score = 30;
+    // ==========================================
+    // 13. 终极动态语义摘要提炼器 (Dynamic Headline Extractor)
+    // 坚决摒弃死板万能模板与概论套话，根据新闻本身高密度提取真实事实短句！
+    // ==========================================
+    const dynamicHeadline = this.extractDynamicHeadlineSummary(text, alertData, sub, ms);
+    res.summary = dynamicHeadline ? dynamicHeadline : '核心要闻动态更新，关注实际宏观与产业流动性传导';
+    res.impact_score = 35;
     return res;
   }
 
@@ -815,14 +1186,24 @@ ${watchlistHint}
       if (resp.ok) {
         return { success: true, msg: '鉴权成功！大模型响应正常就绪' };
       } else {
-        let errDesc = '';
+        let rawErr = '';
         try {
           const errJson = await resp.json();
-          errDesc = errJson.error ? (errJson.error.message || JSON.stringify(errJson.error)) : JSON.stringify(errJson);
+          rawErr = errJson.error ? (errJson.error.message || JSON.stringify(errJson.error)) : JSON.stringify(errJson);
         } catch (e) {
-          errDesc = `HTTP ${resp.status} (${resp.statusText})`;
+          rawErr = `HTTP ${resp.status} (${resp.statusText})`;
         }
-        return { success: false, msg: errDesc || `HTTP ${resp.status}` };
+
+        let userFriendlyMsg = rawErr;
+        if (resp.status === 402 || rawErr.includes('Insufficient Balance')) {
+          userFriendlyMsg = `账户余额不足 (HTTP 402 Insufficient Balance)，请前往平台充值额度`;
+        } else if (resp.status === 401 || rawErr.includes('invalid') || rawErr.includes('Authentication')) {
+          userFriendlyMsg = `API Key 无效或未授权 (HTTP 401)，请核对 Key 是否正确`;
+        } else if (resp.status === 429) {
+          userFriendlyMsg = `接口并发超限或配额耗尽 (HTTP 429 Too Many Requests)`;
+        }
+
+        return { success: false, msg: userFriendlyMsg };
       }
     } catch (e) {
       clearTimeout(timeoutId);

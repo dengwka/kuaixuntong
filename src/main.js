@@ -24,6 +24,14 @@ const cryptoPriceManager = require('./cryptoPrice');
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
 
+// 深度适配企业内网环境：忽略内网行为审计/安全网关弱算法或自签拦截证书，彻底解决 net::ERR_CERT_WEAK_SIGNATURE_ALGORITHM
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('allow-insecure-localhost', 'true');
+app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+  event.preventDefault();
+  callback(true);
+});
+
 // 单实例锁：防止多开冲突
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -52,7 +60,7 @@ const DOMESTIC_PROXY_BYPASS_LIST = [
   '<local>',
   '127.0.0.1',
   'localhost',
-  '*.cn',               // 统统直连：所有 .cn 域名（包含 .gov.cn, .edu.cn, .com.cn 等）
+  '*.gov.cn',           // 政府政务直连（保留具体政务直连，避免全局 *.cn 阻断飞书等办公应用走代理避开内网封锁）
   '*jin10.com',         // 金十快讯主站及 API
   '*xueqiu.com',        // 雪球财经
   '*eastmoney.com',     // 东方财富
@@ -154,7 +162,7 @@ function checkLocalPort(port, timeoutMs = 150) {
 }
 
 async function findOpenLocalProxy() {
-  const commonPorts = [7890, 7892, 10809, 6152, 10808];
+  const commonPorts = [7890, 7897, 7892, 10809, 6152, 10808];
   try {
     const results = await Promise.all(commonPorts.map(p => checkLocalPort(p, 150)));
     const openPort = results.find(p => p !== null);
@@ -167,6 +175,14 @@ async function findOpenLocalProxy() {
 
 async function configureSmartProxy(sess, cfgMgr) {
   if (!sess || !sess.defaultSession) return;
+
+  // 深度适配企业内网：全局信任自签/弱签名网关证书
+  try {
+    sess.defaultSession.setCertificateVerifyProc((request, callback) => {
+      callback(0); // 0 = PR_SUCCESS, 信任内网弱签名/中间人审计证书
+    });
+  } catch (e) {}
+
   const cfg = cfgMgr ? cfgMgr.config : {};
   let proxySetting = (cfg.system?.proxy || cfg.sources?.x_twitter?.proxy || cfg.crypto_prices?.proxy || '').trim();
   

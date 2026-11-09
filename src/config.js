@@ -395,6 +395,8 @@ class ConfigManager {
         wecom_webhook_url: '',
         feishu_enabled: false,
         feishu_mode: 'webhook', // 'webhook' 或 'agent' (智能体/自建应用模式)
+        feishu_use_proxy: true, // 飞书推送是否走网络代理 (默认开启 · 避开内网防火墙封锁)
+        feishu_proxy: '', // 手工指定代理地址 (如 http://127.0.0.1:7897)，留空则自动跟随系统代理
         feishu_webhook_url: '',
         feishu_secret: '',
         feishu_app_id: '',
@@ -524,6 +526,12 @@ class ConfigManager {
                   }
                   if (bkParsed.mobile_push.feishu_receive_id && (!merged.mobile_push.feishu_receive_id || !merged.mobile_push.feishu_receive_id.trim())) {
                     merged.mobile_push.feishu_receive_id = bkParsed.mobile_push.feishu_receive_id;
+                  }
+                  if (bkParsed.mobile_push.feishu_use_proxy !== undefined) {
+                    merged.mobile_push.feishu_use_proxy = bkParsed.mobile_push.feishu_use_proxy;
+                  }
+                  if (bkParsed.mobile_push.feishu_proxy !== undefined) {
+                    merged.mobile_push.feishu_proxy = bkParsed.mobile_push.feishu_proxy;
                   }
                   if (bkParsed.mobile_push.serverchan_sendkey && (!merged.mobile_push.serverchan_sendkey || !merged.mobile_push.serverchan_sendkey.trim())) {
                     merged.mobile_push.serverchan_sendkey = bkParsed.mobile_push.serverchan_sendkey;

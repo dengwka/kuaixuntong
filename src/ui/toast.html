@@ -700,6 +700,11 @@
       color: #15803D;
       border: 1px solid #BBF7D0;
     }
+    .ai-tag-fallback-warn {
+      background: #FFFBEB;
+      color: #B45309;
+      border: 1px solid #FCD34D;
+    }
     .ai-tag-test {
       background: #F1F5F9;
       color: #475569;
@@ -1172,6 +1177,8 @@
     function isChineseText(str) {
       if (!str) return false;
       const clean = str.replace(/https?:\/\/\S+/g, '').replace(/[@#]\S+/g, '').trim();
+      // 日韩字符绝不是纯中文
+      if (/[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(clean)) return false;
       const chCount = (clean.match(/[\u4e00-\u9fa5]/g) || []).length;
       return chCount > 4 && (chCount / Math.max(1, clean.length) > 0.25 || chCount >= 8);
     }
@@ -1713,16 +1720,23 @@
       const cleanContent = rawContent.replace(/\n{3,}/g, '\n\n');
       const cleanOriginal = rawOriginal.replace(/\n{3,}/g, '\n\n');
 
+      // 容错过滤：若内容中意外包含机翻服务报错字符串，自动丢弃报错并优雅回退为原文
+      let safeContent = cleanContent;
+      if (safeContent.toUpperCase().includes('QUERY LENGTH LIMIT EXCEEDED') || safeContent.toUpperCase().includes('MAX ALLOWED QUERY') || safeContent.toUpperCase().includes('MYMEMORY WARNING')) {
+        safeContent = cleanOriginal || '';
+      }
+
       // 推文原文排版优化：如果原文为中文则坚决不显示原文；仅当属于外文机翻时，以清晰细横线隔开，紧凑自然排版
       const hasForeignOriginal = alertData.original_text && 
                                  alertData.is_translated && 
-                                 cleanOriginal !== cleanContent && 
+                                 cleanOriginal !== safeContent && 
+                                 safeContent !== cleanOriginal &&
                                  !isChineseText(cleanOriginal);
 
       if (isXTwitter && hasForeignOriginal) {
-        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(cleanContent)}</div><div style="border-top: 1px solid #E2E8F0; margin: 8px 0 6px 0;"></div><div style="font-size: 11.5px; color: #64748B; line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(cleanOriginal)}</div>`;
+        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(safeContent)}</div><div style="border-top: 1px solid #E2E8F0; margin: 8px 0 6px 0;"></div><div style="font-size: 11.5px; color: #64748B; line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(cleanOriginal)}</div>`;
       } else {
-        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(cleanContent)}</div>`;
+        bodyEl.innerHTML = `<div class="content-body-inner">${highlightNumbers(safeContent)}</div>`;
       }
 
       // 财经日历数据
@@ -1822,9 +1836,11 @@
           const aiSource = aiData.ai_source || '本地规则默认分析';
           aiTag.textContent = `💡 观点分析（来源：${aiSource}）`;
 
-          if (aiSource.includes('DeepSeek')) {
+          if (aiSource.includes('余额不足') || aiSource.includes('异常') || aiSource.includes('失败')) {
+            aiTag.className = 'ai-tag-badge ai-tag-fallback-warn';
+          } else if (aiSource.includes('DeepSeek') && !aiSource.includes('本地')) {
             aiTag.className = 'ai-tag-badge ai-tag-deepseek';
-          } else if (aiSource.includes('智谱') || aiSource.includes('GLM')) {
+          } else if ((aiSource.includes('智谱') || aiSource.includes('GLM')) && !aiSource.includes('本地')) {
             aiTag.className = 'ai-tag-badge ai-tag-zhipu';
           } else if (isTest) {
             aiTag.className = 'ai-tag-badge ai-tag-test';
@@ -1832,7 +1848,7 @@
             aiTag.className = 'ai-tag-badge ai-tag-rule';
           }
 
-          aiSummary.textContent = aiData.summary || '宏观政策与产业要闻密集释放，市场多空博弈均衡。';
+          aiSummary.textContent = aiData.summary || '要闻核心事实提取，多资产影响分化';
 
           // 关键需求：针对“本地周边”规划与问政，完全不展示利好利空胶囊，保持纯净大白话解读
           const isLocalGov = (alertData.source_key === 'local_gov' || (alertData.source && alertData.source.includes('本地周边')));

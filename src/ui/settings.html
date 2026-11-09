@@ -704,7 +704,7 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.4.2 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.4.3 · 运行中</span>
     </div>
   </div>
 
@@ -1772,6 +1772,29 @@
               </div>
               <div id="feishuAgentTestNotice" style="font-size: 12px; font-weight: 600; margin-top: 6px; display: none;"></div>
             </div>
+
+            <!-- 🌐 飞书网络代理与穿透配置 (支持手工输入代理或跟随系统，默认开启以避开企业内网防火墙封锁) -->
+            <div style="margin-top: 10px; padding-top: 9px; border-top: 1px dashed #CBD5E1;">
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 9px 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <label class="checkbox-row" style="margin: 0; cursor: pointer; font-size: 12px;">
+                    <input type="checkbox" id="mobileFeishuUseProxy" checked onchange="toggleFeishuProxyRow(this.checked)" />
+                    <b style="color: #1E293B;">🌐 启用网络代理推送飞书 (默认开启 · 避开公司内网防火墙封锁)</b>
+                  </label>
+                  <span id="feishuSystemProxyTip" style="font-size: 11px; color: #0284C7; font-weight: 600;"></span>
+                </div>
+                <div id="feishuProxyInputRow" style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11.5px; color: #475569; white-space: nowrap; font-weight: 600;">代理地址:</span>
+                  <input type="text" id="mobileFeishuProxy" class="form-control" style="flex: 1; min-width: 0; font-size: 11.5px; font-family: monospace; height: 30px; padding: 4px 10px;" placeholder="留空自动跟随系统代理 (如 http://127.0.0.1:7897)" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnFeishuFollowSystemProxy" style="flex-shrink: 0; font-size: 11px; padding: 2px 10px; height: 30px; font-weight: 600;">
+                    🔄 跟随系统
+                  </button>
+                </div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 5px; line-height: 1.5;">
+                  💡 <b>使用说明</b>：可手工输入指定代理地址（如 <code>http://127.0.0.1:7897</code> 或 <code>http://127.0.0.1:7890</code>），留空或点击【跟随系统】将自动使用本机系统代理穿透企业内网封锁。
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 通道 3: 微信公众号直推 -->
@@ -2597,13 +2620,22 @@
     }
     window.toggleImpactFilterRow = toggleImpactFilterRow;
 
+    function toggleFeishuProxyRow(enabled) {
+      const row = document.getElementById('feishuProxyInputRow');
+      if (row) {
+        row.style.opacity = enabled ? '1' : '0.4';
+        row.style.pointerEvents = enabled ? 'auto' : 'none';
+      }
+    }
+    window.toggleFeishuProxyRow = toggleFeishuProxyRow;
+
     function applySettingsPayload(payload) {
       if (!payload) return;
       const cfg = payload.config || payload || {};
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.4.2';
+      const appVer = payload.appVersion || '1.4.3';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -2900,6 +2932,29 @@
         document.getElementById('mobileFeishuReceiveId').value = mobilePush.feishu_receive_id || '';
       }
       switchFeishuMode(mobilePush.feishu_mode === 'agent' ? 'agent' : 'webhook');
+
+      // 飞书网络代理与穿透状态初始化
+      window._lastDetectedProxy = payload.detectedProxy || '';
+      if (document.getElementById('mobileFeishuUseProxy')) {
+        const useProxy = mobilePush.feishu_use_proxy !== false;
+        document.getElementById('mobileFeishuUseProxy').checked = useProxy;
+        if (typeof toggleFeishuProxyRow === 'function') {
+          toggleFeishuProxyRow(useProxy);
+        }
+      }
+      if (document.getElementById('mobileFeishuProxy')) {
+        document.getElementById('mobileFeishuProxy').value = mobilePush.feishu_proxy || '';
+        const detected = payload.detectedProxy || '';
+        if (detected) {
+          document.getElementById('mobileFeishuProxy').placeholder = `留空自动跟随系统代理 (${detected})`;
+        }
+      }
+      if (document.getElementById('feishuSystemProxyTip')) {
+        const detected = payload.detectedProxy || '';
+        document.getElementById('feishuSystemProxyTip').innerHTML = detected
+          ? `🟢 探测到系统代理: <b>${escapeHtml(detected)}</b>`
+          : '⚪ 未检测到独立系统代理';
+      }
       if (document.getElementById('mobileServerChanEnabled')) {
         document.getElementById('mobileServerChanEnabled').checked = mobilePush.serverchan_enabled === true;
       }
@@ -3581,7 +3636,9 @@
         }
 
         try {
-          const res = await ipcRenderer.invoke('test-feishu-push', { mode: 'webhook', webhookUrl, secret });
+          const useProxy = document.getElementById('mobileFeishuUseProxy') ? document.getElementById('mobileFeishuUseProxy').checked : true;
+          const proxy = document.getElementById('mobileFeishuProxy') ? document.getElementById('mobileFeishuProxy').value.trim() : '';
+          const res = await ipcRenderer.invoke('test-feishu-push', { mode: 'webhook', webhookUrl, secret, useProxy, proxy });
           btn.disabled = false;
           if (noticeEl) {
             if (res && res.success) {
@@ -3629,11 +3686,15 @@
         }
 
         try {
+          const useProxy = document.getElementById('mobileFeishuUseProxy') ? document.getElementById('mobileFeishuUseProxy').checked : true;
+          const proxy = document.getElementById('mobileFeishuProxy') ? document.getElementById('mobileFeishuProxy').value.trim() : '';
           const res = await ipcRenderer.invoke('test-feishu-push', {
             mode: 'agent',
             appId,
             appSecret,
-            receiveId
+            receiveId,
+            useProxy,
+            proxy
           });
           btn.disabled = false;
           if (noticeEl) {
@@ -3650,6 +3711,24 @@
           if (noticeEl) {
             noticeEl.style.color = '#DC2626';
             noticeEl.textContent = `❌ 网络连接异常: ${err.message}`;
+          }
+        }
+      });
+    }
+
+    const btnFeishuFollowSystemProxyEl = document.getElementById('btnFeishuFollowSystemProxy');
+    if (btnFeishuFollowSystemProxyEl) {
+      btnFeishuFollowSystemProxyEl.addEventListener('click', () => {
+        const proxyInput = document.getElementById('mobileFeishuProxy');
+        if (proxyInput) {
+          proxyInput.value = '';
+          const detected = window._lastDetectedProxy || '';
+          if (detected) {
+            proxyInput.placeholder = `已设为跟随系统代理 (${detected})`;
+            showNotice(`已切换为跟随系统代理: ${detected}`);
+          } else {
+            proxyInput.placeholder = '已设为跟随系统代理';
+            showNotice('已切换为跟随系统代理');
           }
         }
       });
@@ -5038,6 +5117,8 @@
           wecom_webhook_url: document.getElementById('mobileWeComWebhook').value.trim(),
           feishu_enabled: document.getElementById('mobileFeishuEnabled') ? document.getElementById('mobileFeishuEnabled').checked : false,
           feishu_mode: currentFeishuMode || 'webhook',
+          feishu_use_proxy: document.getElementById('mobileFeishuUseProxy') ? document.getElementById('mobileFeishuUseProxy').checked : true,
+          feishu_proxy: document.getElementById('mobileFeishuProxy') ? document.getElementById('mobileFeishuProxy').value.trim() : '',
           feishu_webhook_url: document.getElementById('mobileFeishuWebhook') ? document.getElementById('mobileFeishuWebhook').value.trim() : '',
           feishu_secret: document.getElementById('mobileFeishuSecret') ? document.getElementById('mobileFeishuSecret').value.trim() : '',
           feishu_app_id: document.getElementById('mobileFeishuAppId') ? document.getElementById('mobileFeishuAppId').value.trim() : '',

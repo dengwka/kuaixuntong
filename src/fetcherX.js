@@ -12,6 +12,8 @@ class XFetcher {
     this.coolingMap = new Map(); // screen_name -> { untilMs, backoffSec }
     this.lastPolledMap = new Map(); // screen_name -> timestamp
     this.isPolling = false;
+    this.roundRobinCursor = 0;
+    this.syndicationBlockedUntil = 0; // 全局 Syndication 429 IP 冷却到期时间戳
   }
 
   setFinancialAi(ai) {
@@ -21,9 +23,28 @@ class XFetcher {
   getProxyConfig() {
     const cfg = this.configManager ? this.configManager.config : {};
     const xCfg = (cfg.sources && cfg.sources.x_twitter) || {};
-    let proxy = (xCfg.proxy || '').trim();
+    let proxy = (xCfg.proxy || (cfg.crypto_prices && cfg.crypto_prices.proxy) || (cfg.system && cfg.system.proxy) || '').trim();
     if (!proxy) {
-      proxy = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:7892';
+      proxy = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.ALL_PROXY ||
+              process.env.http_proxy || process.env.https_proxy || '';
+    }
+    if (!proxy && process.platform === 'win32') {
+      try {
+        const { execSync } = require('child_process');
+        const output = execSync('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"', { encoding: 'utf8', timeout: 1000 });
+        const enabledMatch = output.match(/ProxyEnable\s+REG_DWORD\s+0x([0-9a-fA-F]+)/);
+        if (enabledMatch && parseInt(enabledMatch[1], 16) === 1) {
+          const serverMatch = output.match(/ProxyServer\s+REG_SZ\s+([^\r\n]+)/);
+          if (serverMatch && serverMatch[1]) {
+            let s = serverMatch[1].trim();
+            if (!s.startsWith('http://') && !s.startsWith('https://')) s = 'http://' + s;
+            proxy = s;
+          }
+        }
+      } catch (e) {}
+    }
+    if (!proxy) {
+      proxy = 'http://127.0.0.1:7897';
     }
     return proxy;
   }
@@ -415,102 +436,169 @@ class XFetcher {
   }
 
   /**
-   * 统一轻量时间线拉取器：
-   * 引擎 1: 官方 Syndication 轻量管道 (首推！单次仅约 15~25 KB，流量消耗降低 98%，解析极速)
-   * 引擎 2: FxTwitter 轻量 JSON API 兜底 (单次约 5 KB)
+   * 解析 FxTwitter / FixTweet 官方 RSS 格式的时间线推文流
+   * 包含：正文（去除HTML标签与多余链接）、配图列表（media:thumbnail/enclosure）、转推与回复判断、推文ID与时间戳
+   */
+  parseFxTwitterRss(xml, screenName, account = {}) {
+    const tweets = [];
+    if (!xml || typeof xml !== 'string') return tweets;
+    const items = xml.split('<item>').slice(1);
+    const cleanScreen = (screenName || '').toLowerCase();
+
+    for (const item of items) {
+      const linkMatch = item.match(/<link>([\s\S]*?)<\/link>/);
+      const link = linkMatch ? linkMatch[1].trim() : '';
+      const idMatch = link.match(/status\/(\d+)/);
+      const id_str = idMatch ? idMatch[1] : '';
+      if (!id_str) continue;
+
+      const dateMatch = item.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+      const pubDateStr = dateMatch ? dateMatch[1].trim() : '';
+      const created_at_ms = pubDateStr ? new Date(pubDateStr).getTime() : Date.now();
+
+      // 解析 description 标签内的推文正文
+      const descMatch = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || item.match(/<description>([\s\S]*?)<\/description>/);
+      let desc = descMatch ? descMatch[1] : '';
+      desc = desc.replace(/<br\s*\/?>/gi, '\n');
+      desc = desc.replace(/<p>([\s\S]*?)<\/p>/gi, '$1\n');
+      desc = desc.replace(/<a[^>]*href="[^"]*"[^>]*>Media<\/a>/gi, '');
+      desc = desc.replace(/<a[^>]*href="[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, '$1');
+      desc = desc.replace(/<[^>]+>/g, '');
+      desc = desc.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+      desc = this.cleanTweetText(desc);
+
+      // 提取配图或视频封面
+      const pics = [];
+      const mediaMatches = item.matchAll(/<(?:media:content|media:thumbnail|enclosure)[^>]*url="([^"]+)"/g);
+      for (const m of mediaMatches) {
+        const u = m[1];
+        if (u && !pics.includes(u) && !u.endsWith('.mp4') && !u.includes('.mp4?')) {
+          pics.push(u);
+        }
+      }
+
+      // 如果链接中的用户名不包含当前博主，判定为转推
+      const isRetweet = !link.toLowerCase().includes('/' + cleanScreen + '/');
+      const isReply = desc.startsWith('@');
+
+      tweets.push({
+        id_str,
+        text: desc,
+        raw_text: desc,
+        created_at_ms,
+        created_at: pubDateStr || new Date(created_at_ms).toISOString(),
+        pics: pics.slice(0, 4),
+        author_name: account.name || screenName,
+        author_handle: screenName,
+        author_avatar: account.avatar || '',
+        is_reply: isReply,
+        is_retweet: isRetweet,
+        is_note_tweet: desc.length > 280
+      });
+    }
+    return tweets;
+  }
+
+  /**
+   * 统一轻量多引擎时间线拉取器：
+   * 引擎 1: 官方 Syndication 轻量管道 (单次仅约 15~25 KB，配额正常时首选)
+   * 引擎 2: FxTwitter 官方 RSS 镜像通道 (无 429 限制，每分钟配额高达 1000 次，极速且内容完整，遇到频控无缝兜底)
    * 引擎 3: x.com 主页直连 (单次高达 1~2 MB，极耗流量，仅作为极端保底)
    */
   async fetchAccountTimeline(screenName, account = {}) {
     const cleanName = this.cleanScreenName(screenName);
     if (!cleanName) return { success: false, tweets: [] };
 
-    // 1. 尝试引擎 1: Syndication 轻量管道 (首选，极省流量)
-    try {
-      const synUrl = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${cleanName}`;
-      const synResp = await this.makeRequest(synUrl);
-      if (synResp.statusCode === 200) {
-        const nextData = this.parseNextData(synResp.body);
-        const entries = nextData?.props?.pageProps?.timeline?.entries || [];
-        const tweets = [];
-        for (const entry of entries) {
-          const tweet = entry?.content?.tweet;
-          if (!tweet || !tweet.id_str) continue;
+    const now = Date.now();
+    const canUseSyndication = (now >= this.syndicationBlockedUntil);
 
-          let rawText = tweet.note_tweet?.note_tweet_results?.result?.text
-            || tweet.note_tweet?.text
-            || tweet.text
-            || '';
-          if (!rawText) continue;
-
-          const pics = [];
-          if (Array.isArray(tweet.entities?.media)) {
-            for (const m of tweet.entities.media) {
-              if (m.media_url_https && !pics.includes(m.media_url_https)) pics.push(m.media_url_https);
-            }
+    // 1. 尝试引擎 1: Syndication 轻量管道 (未遭遇 IP 频控封锁时使用)
+    if (canUseSyndication) {
+      try {
+        const synUrl = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${cleanName}`;
+        const synResp = await this.makeRequest(synUrl);
+        if (synResp.statusCode === 200) {
+          const remaining = parseInt(synResp.headers['x-rate-limit-remaining'], 10);
+          const resetSec = parseInt(synResp.headers['x-rate-limit-reset'], 10);
+          if (!isNaN(remaining) && remaining <= 1) {
+            const until = resetSec ? (resetSec * 1000) : (now + 15 * 60 * 1000);
+            this.syndicationBlockedUntil = until;
+            logger.info(`[XFetcher] Syndication 官方配额临界 (剩余 ${remaining} 次)，临时切换至 FxTwitter 镜像至 ${new Date(until).toLocaleTimeString('zh-CN')}`);
           }
-          if (Array.isArray(tweet.photos)) {
-            for (const p of tweet.photos) {
-              if (p.url && !pics.includes(p.url)) pics.push(p.url);
-            }
-          }
-          let avatar = tweet.user?.profile_image_url_https || account.avatar || '';
-          avatar = avatar.replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1');
 
-          tweets.push({
-            id_str: tweet.id_str,
-            text: this.cleanTweetText(rawText),
-            raw_text: rawText,
-            created_at_ms: tweet.created_at ? new Date(tweet.created_at).getTime() : Date.now(),
-            created_at: tweet.created_at || new Date().toISOString(),
-            pics: pics.slice(0, 4),
-            author_name: tweet.user?.name || account.name || cleanName,
-            author_handle: tweet.user?.screen_name || cleanName,
-            author_avatar: avatar,
-            is_reply: !!(tweet.in_reply_to_status_id_str || tweet.in_reply_to_screen_name),
-            is_retweet: !!tweet.retweeted_status,
-            is_note_tweet: !!tweet.note_tweet
-          });
+          const nextData = this.parseNextData(synResp.body);
+          const entries = nextData?.props?.pageProps?.timeline?.entries || [];
+          const tweets = [];
+          for (const entry of entries) {
+            const tweet = entry?.content?.tweet;
+            if (!tweet || !tweet.id_str) continue;
+
+            let rawText = tweet.note_tweet?.note_tweet_results?.result?.text
+              || tweet.note_tweet?.text
+              || tweet.text
+              || '';
+            if (!rawText) continue;
+
+            const pics = [];
+            if (Array.isArray(tweet.entities?.media)) {
+              for (const m of tweet.entities.media) {
+                if (m.media_url_https && !pics.includes(m.media_url_https)) pics.push(m.media_url_https);
+              }
+            }
+            if (Array.isArray(tweet.photos)) {
+              for (const p of tweet.photos) {
+                if (p.url && !pics.includes(p.url)) pics.push(p.url);
+              }
+            }
+            let avatar = tweet.user?.profile_image_url_https || account.avatar || '';
+            avatar = avatar.replace(/_normal\.(jpg|png|jpeg)/i, '_200x200.$1');
+
+            tweets.push({
+              id_str: tweet.id_str,
+              text: this.cleanTweetText(rawText),
+              raw_text: rawText,
+              created_at_ms: tweet.created_at ? new Date(tweet.created_at).getTime() : Date.now(),
+              created_at: tweet.created_at || new Date().toISOString(),
+              pics: pics.slice(0, 4),
+              author_name: tweet.user?.name || account.name || cleanName,
+              author_handle: tweet.user?.screen_name || cleanName,
+              author_avatar: avatar,
+              is_reply: !!(tweet.in_reply_to_status_id_str || tweet.in_reply_to_screen_name),
+              is_retweet: !!tweet.retweeted_status,
+              is_note_tweet: !!tweet.note_tweet
+            });
+          }
+
+          if (tweets.length > 0) {
+            return { success: true, engine: 'syndication', tweets };
+          }
+        } else if (synResp.statusCode === 429) {
+          const resetSec = parseInt(synResp.headers['x-rate-limit-reset'], 10);
+          const until = resetSec ? (resetSec * 1000) : (now + 15 * 60 * 1000);
+          this.syndicationBlockedUntil = until;
+          logger.warn(`[XFetcher] Syndication 遭遇 IP 429 频控，自动熔断冷却至 ${new Date(until).toLocaleTimeString('zh-CN')}，无缝降级切换至 FxTwitter 镜像通道`);
+          // 429 不直接中断，平滑降级走引擎 2
         }
+      } catch (e) {
+        logger.warn(`[XFetcher] Syndication 轻量拉取 @${cleanName} 受阻:`, e.message);
+      }
+    }
 
+    // 2. 尝试引擎 2: FxTwitter RSS 通道 (无 429 限制，每分钟高达 1000 次，内容完整)
+    try {
+      const rssUrl = `https://fxtwitter.com/${cleanName}/feed.xml`;
+      const rssResp = await this.makeRequest(rssUrl);
+      if (rssResp.statusCode === 200) {
+        const tweets = this.parseFxTwitterRss(rssResp.body, cleanName, account);
         if (tweets.length > 0) {
-          return { success: true, engine: 'syndication', tweets };
-        }
-      } else if (synResp.statusCode === 429) {
-        return { success: false, statusCode: 429, msg: 'X 平台 Syndication 临时频控' };
-      }
-    } catch (e) {
-      logger.warn(`[XFetcher] Syndication 轻量拉取 @${cleanName} 受阻:`, e.message);
-    }
-
-    // 2. 尝试引擎 2: FxTwitter 轻量 JSON API (仅约 5 KB，极其节省流量)
-    try {
-      const fxUrl = `https://api.fxtwitter.com/${cleanName}`;
-      const fxResp = await this.makeRequest(fxUrl);
-      if (fxResp.statusCode === 200) {
-        const parsed = JSON.parse(fxResp.body);
-        if (parsed && Array.isArray(parsed.tweets) && parsed.tweets.length > 0) {
-          const tweets = parsed.tweets.map(t => ({
-            id_str: t.id || t.id_str,
-            text: this.cleanTweetText(t.text || ''),
-            raw_text: t.text || '',
-            created_at_ms: t.created_at ? new Date(t.created_at).getTime() : (t.epoch ? t.epoch * 1000 : Date.now()),
-            created_at: t.created_at || new Date().toISOString(),
-            pics: (t.media && t.media.photos) ? t.media.photos.map(p => p.url).slice(0, 4) : [],
-            author_name: t.author?.name || account.name || cleanName,
-            author_handle: t.author?.screen_name || cleanName,
-            author_avatar: t.author?.avatar_url || account.avatar || '',
-            is_reply: !!t.replying_to,
-            is_retweet: false,
-            is_note_tweet: (t.text || '').length > 280
-          }));
-          return { success: true, engine: 'fxtwitter', tweets };
+          return { success: true, engine: 'fxtwitter_rss', tweets };
         }
       }
-    } catch (errFx) {
-      logger.warn(`[XFetcher] FxTwitter 轻量兜底拉取 @${cleanName} 受阻:`, errFx.message);
+    } catch (errRss) {
+      logger.warn(`[XFetcher] FxTwitter RSS 镜像拉取 @${cleanName} 受阻:`, errRss.message);
     }
 
-    // 3. 尝试引擎 3: x.com 主页直连 (单次高达 1~2 MB，极度消耗流量，仅作为极端保底)
+    // 3. 尝试引擎 3: x.com 主页直连 (极端兜底)
     try {
       const resp = await this.makeRequest(`https://x.com/${cleanName}`);
       if (resp.statusCode === 200) {
@@ -518,8 +606,6 @@ class XFetcher {
         if (tweets.length > 0) {
           return { success: true, engine: 'x_direct', tweets };
         }
-      } else if (resp.statusCode === 429) {
-        return { success: false, statusCode: 429, msg: 'X 平台主页临时频控' };
       }
     } catch (e) {
       logger.warn(`[XFetcher] x.com 主页直连拉取 @${cleanName} 受阻:`, e.message);
@@ -709,6 +795,7 @@ class XFetcher {
   }
 
   clearAccountCooling(screenName = null) {
+    this.syndicationBlockedUntil = 0;
     if (screenName) {
       const key = screenName.toLowerCase();
       this.coolingMap.delete(key);
@@ -717,12 +804,13 @@ class XFetcher {
     } else {
       this.coolingMap.clear();
       this.lastPolledMap.clear();
-      logger.info(`[XFetcher] 已手动清除全部 X 账号的频控冷却状态`);
+      logger.info(`[XFetcher] 已手动清除全部 X 账号的频控冷却状态与 IP 限额熔断`);
     }
   }
 
   /**
-   * 轮询所有已订阅账号
+   * 轮询所有已订阅博主：采用平滑时间片分发调度（Staggered Round-Robin）
+   * 每次主循环心跳仅调度 1 个已到期的博主，彻底消除并发峰值，杜绝触发 429 频控
    */
   async fetch() {
     if (this.isPolling) return [];
@@ -747,38 +835,44 @@ class XFetcher {
 
     try {
       const now = Date.now();
-      for (let i = 0; i < enabledAccounts.length; i++) {
-        const account = enabledAccounts[i];
-        const screenName = account.screen_name;
+      const total = enabledAccounts.length;
+
+      // 单账号轮询基准间隔：至少 30 秒（建议 45 秒）
+      const targetCycleSec = Math.max(30, xCfg.poll_interval_sec || 45);
+      const minAccountIntervalMs = targetCycleSec * 1000;
+
+      // 顺次寻找下一个已达到抓取间隔且未在冷却中的博主
+      let selectedAccount = null;
+      for (let attempt = 0; attempt < total; attempt++) {
+        const idx = (this.roundRobinCursor + attempt) % total;
+        const candidate = enabledAccounts[idx];
+        const screenName = candidate.screen_name;
         const cooling = this.getAccountCoolingStatus(screenName);
 
         if (cooling.isCooling) {
-          logger.info(`[XFetcher] @${screenName} 处于频控冷却中 (剩余 ${cooling.remainingSec}s)，已隔离跳过`);
           continue;
         }
 
-        // 单账号轮询间隔保护：避免单个博主高频重复抓取（至少 45 秒间隔，深度节省代理流量）
         const lastPolled = this.lastPolledMap.get(screenName.toLowerCase()) || 0;
-        const minAccountInterval = Math.max(45000, ((xCfg.poll_interval_sec || 45) * 1000));
-        if (now - lastPolled < minAccountInterval) {
-          continue;
+        if (now - lastPolled >= minAccountIntervalMs) {
+          selectedAccount = candidate;
+          this.roundRobinCursor = (idx + 1) % total;
+          break;
         }
+      }
 
+      if (selectedAccount) {
+        const screenName = selectedAccount.screen_name;
         this.lastPolledMap.set(screenName.toLowerCase(), now);
 
         try {
-          const items = await this.pollSingleAccount(account);
+          const items = await this.pollSingleAccount(selectedAccount);
           if (items && items.length > 0) {
             newAlerts.push(...items);
             configUpdated = true;
           }
         } catch (errOne) {
           logger.warn(`[XFetcher] 轮询 @${screenName} 发生异常:`, errOne.message);
-        }
-
-        // 多账号之间错开 1.5~2.5 秒
-        if (i < enabledAccounts.length - 1) {
-          await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
         }
       }
 
@@ -923,9 +1017,12 @@ class XFetcher {
       if (!isChinese && this.translator) {
         try {
           const transRes = await this.translator.translate(rawText);
-          if (transRes && transRes.isTranslated) {
-            translatedText = transRes.translatedText;
-            isTranslated = true;
+          if (transRes && transRes.isTranslated && transRes.translatedText) {
+            const upper = transRes.translatedText.toUpperCase();
+            if (!upper.includes('QUERY LENGTH LIMIT EXCEEDED') && !upper.includes('MAX ALLOWED QUERY') && !upper.includes('MYMEMORY WARNING')) {
+              translatedText = transRes.translatedText;
+              isTranslated = true;
+            }
           }
         } catch (errTrans) {
           logger.warn(`[XFetcher] 推文翻译失败，回退原文:`, errTrans.message);
