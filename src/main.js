@@ -17,9 +17,12 @@ const trayManager = require('./trayManager');
 const updateManager = require('./updater');
 const Translator = require('./translator');
 const XFetcher = require('./fetcherX');
+const { WeChatFetcher } = require('./fetcherWechat');
+const LicenseManager = require('./licenseManager');
 const notifier = require('./notifier');
 const stockQuoteManager = require('./stockQuote');
 const cryptoPriceManager = require('./cryptoPrice');
+const { formatAuthorName, getAuthorChineseName } = require('./authorTranslator');
 
 // 启动全局日志与异常拦截
 logger.setupGlobalHandlers();
@@ -46,6 +49,8 @@ let topicFetcher = null;
 let xueqiuFetcher = null;
 let maimaiFetcher = null;
 let xFetcher = null;
+let wechatFetcher = null;
+let licenseManager = null;
 let localGovFetcher = null;
 let translator = null;
 let strategyEngine = null;
@@ -254,10 +259,10 @@ function openSettingsWindow(targetTab = null) {
 
   const win = new BrowserWindow({
     show: false,
-    width: 940,
-    height: 800,
-    minWidth: 800,
-    minHeight: 620,
+    width: 980,
+    height: 740,
+    minWidth: 920,
+    minHeight: 650,
     center: true,
     title: '快讯通 · 常驻服务与管理配置中心',
     resizable: true,
@@ -304,50 +309,282 @@ function openSettingsWindow(targetTab = null) {
   });
 }
 
-function triggerTestToast() {
-  logger.info('[TestCard] 用户点击发送测试卡片，立即发起即时自检弹窗...');
+function getCurrentAiSourceInfo() {
+  const cfg = configManager ? configManager.config : {};
+  const aiCfg = cfg.ai_analysis || {};
+  const deepseekKey = (aiCfg.deepseek_api_key || aiCfg.api_key || '').trim();
+  const zhipuKey = (aiCfg.zhipu_api_key || '').trim();
+  const isAiEnabled = aiCfg.enabled !== false;
+
+  if (!isAiEnabled) {
+    return {
+      name: '本地规则默认分析 (免 Key)',
+      type: 'rule_engine'
+    };
+  }
+
+  if (deepseekKey && zhipuKey) {
+    return {
+      name: 'DeepSeek + 智谱双核研判',
+      type: 'deepseek'
+    };
+  }
+
+  if (deepseekKey) {
+    return {
+      name: 'DeepSeek 智能研判',
+      type: 'deepseek'
+    };
+  }
+
+  if (zhipuKey) {
+    return {
+      name: '智谱 GLM 智能研判',
+      type: 'zhipu'
+    };
+  }
+
+  return {
+    name: '本地规则默认分析 (免 Key)',
+    type: 'rule_engine'
+  };
+}
+
+function triggerTestToast(targetSourceKey) {
+  const activeAi = getCurrentAiSourceInfo();
+  logger.info(`[TestCard] 用户点击发送测试卡片，目标数据源: ${targetSourceKey || '默认(金十)'}，立即发起即时自检弹窗...`);
   const now = new Date();
   const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
   const pubTimeStr = now.toLocaleString('zh-CN', { hour12: false });
 
-  const sample = {
-    id: `test_${Date.now()}`,
-    is_test: true,
-    source: '⚡ 金十快讯',
-    source_key: 'jin10',
-    time: timeStr,
-    pub_time: pubTimeStr,
-    title: '【重磅突发】全球央行启动联合协同宽松，释放万亿美元流动性',
-    content: '多国央行与核心金融监管机构发布联合声明，宣布即刻启动联合流动性互换机制，基准利率协同下调 50 个基点，并设立专项市场平准稳定基金。主要股指期货秒级拉升，大宗商品与数字资产全线暴涨。（财联社）',
-    url: 'https://github.com/dengwka/kuaixuntong',
-    important: true,
-    score: 95,
-    impact_score: 95,
-    watchlist_impact: {
-      target: '自选股票池 / 港股科技',
-      direction: '强烈利好',
-      reason: '全球协同宽松直接降低资金成本，提振成长性科技板块估值与风险偏好'
-    },
-    ai_analysis: {
-      ai_source: 'DeepSeek 智能研判',
-      source_type: 'deepseek',
-      impact_score: 95,
-      summary: '多国央行罕见落地协同降息与巨量流动性注入，极大利好权益类资产与高弹性科技成长股，黄金与大宗商品全面提振，美元指数短线承压下挫。',
-      impacts: {
-        'A股': '利好',
-        '港股科技': '利好',
-        '黄金': '利好',
-        '美元': '利空',
-        '虚拟币': '利好',
-        '原油': '中性'
+  let sample = null;
+
+  if (targetSourceKey === 'wechat') {
+    sample = {
+      id: `test_wechat_${Date.now()}`,
+      is_test: true,
+      source: '💬 微信公众号',
+      source_key: 'wechat',
+      author: '新华社',
+      author_name: '新华社',
+      author_avatar: '../../assets/wechat_avatars/xinhua.png',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '新华社：重磅发布！我国在关键核心技术自主攻关领域取得重大战略突破',
+      content: '【新华社微讯】国家高新技术发展领导小组今日联合公布最新成果专项，我国在自主可控核心硬科技、先进算力芯片及新能源前沿材料等产业链多节点实现战略性跨越突破，多项核心指标位列全球前沿，自主替代步伐全面提速。（新华社）',
+      url: 'https://mp.weixin.qq.com',
+      important: true,
+      score: 92,
+      impact_score: 92,
+      watchlist_impact: {
+        target: '自选股票池 / 半导体与硬科技',
+        direction: '强烈利好',
+        reason: '国家级核心科技攻关取得实质性突破，全面激活产业链国产替代与估值重构'
       },
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 92,
+        summary: '国家级权威官媒通报关键科技自主突破，硬科技与高成长半导体板块迎来实质性政策与产业双重驱动，显著提升市场中长期风险偏好。',
+        impacts: {
+          'A股科技': '利好',
+          '科创50': '利好',
+          '半导体': '利好',
+          '传统板块': '中性'
+        },
+        watchlist_impact: {
+          target: '自选股票池 / 半导体与硬科技',
+          direction: '强烈利好',
+          reason: '核心关键产业链自主可控进程全面加速'
+        }
+      }
+    };
+  } else if (targetSourceKey === 'x_twitter') {
+    sample = {
+      id: `test_x_${Date.now()}`,
+      is_test: true,
+      source: '𝕏 顶流关注',
+      source_key: 'x_twitter',
+      author: 'Elon Musk',
+      author_name: 'Elon Musk',
+      author_handle: 'elonmusk',
+      screen_name: 'elonmusk',
+      author_avatar: 'https://pbs.twimg.com/profile_images/1874558173719080960/bzbwhmep_400x400.jpg',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: 'Elon Musk (@elonmusk) 刚刚发布推文',
+      content: '【𝕏 独家翻译】Grok 3 与新一代全自主人形机器人将于下季度启动大规模商业试点验证，能源系统升级全面完成。',
+      original_text: 'Grok 3 and the next-gen humanoid robotics will begin large-scale commercial pilot validation next quarter. Full energy system upgrade complete.',
+      url: 'https://x.com/elonmusk',
+      important: true,
+      score: 93,
+      impact_score: 93,
+      watchlist_impact: {
+        target: '自选股票池 / 人工智能与机器人',
+        direction: '强烈利好',
+        reason: '顶流领袖释放新一代 AI 模型与具身智能规模化试点信号，全面点燃科技产业链情绪'
+      },
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 93,
+        summary: '马斯克宣布 Grok 3 与人形机器人迈入大规模商业化试点阶段，具身智能、高算力芯片与核心传感器供应链迎强催化。',
+        impacts: {
+          'AI机器人': '利好',
+          '算力硬件': '利好',
+          '纳斯达克': '利好'
+        }
+      }
+    };
+  } else if (targetSourceKey === 'xueqiu') {
+    sample = {
+      id: `test_xueqiu_${Date.now()}`,
+      is_test: true,
+      source: '❄️ 雪球快讯',
+      source_key: 'xueqiu',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '【雪球行情突发】中芯国际 (688981) 尾盘放量直线拉升涨超 12%',
+      content: '雪球行情异动监测：中芯国际 (688981) 尾盘获巨额主力资金净流入超 35 亿元，多笔万手大单连续扫盘，盘中涨幅迅速扩大至 12.4%，成交额突破百亿关口，带动科创芯片 ETF 整体强势翻红。',
+      url: 'https://xueqiu.com',
+      important: true,
+      score: 90,
+      impact_score: 90,
+      watchlist_impact: {
+        target: '中芯国际 (688981)',
+        direction: '强烈利好',
+        reason: '百亿成交与巨额主力净买入推动股价放量突破关键技术阻力位'
+      },
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 90,
+        summary: '半导体龙头尾盘获百亿级机构巨额资金抢筹，行业基本面景气度迎来周期底部确认与估值修复。',
+        impacts: {
+          'A股': '利好',
+          '科创板': '利好',
+          '半导体': '利好'
+        }
+      }
+    };
+  } else if (targetSourceKey === 'maimai') {
+    sample = {
+      id: `test_maimai_${Date.now()}`,
+      is_test: true,
+      source: '💼 脉脉职言',
+      source_key: 'maimai',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '【职言情报】头部互联网大厂成立新一代端侧 AI 智能体研发实验室',
+      content: '据脉脉认证员工职言热议，某互联网巨头内部正式完成组织架构调整，原技术中台核心业务线整合，成立专属「端侧AI智能体研发集群」，首批百人编制已全部到位，重点攻关端侧自学习智能体与商业变现闭环。',
+      url: 'https://maimai.cn',
+      important: false,
+      score: 82,
+      impact_score: 82,
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 82,
+        summary: '头部大厂调整组织阵型押注端侧 AI 智能体研发，显示一线产业界对端侧落地应用与技术创新的紧迫布局。',
+        impacts: {
+          '端侧AI': '利好',
+          '互联网': '利好'
+        }
+      }
+    };
+  } else if (targetSourceKey === 'local_gov') {
+    sample = {
+      id: `test_local_gov_${Date.now()}`,
+      is_test: true,
+      source: '📍 本地周边 · 规划局与问政',
+      source_key: 'local_gov',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '【自规局规划公示】长沙市雨花区重大交通枢纽与配套名校规划获批复',
+      content: '长沙市自然资源和规划局最新发布批前公示：雨花区省政府板块新增一条重点快速路连通工程及一所省级示范名校规划正式落地，总用地面积约 4.8 万平方米，规划周边配套商住环境全面优化提升。（红网政民互动）',
+      url: 'https://rednet.cn',
+      important: true,
+      score: 86,
+      impact_score: 86,
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 86,
+        summary: '雨花区重点交通路网与名校教育资源规划双重落地，大幅提升板块居住品质与周边不动产流动性价值。'
+      }
+    };
+  } else if (targetSourceKey === 'jin10_topic') {
+    sample = {
+      id: `test_jin10_topic_${Date.now()}`,
+      is_test: true,
+      source: '🔥 重要事件',
+      source_key: 'jin10_topic',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '【金十专栏特报】全球地缘新博弈：关键航运海峡局势演变全景追踪',
+      content: '金十深度专栏突发追踪：红海与关键国际能源运输要道通行安全评级最新下调，多家头部国际集装箱航运巨头宣布暂停原定航线并绕行好望角，欧洲天然气期货与布伦特原油短线飙涨逾 4.5%。（金十数据）',
+      url: 'https://jin10.com',
+      important: true,
+      score: 91,
+      impact_score: 91,
+      watchlist_impact: {
+        target: '自选股票池 / 航运与原油',
+        direction: '强烈利好',
+        reason: '航运绕行大幅拉长航行周期推升运价与能源风险溢价'
+      },
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 91,
+        summary: '国际关键水道通行受阻导致全球供应链运力短缺，短期内直接刺激集运指数与油气期货暴涨，通胀预期可能再次抬头。',
+        impacts: {
+          '原油': '利好',
+          '航运港口': '利好',
+          '全球通胀': '利空'
+        }
+      }
+    };
+  } else {
+    // 默认走金十财经宏观突发
+    sample = {
+      id: `test_${Date.now()}`,
+      is_test: true,
+      source: '⚡ 金十快讯',
+      source_key: 'jin10',
+      time: timeStr,
+      pub_time: pubTimeStr,
+      title: '【重磅突发】全球央行启动联合协同宽松，释放万亿美元流动性',
+      content: '多国央行与核心金融监管机构发布联合声明，宣布即刻启动联合流动性互换机制，基准利率协同下调 50 个基点，并设立专项市场平准稳定基金。主要股指期货秒级拉升，大宗商品与数字资产全线暴涨。（财联社）',
+      url: 'https://github.com/dengwka/kuaixuntong',
+      important: true,
+      score: 95,
+      impact_score: 95,
       watchlist_impact: {
         target: '自选股票池 / 港股科技',
         direction: '强烈利好',
         reason: '全球协同宽松直接降低资金成本，提振成长性科技板块估值与风险偏好'
+      },
+      ai_analysis: {
+        ai_source: activeAi.name,
+        source_type: activeAi.type,
+        impact_score: 95,
+        summary: '多国央行罕见落地协同降息与巨量流动性注入，极大利好权益类资产与高弹性科技成长股，黄金与大宗商品全面提振，美元指数短线承压下挫。',
+        impacts: {
+          'A股': '利好',
+          '港股科技': '利好',
+          '黄金': '利好',
+          '美元': '利空',
+          '虚拟币': '利好',
+          '原油': '中性'
+        },
+        watchlist_impact: {
+          target: '自选股票池 / 港股科技',
+          direction: '强烈利好',
+          reason: '全球协同宽松直接降低资金成本，提振成长性科技板块估值与风险偏好'
+        }
       }
-    }
-  };
+    };
+  }
 
   toastManager.showToast(sample);
 }
@@ -396,7 +633,8 @@ async function pollCycle() {
     const maimaiItems = await fetchWithHealth('maimai', cfgSources.maimai?.enabled !== false, () => maimaiFetcher.fetch());
     const xItems = await fetchWithHealth('x_twitter', cfgSources.x_twitter?.enabled === true, () => (xFetcher ? xFetcher.fetch() : []));
     const localGovItems = await fetchWithHealth('local_gov', cfgSources.local_gov?.enabled !== false, () => (localGovFetcher ? localGovFetcher.fetch() : []));
-    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems, ...localGovItems];
+    const wechatItems = await fetchWithHealth('wechat', cfgSources.wechat?.enabled === true, () => (wechatFetcher ? wechatFetcher.fetch() : []));
+    const allItems = [...flashItems, ...topicItems, ...xueqiuItems, ...maimaiItems, ...xItems, ...localGovItems, ...wechatItems];
 
     let newCount = 0;
     const MAX_TOASTS_PER_CYCLE = 3; // 单轮轮询心跳最多弹出 3 条桌面卡片，防止突发洪峰刷屏
@@ -404,11 +642,39 @@ async function pollCycle() {
       const itemUid = historyManager.getItemUniqueId(item);
       if (historyManager.isPushed(itemUid)) continue;
 
-      // ⏰ 全局时效总闸门：突发快讯工具绝不推送超过时效的过期旧闻（防止接口吐出数天前历史归档）
-      // local_gov 本地政务与问政最长允许 24 小时（1天），超过 24 小时的一律判定为历史归档直接拦截丢弃
-      const maxAgeSec = item.source_key === 'local_gov' ? (24 * 3600) : (item.source_key === 'x_twitter' ? (12 * 3600) : (2 * 3600));
-      if (item.sync_delay_sec && item.sync_delay_sec > maxAgeSec) {
-        logger.warn(`[时效拦截] [${item.source || item.source_key}] ${item.title} 原文发布于 ${item.pub_time || item.time}，延迟已达 ${item.sync_delay_sec}秒 (>24小时)，判定为过期历史归档，已拦截丢弃`);
+      // ⏰ 全局消息抓取与时效总闸门：突发快讯工具绝不推送超过时效的过期旧闻（防止接口吐出数天前历史归档）
+      const fetchingStrategy = configManager.config?.rules?.fetching_strategy || {};
+      const globalMaxHours = fetchingStrategy.mode === 'unlimited' ? Infinity : (Number(fetchingStrategy.max_age_hours) || 24);
+      const globalMaxSec = globalMaxHours === Infinity ? Infinity : (globalMaxHours * 3600);
+
+      // 计算该消息的实际延迟/存在时长（秒）
+      let delaySec = Number(item.sync_delay_sec);
+      if (isNaN(delaySec) || delaySec <= 0) {
+        const pubStr = item.pub_time || item.time;
+        if (pubStr) {
+          const parsedMs = Date.parse(String(pubStr).replace(/-/g, '/'));
+          if (!isNaN(parsedMs)) {
+            delaySec = Math.max(0, Math.floor((Date.now() - parsedMs) / 1000));
+            item.sync_delay_sec = delaySec;
+          }
+        }
+      }
+
+      // 确定各数据源生效的时效上限（兼顾全局抓取策略与快讯特征）
+      let effectiveMaxAgeSec = globalMaxSec;
+      if (effectiveMaxAgeSec !== Infinity) {
+        if (item.source_key === 'jin10' || item.source_key === 'jin10_topic' || item.source_key === 'xueqiu' || item.source_key === 'maimai') {
+          effectiveMaxAgeSec = Math.min(globalMaxSec, 2 * 3600); // 财经敏捷快讯默认不超过 2 小时
+        } else if (item.source_key === 'x_twitter') {
+          effectiveMaxAgeSec = Math.min(globalMaxSec, 12 * 3600); // X 推文默认不超过 12 小时
+        } else if (item.source_key === 'local_gov' || item.source_key === 'wechat') {
+          effectiveMaxAgeSec = globalMaxSec; // 微信长文与本地政务完全遵循全局时效策略 (默认 24 小时)
+        }
+      }
+
+      if (effectiveMaxAgeSec !== Infinity && delaySec > effectiveMaxAgeSec) {
+        const hoursAgo = (delaySec / 3600).toFixed(1);
+        logger.warn(`[时效拦截] [${item.source || item.source_key}] 《${item.title}》原文发布于 ${item.pub_time || item.time}（已过去 ${hoursAgo} 小时），超过时效策略上限(${(effectiveMaxAgeSec / 3600).toFixed(1)}小时)，已精准拦截丢弃！`);
         historyManager.pushedIds.add(itemUid);
         continue;
       }
@@ -419,8 +685,8 @@ async function pollCycle() {
         const evalUid = historyManager.getItemUniqueId(evalItem);
         if (historyManager.isPushed(evalUid)) continue;
 
-        if (evalItem.source_key === 'x_twitter') {
-          // X 监控推文已由 XFetcher 根据博主独立的 ai_analysis_enabled 配置完成研判，保留原有结果
+        if (evalItem.source_key === 'x_twitter' || evalItem.source_key === 'wechat') {
+          // X 监控与微信公众号推文已由各自 Fetcher 根据独立的 ai_analysis_enabled 配置完成研判，保留原有结果
         } else {
           try {
             evalItem.ai_analysis = await financialAi.analyze(evalItem);
@@ -554,11 +820,13 @@ app.whenReady().then(() => {
   financialAi = new FinancialAIEngine(configManager);
   translator = new Translator(configManager, financialAi);
   xFetcher = new XFetcher(configManager, translator, financialAi);
+  wechatFetcher = new WeChatFetcher(configManager, financialAi);
   jin10Fetcher = new Jin10Fetcher(configManager);
   topicFetcher = new Jin10TopicFetcher(configManager);
   xueqiuFetcher = new XueqiuFetcher(configManager);
   maimaiFetcher = new MaimaiFetcher(configManager);
   localGovFetcher = new LocalGovFetcher(configManager);
+  licenseManager = new LicenseManager(configManager);
 
   // 启动存储与日志自动清理巡检
   storageCleaner.startPeriodicCleanup();
@@ -602,8 +870,8 @@ app.whenReady().then(() => {
     logger.info(`[Sound] 用户快捷切换声音/语音提醒: ${isEnabled ? '开启' : '关闭'}`);
   });
 
-  ipcMain.on('settings-trigger-test', () => {
-    triggerTestToast();
+  ipcMain.on('settings-trigger-test', (event, sourceKey) => {
+    triggerTestToast(sourceKey);
   });
 
   ipcMain.on('settings-poll-now', async (event) => {
@@ -700,6 +968,7 @@ app.whenReady().then(() => {
   ipcMain.handle('test-local-gov-fetch', async (event, previewCfg) => {
     if (!localGovFetcher) {
       localGovFetcher = new LocalGovFetcher(configManager);
+  licenseManager = new LicenseManager(configManager);
     }
     const items = await localGovFetcher.fetch(true, previewCfg);
     
@@ -782,7 +1051,7 @@ app.whenReady().then(() => {
           'A股': '利空',
           '美股': '利空'
         },
-        ai_source: 'DeepSeek 特报引擎'
+        ai_source: activeAi.name
       }
     };
     toastManager.showToast(sampleVip);
@@ -860,6 +1129,270 @@ app.whenReady().then(() => {
     cfg.sources.x_twitter.accounts_cleared = false;
     configManager.saveConfig(cfg);
     return { success: true, accounts: cfg.sources.x_twitter.accounts };
+  });
+
+  // 💬 微信公众号与服务号监控模块 IPC 处理器
+  ipcMain.handle('wechat:lookup-account', async (event, query) => {
+    if (!wechatFetcher) return { success: false, msg: '微信服务未初始化' };
+    return await wechatFetcher.lookupAccount(query);
+  });
+
+  ipcMain.handle('wechat:get-accounts-status', async () => {
+    const cfg = configManager.config;
+    const accounts = (cfg.sources && cfg.sources.wechat && cfg.sources.wechat.accounts) || [];
+    return accounts.map(acc => {
+      const cooling = wechatFetcher ? wechatFetcher.getAccountCoolingStatus(acc.id || acc.name) : { isCooling: false, remainingSec: 0 };
+      return {
+        ...acc,
+        isCooling: cooling.isCooling,
+        coolingRemainingSec: cooling.remainingSec
+      };
+    });
+  });
+
+  ipcMain.handle('wechat:save-accounts', async (event, accounts, isCleared) => {
+    const cfg = configManager.config;
+    if (!cfg.sources) cfg.sources = {};
+    if (!cfg.sources.wechat) cfg.sources.wechat = {};
+    cfg.sources.wechat.accounts = accounts;
+    if (typeof isCleared === 'boolean') {
+      cfg.sources.wechat.accounts_cleared = isCleared;
+    }
+    configManager.saveConfig(cfg);
+    return { success: true };
+  });
+
+  ipcMain.handle('wechat:restore-defaults', async () => {
+    const defaultAccounts = configManager.getDefaultConfig().sources.wechat.accounts;
+    const cfg = configManager.config;
+    if (!cfg.sources) cfg.sources = {};
+    if (!cfg.sources.wechat) cfg.sources.wechat = {};
+    cfg.sources.wechat.accounts = JSON.parse(JSON.stringify(defaultAccounts));
+    cfg.sources.wechat.accounts_cleared = false;
+    configManager.saveConfig(cfg);
+    return { success: true, accounts: cfg.sources.wechat.accounts };
+  });
+
+  // 📱 微信公众平台扫码授权 IPC 处理器
+  ipcMain.handle('wechat:open-qr-login', async () => {
+    return new Promise((resolve) => {
+      const loginWin = new BrowserWindow({
+        width: 380,
+        height: 440,
+        title: '微信公众平台扫码授权',
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        autoHideMenuBar: true,
+        backgroundColor: '#F8FAFC',
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true
+        }
+      });
+
+      let resolved = false;
+      const done = (result) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(result);
+      };
+
+      // 页面加载完成后注入样式：精准只保留并放大居中二维码卡片，隐藏外部全部背景与导航，彻底免除左右滚动拉扯
+      const cleanQrCss = `
+        html, body {
+          overflow: hidden !important;
+          background: #F8FAFC !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+        }
+        body::before {
+          content: '' !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background: #F8FAFC !important;
+          z-index: 999999 !important;
+        }
+        .login_frame {
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          z-index: 9999999 !important;
+          background: #FFFFFF !important;
+          border: 1px solid #E2E8F0 !important;
+          border-radius: 14px !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06) !important;
+          margin: 0 !important;
+          width: 300px !important;
+          padding: 18px 16px !important;
+          box-sizing: border-box !important;
+        }
+        .login__type__container__select-type {
+          display: none !important;
+        }
+        .login__type__container__scan__qrcode {
+          width: 180px !important;
+          height: 180px !important;
+          margin: 10px auto !important;
+          display: block !important;
+        }
+        .login__type__container__scan__info__desc {
+          font-size: 13px !important;
+          color: #475569 !important;
+          text-align: center !important;
+          margin-top: 8px !important;
+        }
+      `;
+
+      loginWin.webContents.on('did-finish-load', () => {
+        loginWin.webContents.insertCSS(cleanQrCss).catch(() => {});
+      });
+
+      loginWin.loadURL('https://mp.weixin.qq.com/');
+
+      // 监听导航：扫码登录成功后会跳转到含 token 的管理后台首页
+      const handleNavigation = async (navUrl) => {
+        try {
+          const urlObj = new URL(navUrl);
+          // 登录成功后 URL 格式: https://mp.weixin.qq.com/cgi-bin/home?t=home/index&lang=zh_CN&token=XXXXXX
+          if (urlObj.pathname.includes('/cgi-bin/home') && urlObj.searchParams.get('token')) {
+            const token = urlObj.searchParams.get('token');
+            logger.info(`[WeChatAuth] 扫码登录成功，获取 token: ${token.substring(0, 6)}...`);
+
+            // 获取 cookies
+            const cookies = await session.defaultSession.cookies.get({ domain: 'mp.weixin.qq.com' });
+            const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+
+            // 设置到 fetcher
+            if (wechatFetcher) {
+              wechatFetcher.setAuth({ token, cookie: cookieStr });
+            }
+
+            // 关闭登录窗口
+            try { loginWin.close(); } catch (e) {}
+            done({ success: true, token });
+            return;
+          }
+        } catch (e) {}
+      };
+
+      loginWin.webContents.on('did-navigate', (event, url) => handleNavigation(url));
+      loginWin.webContents.on('did-navigate-in-page', (event, url) => handleNavigation(url));
+
+      // 用户手动关闭窗口
+      loginWin.on('closed', () => {
+        done({ success: false, msg: '登录窗口已关闭' });
+      });
+    });
+  });
+
+  ipcMain.handle('wechat:get-auth-status', async () => {
+    if (!wechatFetcher) return { authorized: false, msg: '服务未初始化' };
+    return wechatFetcher.getAuthStatus();
+  });
+
+  ipcMain.handle('wechat:clear-auth', async () => {
+    if (wechatFetcher) wechatFetcher.clearAuth();
+    return { success: true };
+  });
+
+  // ==========================================
+  // 🛡️ License 软件授权管理 IPC
+  // ==========================================
+  ipcMain.handle('license:get-info', () => {
+    if (!licenseManager) return { macAddress: '', allMacs: [], state: { status: 'unlicensed', isAuthorized: false } };
+    return licenseManager.getInfo();
+  });
+
+  ipcMain.handle('license:activate', async (_event, payload) => {
+    if (!licenseManager) return { ok: false, message: '授权服务未初始化' };
+    return await licenseManager.activateOnline(payload || {});
+  });
+
+  ipcMain.handle('license:verify', async (_event, payload) => {
+    if (!licenseManager) return { ok: false, message: '授权服务未初始化' };
+    return await licenseManager.verifyHeartbeat(payload || {});
+  });
+
+  ipcMain.handle('license:verify-offline', async (_event, payload) => {
+    if (!licenseManager) return { ok: false, message: '授权服务未初始化' };
+    return await licenseManager.verifyOffline(payload || {});
+  });
+
+  ipcMain.handle('license:clear', () => {
+    if (!licenseManager) return { ok: false };
+    return licenseManager.clearLicense();
+  });
+
+  ipcMain.handle('test-wechat-account', async (event, account) => {
+    if (!toastManager || !account) return { success: false };
+
+    let latestInfo = null;
+    if (wechatFetcher) {
+      try {
+        latestInfo = await wechatFetcher.fetchLatestArticleForAccount(account);
+      } catch (e) {
+        logger.warn('[WeChatFetcher] 获取公众号最新推文失败:', e.message);
+      }
+    }
+
+    const title = latestInfo?.title || account?.latest_article || `【${account.name}】官方最新深度报道与行业专栏推送`;
+    const summary = latestInfo?.summary || account?.desc || `${account.name} 微信公众号最新重点文章已发布，点击卡片可直接在浏览器中打开微信原文查阅全文。`;
+    const authorName = account.name || '微信公众号';
+    const authorHandle = account.wechat_id || account.id || 'mp_wechat';
+    let authorAvatar = (wechatFetcher ? wechatFetcher.getAccountAvatar(account) : '') || latestInfo?.author_avatar || account.avatar || (wechatFetcher ? wechatFetcher.getFallbackAvatar(authorName) : '');
+
+    let aiAnalysis = null;
+    if (account.ai_analysis_enabled && financialAi) {
+      try {
+        aiAnalysis = await financialAi.analyze(`${title}\n${summary}`);
+      } catch (errAi) {
+        logger.warn('[FinancialAI] 测试微信文章研判异常:', errAi.message);
+      }
+    }
+
+    if (!aiAnalysis) {
+      aiAnalysis = {
+        summary: `【${authorName}】发布重要深度评论与行业洞察，对宏观政策落地及实体产业链发展预期形成积极指引。`,
+        impacts: {
+          'A股': '利好',
+          '产业经济': '利好',
+          '市场信心': '偏多'
+        },
+        ai_source: '本地策略深度研判'
+      };
+    }
+
+    const testItem = {
+      id: `wx_test_${Date.now()}`,
+      is_test: true,
+      source: '微信公众号',
+      source_key: 'wechat',
+      source_name: `微信 ${authorName}`,
+      author_name: authorName,
+      author_handle: authorHandle,
+      author_avatar: authorAvatar,
+      account_type: account.type || '订阅号',
+      time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      pub_time: new Date().toLocaleString('zh-CN', { hour12: false }),
+      title: title,
+      content: summary,
+      pic: latestInfo?.pic || null,
+      pics: latestInfo?.pic ? [latestInfo.pic] : [],
+      url: latestInfo?.url || `https://weixin.sogou.com/weixin?type=2&query=${encodeURIComponent(authorName)}`,
+      important: true,
+      score: 80,
+      ai_analysis: aiAnalysis
+    };
+
+    toastManager.showToast(testItem);
+    return { success: true };
   });
 
   ipcMain.on('open-external-url', (event, url) => {
@@ -946,7 +1479,7 @@ app.whenReady().then(() => {
           'A股': '利好',
           '美元': '中性'
         },
-        ai_source: 'DeepSeek 智能研判',
+        ai_source: activeAi.name,
         watchlist_impact: {
           target: `${authorName} 关联科技板块`,
           direction: '利好',
@@ -955,18 +1488,24 @@ app.whenReady().then(() => {
       };
     }
 
+    const cfg = configManager ? configManager.config : {};
+    const showChineseName = !!(cfg.sources?.x_twitter?.show_chinese_name);
+    const displayAuthorName = formatAuthorName(authorName, authorHandle, showChineseName, account?.chinese_name);
+
     const testTweet = {
       id: `x_test_${Date.now()}`,
       is_test: true,
       source: '𝕏 监控',
       source_key: 'x_twitter',
-      source_name: `𝕏 ${authorName}`,
-      author_name: authorName,
+      source_name: `𝕏 ${displayAuthorName}`,
+      author_name: displayAuthorName,
+      author_name_raw: authorName,
+      author_chinese_name: getAuthorChineseName(authorName, authorHandle, account?.chinese_name),
       author_handle: authorHandle,
       author_avatar: authorAvatar,
       time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
       pub_time: new Date().toLocaleString('zh-CN', { hour12: false }),
-      title: `𝕏 ${authorName} (@${authorHandle})`,
+      title: `𝕏 ${displayAuthorName} (@${authorHandle})`,
       content: translatedText,
       original_text: isTranslated ? rawText : null,
       is_translated: isTranslated,

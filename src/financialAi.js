@@ -423,7 +423,7 @@ ${watchlistHint}
       if (lastErrorReason) {
         finalResult.ai_source = `本地策略分析 (${lastErrorReason})`;
       } else {
-        finalResult.ai_source = '本地策略离线分析';
+        finalResult.ai_source = '本地规则默认分析 (免 Key)';
       }
       finalResult.source_type = 'rule_engine';
     }
@@ -546,7 +546,8 @@ ${watchlistHint}
     } else {
       const macroKeywords = [
         '降息', '加息', '非农', 'cpi', '关税', '通胀', '违约', '制裁', '涨停', '跌停', '暴涨', '暴跌', '印花税', '熔断', '崩盘',
-        '就业', '招聘', '失业率', '荣枯线', 'pmi', 'gdp', 'ppi', '停火', '停战', '宣战', '冲突'
+        '就业', '招聘', '失业率', '荣枯线', 'pmi', 'gdp', 'ppi', '停火', '停战', '宣战', '冲突',
+        '裁员', '裁减', '陷入困境', '销售疲软', '需求疲软', '净利润', '业绩超预期', '扭亏为盈', '亏损'
       ];
       const hitMacro = macroKeywords.some(w => fullText.includes(w));
       if (hitMacro) {
@@ -628,15 +629,27 @@ ${watchlistHint}
     // 3. 产油国组织与能源核心
     if (/欧佩克|opec\+|opec|沙特阿美|产油国/i.test(t)) return { name: 'OPEC+产油国', cb: null, curr: '原油' };
     
-    // 4. 全球核心硬科技与资产龙头
+    // 4. 全球核心资产与产业跨国龙头
     if (/英伟达|nvidia/i.test(t)) return { name: '英伟达', cb: null, curr: '科技股' };
     if (/微软|microsoft/i.test(t)) return { name: '微软', cb: null, curr: '科技股' };
     if (/苹果|apple/i.test(t)) return { name: '苹果', cb: null, curr: '消费电子' };
     if (/特斯拉|tesla/i.test(t)) return { name: '特斯拉', cb: null, curr: '新能源车' };
+    if (/百事|百事公司|百事可乐|pepsi|可口可乐|coca-cola|雀巢|nestle|宝洁|p&g|联合利华|unilever/i.test(t)) {
+      const m = t.match(/百事公司|百事可乐|百事|可口可乐|雀巢|宝洁|联合利华/i);
+      return { name: m ? m[0] : '快消龙头', cb: null, curr: '大消费/零售' };
+    }
+    if (/谷歌|google|alphabet|亚马逊|amazon|meta|脸书|甲骨文|oracle|amd|英特尔|intel|高通|qualcomm/i.test(t)) {
+      const m = t.match(/谷歌|alphabet|亚马逊|meta|脸书|甲骨文|amd|英特尔|高通/i);
+      return { name: m ? m[0] : '全球科技龙头', cb: null, curr: '科技股' };
+    }
+    if (/沃尔玛|walmart|开市客|costco|家得宝|target|波音|空客/i.test(t)) {
+      const m = t.match(/沃尔玛|开市客|家得宝|波音|空客/i);
+      return { name: m ? m[0] : '产业巨头', cb: null, curr: '核心蓝筹' };
+    }
     if (/比特币|btc/i.test(t)) return { name: '比特币', cb: null, curr: '加密货币' };
     if (/以太坊|eth/i.test(t)) return { name: '以太坊', cb: null, curr: '加密货币' };
-    if (/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i.test(t)) {
-      const m = t.match(/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i);
+    if (/台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i.test(t)) {
+      const m = t.match(/台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i);
       return { name: m[0], cb: null, curr: '核心标的' };
     }
     
@@ -677,19 +690,23 @@ ${watchlistHint}
     const m1 = text.match(/(?:近|创)?(?:[\d一二三四五六七八九十]+个?月|[\d一二三四五六七八九十]+年)?(?:来)?(?:首次|首度)[^，,。；;\s]{2,10}/);
     if (m1) parts.push(m1[0].trim());
 
-    // 2. 荣枯线破位/重回 (e.g. 跌破50荣枯线, 重返荣枯线上方)
+    // 2. 裁员人数与岗位精简 (e.g. 裁员1000人, 裁减约1000个工作岗位, 缩减5000个岗位)
+    const mLayoffs = text.match(/(?:裁员|裁减|裁撤|缩减|削减)\s*(?:约|超)?\s*[\d,]+(?:\.\d+)?\s*(?:人|名|个岗位|个工作岗位)/);
+    if (mLayoffs) parts.push(mLayoffs[0].trim());
+
+    // 3. 荣枯线破位/重回 (e.g. 跌破50荣枯线, 重返荣枯线上方)
     const m2 = text.match(/(?:跌破|跌穿|跌落|重回|升破|站上|处于)?\s*(?:\d+(?:\.\d+)?\s*)?荣枯线/);
     if (m2 && (!m1 || !m1[0].includes('荣枯线'))) parts.push(m2[0].trim());
 
-    // 3. 政策利率与基点 (e.g. 降息25个基点, 加息50个基点)
+    // 4. 政策利率与基点 (e.g. 降息25个基点, 加息50个基点)
     const m3 = text.match(/(?:降息|加息|降准|上调|下调)\s*\d+(?:\.\d+)?\s*(?:个?基点|个?百分点|%|bps)/i);
     if (m3) parts.push(m3[0].trim());
 
-    // 4. 行情价格与点位大关 (e.g. 突破90000美元, 站上3000点)
+    // 5. 行情价格与点位大关 (e.g. 突破90000美元, 站上3000点)
     const m4 = text.match(/(?:突破|站上|跌破)\s*[\d,]+(?:\.\d+)?\s*(?:点|美元|元)/);
     if (m4) parts.push(m4[0].trim());
 
-    // 5. 核心地产/实物/能源动作 (e.g. 首套房首付降至15%, 取消限购, 全部售罄, 日均220万桶)
+    // 6. 核心地产/实物/能源动作 (e.g. 首套房首付降至15%, 取消限购, 全部售罄, 日均220万桶)
     const mDownPayment = text.match(/(?:首套房)?首付(?:比例)?(?:降至|下调至)?\s*\d+%/);
     if (mDownPayment) {
       parts.push(mDownPayment[0].trim());
@@ -697,13 +714,19 @@ ${watchlistHint}
     const m5 = text.match(/(?:取消限购|降低首付|全部售罄|日均\s*\d+(?:\.\d+)?\s*万桶)/);
     if (m5 && !parts.some(p => p.includes(m5[0]))) parts.push(m5[0].trim());
 
-    // 6. 资金量级/利润规模 (e.g. 净流入超10亿美元, 增加化债资源10万亿元, 净利润增长超40%)
-    const m6 = text.match(/(?:净流入|流入|成交|净利润|增产|减产|化债资源|自愿减产)?\s*(?:超|达)?\s*[\d,]+(?:\.\d+)?\s*(?:万桶|亿美元|亿元|万亿元|%)/);
+    // 7. 资金量级/利润规模与幅度 (e.g. 净利润大增120%, 净流入超10亿美元, 增加化债资源10万亿元)
+    const mProfit = text.match(/(?:净利润|利润|营收|净利)?\s*(?:大增|暴增|增长|下滑|亏损|缩减)\s*[\d,]+(?:\.\d+)?%/);
+    if (mProfit && !parts.some(p => p.includes(mProfit[0]))) parts.push(mProfit[0].trim());
+
+    const m6 = text.match(/(?:净流入|流入|成交|增产|减产|化债资源|自愿减产)\s*(?:超|达)?\s*[\d,]+(?:\.\d+)?\s*(?:万桶|亿美元|亿元|万亿元)/);
     if (m6 && !m3 && !m4 && !mDownPayment && !parts.some(p => p.includes(m6[0]))) parts.push(m6[0].trim());
 
-    // 7. 专利/资质
+    // 8. 专利/合作
     const m7 = text.match(/获.*?专利授权/);
     if (m7) parts.push(m7[0].trim());
+
+    const m8 = text.match(/签署.*?合作协议/);
+    if (m8) parts.push(m8[0].trim());
 
     return parts.filter(Boolean).slice(0, 2).join('，');
   }
@@ -730,6 +753,7 @@ ${watchlistHint}
   }
 
   extractDynamicHeadlineSummary(text, alertData = null, sub = null, ms = '') {
+    const rawTitle = (alertData && alertData.title ? alertData.title : '').trim();
     let clean = (alertData && alertData.title ? alertData.title + ' ' : '') + (alertData && alertData.content ? alertData.content : (text || ''));
     clean = clean
       .replace(/【(?:快讯|独家|突发|特报|要闻|重磅|盘中|午评|收评|盘前|早报|晚报|简讯|公告)】/g, ' ')
@@ -740,28 +764,33 @@ ${watchlistHint}
       .replace(/\s+/g, ' ')
       .trim();
 
-    // 优先提取清晰简练的标题
-    if (alertData && alertData.title) {
-      let tClean = alertData.title
-        .replace(/【[^】]+】/g, '')
-        .replace(/（[^）]+）/g, '')
-        .replace(/\([^)]+\)/g, '')
-        .trim();
-      if (tClean.length >= 10 && tClean.length <= 40) {
-        return tClean;
-      }
+    // 严禁原样复制标题！必须做主体提取、事件动作提炼与专业因果研判
+    const sName = (sub && sub.name) ? sub.name : (rawTitle.match(/^[\u4e00-\u9fa5A-Za-z0-9]{2,8}/) ? rawTitle.match(/^[\u4e00-\u9fa5A-Za-z0-9]{2,8}/)[0] : '微观主体');
+
+    let action = ms || '';
+    let commentary = '微观主体与行业生态动态演进；系统性宏观影响有限，重在板块内部结构性分化';
+
+    if (/裁员|裁撤|缩减|亏损|下滑|疲软|困境|关停|违约|暴跌|跌超/i.test(clean)) {
+      commentary = '终端需求走弱倒逼企业战略收缩；行业处于成本防御与存量出清周期，关注盈利兑现承压';
+      if (!action) action = '经营承压与防守调整';
+    } else if (/大增|暴增|超预期|增长|创新高|突破|回升|爆发|涨超/i.test(clean)) {
+      commentary = '业务高景气与盈利基本面修复；显著提振板块风险偏好与估值溢价空间';
+      if (!action) action = '业绩高增与基本面改善';
+    } else if (/签约|合作|收购|并购|入股|中标|投资|扩产|投产/i.test(clean)) {
+      commentary = '产业战略协同与外延扩张落地；中长期观察业务整合效应与商业化变现转化';
+      if (!action) action = '产业布局与战略推进';
+    } else if (/专利|获批|许可|首发|自研|认证|上市/i.test(clean)) {
+      commentary = '知识产权与核心研发壁垒夯实；提升中长期核心竞争力，关注后续产业化落地进展';
+      if (!action) action = '技术创新与资质落地';
+    } else if (/调查|通报|违规|处罚|问询|警告|整改/i.test(clean)) {
+      commentary = '合规警示与潜在经营风险发酵；压制短期风险偏好，资金倾向避险审慎观望';
+      if (!action) action = '合规监管与整改问询';
     }
 
-    const firstSentence = clean.split(/[。！？\n]/)[0].trim();
-    if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 40) {
-      return firstSentence;
+    if (action) {
+      return `${sName}业务动态（${action}）；${commentary}`;
     }
-
-    if (sub && sub.name && ms) {
-      return `${sub.name}核心要闻（${ms}）；关注后续实际商业化与市场流动性传导`;
-    }
-
-    return firstSentence.substring(0, 36) + (firstSentence.length > 36 ? '...' : '');
+    return `${sName}要闻动态；${commentary}`;
   }
 
   ruleBasedAnalysis(text, alertData = null) {
@@ -1125,9 +1154,67 @@ ${watchlistHint}
     }
 
     // ==========================================
-    // 12. 权益市场（A股/港股）基本面驱动与资本市场改革
+    // 12. 企业微观经营、业绩异动与裁员重组模型
     // ==========================================
-    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '扭亏为盈', '净利润增长', '引导长期资金', '市值管理', '分红'].some(w => t.includes(w))) {
+    // 12.1 企业经营承压、陷入困境、降本裁员与销售疲软
+    const corporateDistressKeywords = [
+      '陷入困境', '业务困境', '裁员', '裁减', '裁撤', '削减工作岗位', '裁减工作岗位', '裁减岗位',
+      '裁员计划', '计划裁员', '缩减岗位', '销售疲软', '本土市场销售疲软', '需求疲软', '销售下滑',
+      '营收下滑', '业绩承压', '业绩爆雷', '巨额亏损', '亏损扩大', '关停工厂', '停产', '精简运营'
+    ];
+
+    if (corporateDistressKeywords.some(w => t.includes(w))) {
+      const isLayoff = ['裁员', '裁减', '裁撤', '削减工作岗位', '缩减岗位'].some(w => t.includes(w));
+      const actionName = isLayoff ? '精简运营降本裁员' : '经营承压与防守调整';
+      res.summary = this.formatPrecisionSummary(
+        sub, 
+        ms || '应对销售疲软', 
+        actionName, 
+        '终端需求走弱倒逼企业战略收缩；行业处于成本防御与存量出清周期'
+      );
+      res.impact_score = 48;
+      res.impacts['A股'] = '利空';
+      res.impacts['原油'] = '利空'; // 实体消费品需求萎缩利空工业与大宗能源
+      res.impacts['美元'] = '中性';
+      res.impacts['黄金'] = '中性';
+      res.impacts['虚拟币'] = '中性';
+      return res;
+    }
+
+    // 12.2 监管立案调查、合规处罚与重大违规
+    const corporateBearKeywords = [
+      '立案调查', '受到行政处罚', '重大违法', '财务造假', '强制退市', '退市风险', '实控人被拘', '被证监会立案', '突发被查'
+    ];
+    if (corporateBearKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(
+        sub,
+        ms,
+        '突发合规风险与涉嫌违规立案',
+        '合规黑天鹅与信用风险冲击基本面底线；短线资金避险离场，标的面临估值剧烈杀跌压力'
+      );
+      res.impact_score = 75;
+      res.impacts['A股'] = '利空';
+      return res;
+    }
+
+    // 12.3 业绩高增、扭亏为盈与大额回购
+    const corporateBullKeywords = [
+      '净利润大增', '净利润暴增', '业绩超预期', '扭亏为盈', '营收创新高', '订单饱满', '订单大幅增长', '上调业绩指引', '大额回购注销'
+    ];
+    if (corporateBullKeywords.some(w => t.includes(w))) {
+      res.summary = this.formatPrecisionSummary(
+        sub,
+        ms,
+        '业绩高增与盈利爆发',
+        '主营业务高景气与盈利能力强劲验证；显著提振板块基本面信心，打开估值溢价空间'
+      );
+      res.impact_score = 65;
+      res.impacts['A股'] = '利好';
+      return res;
+    }
+
+    // 12.4 权益市场（A股/港股）基本面驱动与资本市场改革
+    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '引导长期资金', '市值管理', '分红'].some(w => t.includes(w))) {
       res.summary = this.formatPrecisionSummary(sub, ms, '基本面改善与资本回报提升', '盈利预期稳健或股东增持回购加码，稳固宏观风险偏好与估值修复');
       res.impact_score = 58;
       res.impacts['A股'] = '利好';

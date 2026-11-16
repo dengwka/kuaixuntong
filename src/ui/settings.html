@@ -273,7 +273,7 @@
     .scroll-body {
       flex: 1;
       overflow-y: auto;
-      padding: 16px 20px 24px 20px;
+      padding: 8px 16px 10px 16px;
     }
     .tab-pane {
       display: none;
@@ -524,8 +524,8 @@
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 8px;
-      padding: 10px 16px;
-      margin-bottom: 12px;
+      padding: 6px 12px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -563,7 +563,7 @@
       display: flex;
       gap: 14px;
       align-items: flex-start;
-      min-height: 520px;
+      min-height: auto;
     }
     .sources-sidebar-menu {
       width: 260px;
@@ -580,7 +580,7 @@
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 8px;
-      padding: 10px 12px;
+      padding: 6px 9px;
       cursor: pointer;
       transition: all 0.15s ease;
       display: flex;
@@ -694,6 +694,45 @@
       font-size: 11.5px;
       color: #475569;
     }
+  
+    /* 未授权锁定遮罩 */
+    .tab-pane {
+      position: relative;
+    }
+    .unauthorized-glass-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(248, 250, 252, 0.82);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 10px 0;
+    }
+    .unauthorized-glass-card {
+      position: sticky;
+      top: 80px;
+      margin: 40px auto 0 auto;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.16);
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-align: center;
+      max-width: 440px;
+      width: 90%;
+      pointer-events: auto;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .unauthorized-glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(15, 23, 42, 0.18);
+    }
+
   </style>
 </head>
 <body>
@@ -704,7 +743,11 @@
       <p>轻量敏捷监控 · 毫秒级突发推送 · 智能研判 · 配置即时生效</p>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="status-badge" id="versionBadge">🟢 v1.4.3 · 运行中</span>
+      <span class="license-header-pill" id="licenseHeaderPill" onclick="openLicenseModal()" title="点击查看与管理 License 软件授权" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 4px 12px; border-radius: 9999px; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #475569; user-select: none;">
+        <span id="licenseHeaderPillIcon">🛡️</span>
+        <span id="licenseHeaderPillText">未配置授权</span>
+      </span>
+      <span class="status-badge" id="versionBadge">🟢 v1.0.0 · 运行中</span>
     </div>
   </div>
 
@@ -715,7 +758,7 @@
     <div class="tab-item" data-tab="ai">💡 AI观点研判</div>
     <div class="tab-item" data-tab="toast">🔔 弹窗与行情</div>
     <div class="tab-item" data-tab="mobile">📢 推送管理</div>
-    <div class="tab-item" data-tab="autostart">🚀 开机自启</div>
+    
     <div class="tab-item" data-tab="storage">📂 数据与日志</div>
     <div class="tab-item" data-tab="update" id="tabItemUpdate">
       🔄 检查更新
@@ -728,6 +771,20 @@
 
     <!-- ==================== TAB 1: 监控数据源 (P0 数据源健康诊断与左右分栏工作台) ==================== -->
     <div class="tab-pane active" id="pane-sources">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
       <!-- 📡 全局网络与健康监控雷达总览条 -->
       <div class="source-health-radar">
         <div class="radar-net-status" id="radarNetStatus">
@@ -815,12 +872,20 @@
             <div class="snc-sub" id="sub_local_gov">长沙 · 天心区省府</div>
           </div>
 
-          <!-- ⚡ 下方：一键存活诊断操作按钮 -->
-          <div style="margin-top: 10px;">
-            <button type="button" class="btn btn-secondary" id="btnDiagnoseSources" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; padding: 9px 12px; cursor: pointer; border: 1px solid #CBD5E1; background: #FFFFFF; border-radius: 8px; color: #0F172A; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.15s ease;">
-              <span id="diagnoseIcon">⚡</span> <span>一键存活诊断</span>
-            </button>
+          <!-- 7. 微信公众号 -->
+          <div class="source-nav-card" data-source="wechat" onclick="switchSourcePanel('wechat')">
+            <div class="snc-top">
+              <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
+                <input type="checkbox" id="navCb_wechat" onchange="syncNavSourceCheck('wechat', this.checked)" />
+                <span class="snc-title" style="display:inline-flex; align-items:center; gap:5px;"><svg style="width: 14px; height: 14px; fill: #07C160; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M8.691 2.188C3.891 2.188 0 5.478 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.254-4.647 1.57-5.918 1.42-1.37 3.39-1.996 5.34-1.996.34 0 .68.02 1.01.056C16.57 5.492 12.95 2.188 8.69 2.188zm-2.6 4.316a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm5.2 0a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm6.81 3.596c-3.9 0-7.06 2.68-7.06 5.98 0 1.8 0.95 3.42 2.44 4.51.13.1.2.26.17.43l-.32 1.2c-.02.06-.04.12-.04.17 0 .13.1.24.23.24a.26.26 0 0 0 .14-.04l1.55-.91a.7.7 0 0 1 .58-.08c.73.2 1.5.31 2.31.31 3.9 0 7.06-2.68 7.06-5.98 0-3.3-3.16-5.83-7.06-5.83zm-2.12 3.51a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92zm4.24 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92z"/></svg>微信公众号</span>
+              </label>
+              <span class="health-pill health-pill-disabled" id="pill_wechat">⚪ 未启用</span>
+            </div>
+            <div class="snc-sub" id="sub_wechat"><span id="wechat_sidebar_sub">官方接口实时同步</span></div>
           </div>
+
+
+          
         </div>
 
         <!-- 右侧：选中数据源的专属配置面板 -->
@@ -1369,16 +1434,224 @@
               </div>
             </div>
           </div>
+
+          <!-- G. 微信公众号与服务号推文实时监控面板 -->
+          <div class="source-detail-panel" id="detail-panel-wechat">
+            <div class="card" style="margin-top: 0;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg style="width: 16px; height: 16px; fill: #07C160;" viewBox="0 0 24 24"><path d="M8.691 2.188C3.891 2.188 0 5.478 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.254-4.647 1.57-5.918 1.42-1.37 3.39-1.996 5.34-1.996.34 0 .68.02 1.01.056C16.57 5.492 12.95 2.188 8.69 2.188zm-2.6 4.316a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm5.2 0a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm6.81 3.596c-3.9 0-7.06 2.68-7.06 5.98 0 1.8 0.95 3.42 2.44 4.51.13.1.2.26.17.43l-.32 1.2c-.02.06-.04.12-.04.17 0 .13.1.24.23.24a.26.26 0 0 0 .14-.04l1.55-.91a.7.7 0 0 1 .58-.08c.73.2 1.5.31 2.31.31 3.9 0 7.06-2.68 7.06-5.98 0-3.3-3.16-5.83-7.06-5.83zm-2.12 3.51a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92zm4.24 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92z"/></svg>
+                  <span>微信公众号与服务号推文实时监控</span>
+                </span>
+                <span class="status-badge" id="wechatAuthModeBadge" style="background:#E8F5E9; color:#166534; font-size:11px;">方案 1: 官方API / 开放协议</span>
+              </div>
+
+              <!-- 微信公众平台扫码授权区域 -->
+              <div id="wechatAuthBanner" style="margin: 8px 0 10px 0; padding: 10px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span id="wechatAuthIcon" style="font-size: 20px;">⚪</span>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <b id="wechatAuthLabel" style="font-size: 13px; color: #1E293B;">未授权微信公众平台</b>
+                    </div>
+                    <div id="wechatAuthDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">扫码授权后支持全网任意公众号实时精准搜索、官方高清头像与最新推文同步</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnWechatQrLogin" style="background: #07C160; border-color: #059669; font-size: 11.5px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px;">
+                    <span>📲</span> <span id="wechatQrLoginText">扫码授权</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnWechatClearAuth" style="font-size: 11.5px; padding: 5px 10px; display: none;">
+                    退出授权
+                  </button>
+                </div>
+              </div>
+
+              <div class="source-panel-banner">
+                <span>📡 支持微信公众号与服务号实时推文监控，时效受全局策略保护</span>
+              </div>
+
+              <div id="wechatOptionsSub" style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; margin-top: 6px;">
+                <!-- 热门推荐标签 (精简第一排) -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="color: #64748B; font-size: 11px;">🔥 快捷精选推荐（点击自动填入验证）：</div>
+                    <button type="button" id="btnToggleWechatPresetChips" onclick="toggleWechatPresetChips()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #166534; font-size: 11px; font-weight: 600; cursor: pointer; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                      <span id="wechatPresetChipsToggleText">收起推荐</span>
+                      <span id="wechatPresetChipsToggleIcon" style="font-size: 9px;">▲</span>
+                    </button>
+                  </div>
+                  <div id="wechatPresetChipsContainer" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('新华社')" style="font-size: 11.5px; padding: 4px 10px;">新华社 (权威央媒)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('人民日报')" style="font-size: 11.5px; padding: 4px 10px;">人民日报 (官方党媒)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('连岳')" style="font-size: 11.5px; padding: 4px 10px;">连岳 (见识与审美)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('电商Pro')" style="font-size: 11.5px; padding: 4px 10px;">电商Pro (电商重磅头条)</button>
+                  </div>
+                </div>
+
+                <!-- 搜索与添加公众号输入框 -->
+                <div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="position: relative; flex: 1;">
+                      <span style="position: absolute; left: 8px; top: 7px; color: #166534; font-weight: 700; pointer-events: none; user-select: none;">💬</span>
+                      <input type="text" id="wechatInputHandle" class="form-control" placeholder="输入公众号名称、Biz ID 或搜狗微信链接进行解析" style="padding-left: 28px; font-size: 12px; height: 32px;" />
+                      <button type="button" id="btnWechatClearInput" onclick="clearWechatInput()" style="display: none; position: absolute; right: 8px; top: 6px; background: transparent; border: none; font-size: 13px; color: #94A3B8; cursor: pointer;">✕</button>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnLookupWechat" style="padding: 0 16px; height: 32px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                      <span>🔍</span> <span>验证公众号</span>
+                    </button>
+                  </div>
+                  <div id="wechatLookupNotice" style="display: none; margin-top: 6px; padding: 6px 10px; border-radius: 4px; font-size: 11.5px;"></div>
+                </div>
+
+                <!-- 实时公众号验证预览卡片 -->
+                <div id="wechatPreviewCard" style="display: none; background: #FFFFFF; border: 1.5px solid #16A34A; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.1);">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1;">
+                      <img id="wechatPreviewAvatar" src="" alt="头像" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; display: none;" />
+                      <div id="wechatPreviewAvatarPlaceholder" style="width: 44px; height: 44px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">公</div>
+                      <div style="min-width: 0; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <b id="wechatPreviewName" style="color: #0F172A; font-size: 13px;">--</b>
+                          <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: #F1F5F9; color: #475569;">订阅号</span>
+                        </div>
+                        <div id="wechatPreviewDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">--</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnConfirmAddWechat" style="padding: 6px 16px; font-size: 12px; background: #07C160; border-color: #059669; font-weight: 700;">
+                      订阅
+                    </button>
+                  </div>
+                  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #E2E8F0; font-size: 11px; color: #475569;">
+                    <span>最新文章：</span>
+                    <span id="wechatPreviewLatestTitle" style="color: #0F172A; font-weight: 600;">--</span>
+                  </div>
+                </div>
+
+                <!-- 已订阅的微信公众号列表 -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-weight: 600; color: #334155; font-size: 12px;">
+                      📋 已订阅微信公众号 (<span id="wechatAccountsCount" style="color: #07C160;">0</span>):
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="btnRestoreDefaultWechat" style="font-size: 11px; padding: 2px 8px;">重置预设头部媒体</button>
+                    </div>
+                  </div>
+                  <div id="wechatAccountsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; padding-right: 4px;">
+                    <!-- 动态渲染账号项 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
 
     <!-- ==================== TAB 2: 关键词规则 ==================== -->
     <div class="tab-pane" id="pane-keywords">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
+      
+      <!-- ⏱️ 全局消息抓取与时效策略模式 (单行5选1极简紧凑) -->
+      <div class="card" style="border-left: 3px solid #2563EB;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>⏱️ 全局消息抓取与时效策略模式</span>
+            <span id="fetchStrategyBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #DBEAFE; color: #1D4ED8; font-weight: 600;">当日实时 (≤ 24h)</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnResetStrategy" style="font-size: 11px; padding: 2px 8px; cursor: pointer;">恢复默认推荐</button>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 10px;">
+          控制各数据源（微信、𝕏、周边政务、快讯等）时间抓取策略与历史旧闻拦截阈值。
+        </div>
+
+        <!-- 5 选 1 单行排布 (绝不换行) -->
+        <div style="margin-bottom: 10px;">
+          <div style="font-size: 11.5px; font-weight: 600; color: #1E293B; margin-bottom: 6px;">
+            📌 抓取时效模式 (全局生效):
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+            <!-- 模式 1: 极速 -->
+            <label class="strategy-mode-card" id="modeCard_realtime_2h" style="display: flex; gap: 5px; align-items: flex-start; padding: 6px 6px; border: 1.5px solid #E2E8F0; border-radius: 6px; cursor: pointer; background: #FFFFFF; transition: all 0.15s ease;">
+              <input type="radio" name="fetchStrategyMode" value="realtime_2h" style="margin-top: 2px;" />
+              <div style="min-width: 0;">
+                <b style="color: #0F172A; font-size: 11px; white-space: nowrap; display: block;">⚡ 极速 (≤2h)</b>
+                <div style="font-size: 10px; color: #64748B; margin-top: 2px; white-space: nowrap;">最新2小时突发</div>
+              </div>
+            </label>
+
+            <!-- 模式 2: 半日 -->
+            <label class="strategy-mode-card" id="modeCard_halfday_12h" style="display: flex; gap: 5px; align-items: flex-start; padding: 6px 6px; border: 1.5px solid #E2E8F0; border-radius: 6px; cursor: pointer; background: #FFFFFF; transition: all 0.15s ease;">
+              <input type="radio" name="fetchStrategyMode" value="halfday_12h" style="margin-top: 2px;" />
+              <div style="min-width: 0;">
+                <b style="color: #0F172A; font-size: 11px; white-space: nowrap; display: block;">🌤️ 半日 (≤12h)</b>
+                <div style="font-size: 10px; color: #64748B; margin-top: 2px; white-space: nowrap;">早晚盘与半日</div>
+              </div>
+            </label>
+
+            <!-- 模式 3: 当日推荐 -->
+            <label class="strategy-mode-card" id="modeCard_today_24h" style="display: flex; gap: 5px; align-items: flex-start; padding: 6px 6px; border: 1.5px solid #2563EB; border-radius: 6px; cursor: pointer; background: #EFF6FF; transition: all 0.15s ease;">
+              <input type="radio" name="fetchStrategyMode" value="today_24h" checked style="margin-top: 2px;" />
+              <div style="min-width: 0;">
+                <b style="color: #1D4ED8; font-size: 11px; white-space: nowrap; display: block;">🌟 当日 (推荐)</b>
+                <div style="font-size: 10px; color: #1E40AF; margin-top: 2px; white-space: nowrap;">当天/≤24h发文</div>
+              </div>
+            </label>
+
+            <!-- 模式 4: 3天 -->
+            <label class="strategy-mode-card" id="modeCard_three_days_72h" style="display: flex; gap: 5px; align-items: flex-start; padding: 6px 6px; border: 1.5px solid #E2E8F0; border-radius: 6px; cursor: pointer; background: #FFFFFF; transition: all 0.15s ease;">
+              <input type="radio" name="fetchStrategyMode" value="three_days_72h" style="margin-top: 2px;" />
+              <div style="min-width: 0;">
+                <b style="color: #0F172A; font-size: 11px; white-space: nowrap; display: block;">📅 3天 (≤72h)</b>
+                <div style="font-size: 10px; color: #64748B; margin-top: 2px; white-space: nowrap;">周末复盘与深度</div>
+              </div>
+            </label>
+
+            <!-- 模式 5: 全量 -->
+            <label class="strategy-mode-card" id="modeCard_unlimited" style="display: flex; gap: 5px; align-items: flex-start; padding: 6px 6px; border: 1.5px solid #E2E8F0; border-radius: 6px; cursor: pointer; background: #FFFFFF; transition: all 0.15s ease;">
+              <input type="radio" name="fetchStrategyMode" value="unlimited" style="margin-top: 2px;" />
+              <div style="min-width: 0;">
+                <b style="color: #0F172A; font-size: 11px; white-space: nowrap; display: block;">🌐 全量历史</b>
+                <div style="font-size: 10px; color: #64748B; margin-top: 2px; white-space: nowrap;">不过滤时效</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 自定义阈值与标记水位线 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-top: 8px; border-top: 1px solid #E2E8F0; font-size: 11.5px; color: #475569;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span>消息最大允许时效上限:</span>
+            <input type="number" id="fetchMaxAgeHours" value="24" min="0" max="720" style="width: 55px; padding: 2px 6px; font-size: 11.5px; border: 1px solid #CBD5E1; border-radius: 4px; text-align: center;" />
+            <span>小时</span>
+          </div>
+
+          <label class="checkbox-row" style="margin: 0; font-size: 11.5px; cursor: pointer;">
+            <input type="checkbox" id="markWatermarkOnStart" checked />
+            <span>启动/新加订阅时默认标记最新水位线（不补推历史旧闻）</span>
+          </label>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">🎯 全局关键词规则与过滤策略</div>
         <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
-          设置跨所有通道的全局加分标签与一票否决黑名单。黑名单命中则绝对不推送。
+          设置跨通道加分关键词与一票否决黑名单（命中黑名单绝对不推）。
         </div>
 
         <div style="margin-bottom: 12px;">
@@ -1428,6 +1701,20 @@
 
     <!-- ==================== TAB 3: AI 观点研判 ==================== -->
     <div class="tab-pane" id="pane-ai">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">
           <span>💡 宏观观点分析与资产影响研判</span>
@@ -1466,6 +1753,20 @@
 
     <!-- ==================== TAB 4: 弹窗与行情 ==================== -->
     <div class="tab-pane" id="pane-toast">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
       <!-- 轮询与弹窗 -->
       <div class="card">
         <div class="card-title">🔔 弹窗与交互策略</div>
@@ -1603,6 +1904,20 @@
 
     <!-- ==================== TAB: 推送管理 (电脑端桌面弹窗 / 手机端即时消息) ==================== -->
     <div class="tab-pane" id="pane-mobile">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">
           <span>📢 消息推送管理 · 电脑桌面与手机移动端</span>
@@ -1941,45 +2256,22 @@
       </div>
     </div>
 
-    <!-- ==================== TAB 5: 开机自启 (专用独立Tab，默认开启) ==================== -->
-    <div class="tab-pane" id="pane-autostart">
-      <div class="card">
-        <div class="card-title">
-          <span>🚀 开机自启动与后台常驻服务</span>
-          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #FEF3C7; color: #92400E; font-weight: 600;">推荐开启</span>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
-          设置电脑开机后快讯通的自动启动机制，确保随时随地第一时间捕获全球重磅突发财经情报。
-        </div>
-
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px; margin-bottom: 12px;">
-          <div class="form-row" style="margin-bottom: 6px;">
-            <label class="checkbox-row">
-              <input type="checkbox" id="autoStartEnabled" checked />
-              <b style="color: #0F172A; font-size: 13px;">开机自动启动快讯通 (系统登录后自动运行 · 默认开启)</b>
-            </label>
-          </div>
-          <div style="font-size: 11.5px; color: #64748B; margin-left: 22px; line-height: 1.5;">
-            勾选后，系统将在开机或用户登录时自动拉起快讯通服务，无需手动启动。系统级原生注册，开销几乎为零。
-          </div>
-        </div>
-
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 14px; border-radius: 6px;">
-          <div style="font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 6px;">
-            💡 状态栏与系统托盘常驻说明
-          </div>
-          <div style="font-size: 11.5px; color: #475569; line-height: 1.6;">
-            • <b>未看消息优先</b>：单击或双击托盘图标，若有未读消息将优先弹出进行补看；<br>
-            • <b>快速唤起配置</b>：在无未读消息时，点击托盘图标将快速打开此配置中心；<br>
-            • <b>状态徽章提示</b>：产生未点击消息时托盘图标将自动显示未读角标并闪烁提醒；<br>
-            • <b>彻底退出方式</b>：右键点击托盘小图标，选择【❌ 退出程序】即可完全终止后台进程。
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ==================== TAB 6: 数据与日志 (放在最后一个Tab) ==================== -->
     <div class="tab-pane" id="pane-storage">
+      <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
+      <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
+        <div class="unauthorized-glass-card">
+          <div style="font-size: 22px; margin-bottom: 4px;">🔒</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">核心功能已锁定 · 需激活授权</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+            当前设备尚未激活商业授权。您可自由切换 Tab 浏览功能，激活后即可开启实时监控与推送。
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" style="background: #059669; border-color: #047857; font-weight: 600; padding: 6px 16px;">
+            🔑 立即输入授权码激活
+          </button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">
           <span>📂 数据与日志存储及自动巡检清理</span>
@@ -2060,43 +2352,45 @@
 
     <!-- ==================== TAB 7: 检查与版本更新 (从GitHub Releases拉取) ==================== -->
     <div class="tab-pane" id="pane-update">
-      <!-- 卡片 1: 核心版本状态与在线升级 -->
-      <div class="card">
+      <!-- 极简卡片: 软件版本状态与更新检测 -->
+      <div class="card" style="margin-top: 0;">
         <div class="card-title">
-          <span>🚀 版本运行状态与在线升级</span>
+          <span>🔄 软件更新检测</span>
           <span id="updateHeaderBadge" class="status-badge" style="background: #E2E8F0; color: #475569;">已就绪</span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
-          <div>
-            <div style="font-size: 13px; color: #1E293B; display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-block; width: 95px; color: #475569; font-weight: 600;">当前运行版本:</span>
-              <b style="color: #2563EB; font-size: 13.5px;" id="updateCurrentVer">v1.2.0</b>
-              <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🟢 最新版</span>
-            </div>
-            <div style="font-size: 12.5px; color: #64748B; margin-top: 6px; display: flex; align-items: center; gap: 8px;" id="updateLatestInfo">
-              <span style="display: inline-block; width: 95px; color: #64748B;">线上最新版本:</span>
-              <b style="color: #0F172A;" id="updateLatestVer">--</b>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;">
+          <!-- 上方信息行 (单行横向排布，带充足留白，永不换行) -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap;">
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; white-space: nowrap;">
+              <span style="color: #475569;">当前版本:</span>
+              <b style="font-size: 13.5px; color: #0F172A;" id="updateCurrentVer">v1.0.0</b>
+              <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 1.5px 7px; border-radius: 12px; font-weight: 600;">已是最新版</span>
+              <span style="color: #CBD5E1; margin: 0 4px;">|</span>
+              <span style="color: #64748B;">最新版本: <b style="color: #0F172A;" id="updateLatestVer">--</b></span>
               <span id="updatePubTime" style="color: #94A3B8; font-size: 11.5px;"></span>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-block; width: 95px; color: #64748B;">上次检测时间:</span>
-              <span id="updateLastCheckTime" style="color: #059669; font-weight: 600;">--</span>
+            <div style="font-size: 11.5px; color: #64748B; white-space: nowrap; flex-shrink: 0;">
+              上次核对: <span id="updateLastCheckTime" style="color: #059669; font-weight: 600;">--</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" class="btn btn-primary btn-sm" id="btnStartUpdate" style="display: none; padding: 7px 18px; font-weight: 700; cursor: pointer; background: #16A34A; border-color: #15803D; font-size: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);">
-              🚀 立即更新
+
+          <!-- 下方按钮行 (独立换行放置，按钮居右对齐，整洁大气) -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; border-top: 1px dashed #E2E8F0; padding-top: 8px;">
+            <button type="button" class="btn btn-primary btn-sm" id="btnStartUpdate" style="display: none; padding: 5px 16px; font-weight: 700; background: #16A34A; border-color: #15803D; font-size: 12px;">
+              🚀 立即升级
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshUpdate" style="padding: 6px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
-              <span id="refreshUpdateIcon" style="display: inline-block;">🔄</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshUpdate" style="padding: 5px 14px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">
+              <span id="refreshUpdateIcon">🔄</span>
               <span id="refreshUpdateText">立即检测更新</span>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnOpenReleasePage" style="padding: 6px 12px; cursor: pointer;">
-              🌐 访问 Releases
+            <button type="button" class="btn btn-secondary btn-sm" id="btnOpenReleasePage" style="padding: 5px 12px; color: #475569; cursor: pointer; font-size: 12px;">
+              访问 Releases ↗
             </button>
           </div>
         </div>
-        <div id="updateNoticeBanner" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 4px;"></div>
+
+        <div id="updateNoticeBanner" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px;"></div>
 
         <!-- 自动下载并触发安装的动态进度条 (点击【立即更新】后展示) -->
         <div id="updateProgressBox" style="display: none; margin-top: 10px; padding: 12px 14px; background: #F8FAFC; border-radius: 6px; border: 1px solid #CBD5E1;">
@@ -2112,90 +2406,90 @@
             <span id="updateProgressDetail">0 MB / 0 MB (0.0 MB/s)</span>
           </div>
         </div>
+
+        <!-- 极简更新设置 (去除了繁杂的节点单选和长篇大论) -->
+        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; border-top: 1px solid #F1F5F9; padding-top: 10px;">
+          <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+            <label class="checkbox-row" style="cursor: pointer; margin: 0; font-size: 12px;">
+              <input type="radio" name="updateStrategy" id="strategyAuto" value="auto" checked style="cursor: pointer;" />
+              <span style="color: #1E293B; font-weight: 600;">自动检查更新 (启动及后台静默核对)</span>
+            </label>
+            <label class="checkbox-row" style="cursor: pointer; margin: 0; font-size: 12px;">
+              <input type="radio" name="updateStrategy" id="strategyManual" value="manual" style="cursor: pointer;" />
+              <span style="color: #64748B;">仅手动检查 (打开本页时检测)</span>
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+            <label class="checkbox-row" style="cursor: pointer; margin: 0; font-size: 12px;">
+              <input type="checkbox" id="updateNotifyOnNew" checked />
+              <span style="color: #475569;">发现新版本时桌面右下角弹窗提醒</span>
+            </label>
+            <label class="checkbox-row" style="cursor: pointer; margin: 0; font-size: 12px;">
+              <input type="checkbox" id="chkDownloadAccel" checked />
+              <span style="color: #166534; font-weight: 600;">🚀 启用国内高速下载镜像加速</span>
+            </label>
+          </div>
+          <!-- 隐藏保留原单选框兼容 JS 逻辑 -->
+          <div style="display: none;">
+            <input type="radio" name="downloadAccelNode" value="auto" checked />
+            <input type="radio" name="downloadAccelNode" value="ghfast" />
+            <input type="radio" name="downloadAccelNode" value="ghproxy" />
+            <input type="radio" name="downloadAccelNode" value="official" />
+          </div>
+        </div>
       </div>
 
-      <!-- 卡片 2: 版本更新说明 (仅在检测到新版本时展示；若已是最新版则不展示更新说明，且不展示具体下载地址) -->
+      <!-- 版本更新说明卡片 (仅有新版时展示) -->
       <div class="card" id="cardReleaseNotes" style="display: none;">
         <div class="card-title">
-          <span>📋 新版本更新内容与说明 (Release Notes)</span>
-          <span style="font-size: 11px; color: #64748B;">从 GitHub Releases 官方通道获取</span>
+          <span>📋 新版本更新内容与说明</span>
         </div>
-        <div id="releaseNotesContainer" class="release-body">
-          <div style="color: #94A3B8; text-align: center; padding: 18px 0;">
-            正在从 GitHub Releases 官方源查询最新版本更新说明...
-          </div>
+        <div id="releaseNotesContainer" class="release-body" style="font-size: 12px; color: #475569; line-height: 1.6;">
         </div>
       </div>
 
-      <!-- 卡片 3: 各平台与芯片架构专属安装包 (支持手动选包/自动推荐) -->
+      <!-- 手动选包卡片 (按需展示) -->
       <div class="card" id="cardManualAssets" style="display: none;">
         <div class="card-title">
-          <span>📦 各平台与芯片架构安装包 (支持手动选包)</span>
+          <span>📦 各平台安装包</span>
           <span id="currentMachineTag" style="font-size: 11.5px; background: #E0F2FE; color: #0369A1; padding: 2px 8px; border-radius: 10px; font-weight: 600;"></span>
         </div>
-        <div style="font-size: 12px; color: #64748B; margin-bottom: 8px;">
-          系统已根据当前硬件自动标注推荐安装包。不同芯片的 Mac 电脑请务必选择对应架构包以确保正常启动：
-        </div>
-        <div id="manualAssetsContainer" style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- 动态渲染安装包列表 -->
-        </div>
+        <div id="manualAssetsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
 
-      <!-- 卡片 4: 更新策略与下载提速设置 -->
-      <div class="card">
+      <!-- 卡片: 开机自启动与后台常驻服务 (独立整宽，放置在检查更新最下方) -->
+      <div class="card" id="cardAutoStart">
         <div class="card-title">
-          <span>⚙ 更新策略与下载加速设置</span>
+          <span>🚀 开机自启动与系统常驻服务</span>
+          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">系统级常驻</span>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border-radius: 6px; background: #F8FAFC; border: 1px solid #E2E8F0;">
-            <input type="radio" name="updateStrategy" id="strategyAuto" value="auto" checked style="cursor: pointer;" />
-            <span style="font-weight: 600; color: #1E293B;">自动更新</span>
-            <span style="font-size: 11.5px; color: #64748B;">（软件启动及后台自动检测，发现新版提醒并标记小红点）</span>
-          </label>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 10px;">
+          设置开机自启机制，开机后自动后台常驻运行，第一时间捕获全球重磅资讯。
+        </div>
 
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border-radius: 6px; background: #F8FAFC; border: 1px solid #E2E8F0;">
-            <input type="radio" name="updateStrategy" id="strategyManual" value="manual" style="cursor: pointer;" />
-            <span style="font-weight: 600; color: #334155;">手工更新</span>
-            <span style="font-size: 11.5px; color: #64748B;">（不在后台静默轮询网络，进入本页面时自动检测）</span>
-          </label>
-
-          <div style="margin-top: 4px; padding-left: 2px;">
-            <label class="checkbox-row" style="font-size: 12px; color: #475569;">
-              <input type="checkbox" id="updateNotifyOnNew" checked />
-              <span>发现可用新版本时，在桌面右下角弹出升级卡片提示</span>
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px;">
+          <div class="form-row" style="margin-bottom: 0;">
+            <label class="checkbox-row" style="cursor: pointer; margin: 0;">
+              <input type="checkbox" id="autoStartEnabled" checked />
+              <b style="color: #0F172A; font-size: 12.5px;">开机自动启动快讯通（登录系统后自动常驻 · 推荐）</b>
             </label>
           </div>
         </div>
 
-        <!-- 极速下载与镜像加速引擎配置 -->
-        <div style="margin-top: 12px; padding: 10px 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 6px;">
-          <div style="font-weight: 700; color: #166534; font-size: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <span style="display: flex; align-items: center; gap: 6px;">⚡ 下载提速与镜像加速引擎</span>
-            <span style="font-size: 11px; background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 10px; font-weight: 700;">国内提速 10~50 倍</span>
-          </div>
-          <div style="font-size: 11.5px; color: #475569; line-height: 1.5; margin-bottom: 8px;">
-            GitHub 官方源由于海外服务器带宽限制常出现几十 KB/s 或超时。系统已内置智能镜像测速加速通道（实测下载速度 3~15 MB/s）：
-          </div>
-          <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px;">
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-              <input type="radio" name="downloadAccelNode" value="auto" checked style="cursor: pointer;" />
-              <span style="font-weight: 700; color: #047857;">⚡ 智能多节点自动测速 (推荐)</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-              <input type="radio" name="downloadAccelNode" value="ghfast" style="cursor: pointer;" />
-              <span style="color: #1E293B;">🚀 高速节点 1 (GHFast CDN)</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-              <input type="radio" name="downloadAccelNode" value="ghproxy" style="cursor: pointer;" />
-              <span style="color: #1E293B;">🚀 高速节点 2 (GH-Proxy CDN)</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-              <input type="radio" name="downloadAccelNode" value="official" style="cursor: pointer;" />
-              <span style="color: #64748B;">🌐 GitHub 官方直连 (仅海外/代理)</span>
-            </label>
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <b style="color: #0F172A; font-size: 12px;">开机静默常驻系统托盘</b>
+              <div style="font-size: 11px; color: #64748B; margin-top: 2px;">
+                开机启动时仅在任务栏托盘静默就绪，不干扰桌面，有重磅突发时即时弹窗提醒。
+              </div>
+            </div>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">默认支持</span>
           </div>
         </div>
       </div>
+
       </div>
     </div>
 
@@ -2635,7 +2929,7 @@
       const stats = payload.stats || {};
 
       // 动态对齐并统一顶部与页面当前版本号
-      const appVer = payload.appVersion || '1.4.3';
+      const appVer = payload.appVersion || '1.0.0';
       const vBadge = document.getElementById('versionBadge');
       if (vBadge) {
         vBadge.textContent = `🟢 v${appVer} · 运行中`;
@@ -3480,11 +3774,19 @@
         tag.style.background = '#DCFCE7';
         tag.style.color = '#166534';
         container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+        container.style.userSelect = 'auto';
+        container.style.filter = 'none';
+        container.querySelectorAll('input, button, select, textarea').forEach(el => el.disabled = false);
       } else {
         tag.textContent = '已关闭';
         tag.style.background = '#E2E8F0';
         tag.style.color = '#64748B';
-        container.style.opacity = '0.65';
+        container.style.opacity = '0.4';
+        container.style.pointerEvents = 'none';
+        container.style.userSelect = 'none';
+        container.style.filter = 'grayscale(20%)';
+        container.querySelectorAll('input, button, select, textarea').forEach(el => el.disabled = true);
       }
     }
 
@@ -5143,8 +5445,30 @@
       // 自动静默同步并保存当前所有最新配置（包括静音开关状态），确保演练严格以当前配置为准
       const currentCfg = collectCurrentConfig();
       ipcRenderer.send('settings-save-config', currentCfg);
-      ipcRenderer.send('settings-trigger-test');
-      showNotice('自检测试卡片已唤起（已自动同步当前配置）！');
+
+      // 获取当前激活的数据源（若在监控数据源Tab下，取当前选中卡片的data-source；否则走默认金十逻辑）
+      let currentSource = null;
+      const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
+      if (!activeTab || activeTab === 'sources') {
+        const activeNavCard = document.querySelector('.source-nav-card.active');
+        if (activeNavCard) {
+          currentSource = activeNavCard.getAttribute('data-source');
+        }
+      }
+
+      ipcRenderer.send('settings-trigger-test', currentSource);
+
+      const sourceNameMap = {
+        'wechat': '微信公众号',
+        'x_twitter': '𝕏 顶流关注',
+        'xueqiu': '雪球快讯',
+        'maimai': '脉脉职言',
+        'local_gov': '本地周边政务',
+        'jin10_topic': '重要事件专栏',
+        'jin10': '金十快讯'
+      };
+      const label = (currentSource && sourceNameMap[currentSource]) ? `【${sourceNameMap[currentSource]}】` : '';
+      showNotice(`${label}自检测试卡片已唤起（已自动同步当前配置）！`);
     });
 
     document.getElementById('btnSave').addEventListener('click', () => {
@@ -5300,7 +5624,7 @@
       if (!res) return;
       currentUpdateData = res;
 
-      const currentVer = res.currentVersion || '1.2.0';
+      const currentVer = res.currentVersion || '1.0.0';
       const latestTag = res.latestTag || `v${currentVer}`;
       const publishedAt = res.publishedAt || '--';
       const buildInfo = (res.buildTime && res.buildTime !== publishedAt) ? ` · 最新构建: ${res.buildTime}` : '';
@@ -5625,6 +5949,1006 @@
     } catch (e) {
       console.warn('初始同步预渲染失败:', e);
     }
-  </script>
+  
+
+  // ==========================================
+  // License 授权管理客户端逻辑 (浅色主题 + 全局功能锁定)
+  // ==========================================
+  window._currentLicenseState = null;
+
+  async function openLicenseModal() {
+    const overlay = document.getElementById('licenseModalOverlay');
+    if (overlay) overlay.style.display = 'flex';
+    setLicNotice('', '');
+    await refreshLicenseState();
+  }
+
+  function closeLicenseModal() {
+    const overlay = document.getElementById('licenseModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  function toggleLicProxyAdvanced() {
+    const body = document.getElementById('licProxyBody');
+    const chevron = document.getElementById('licProxyChevron');
+    if (!body) return;
+    const isHidden = body.style.display === 'none' || !body.style.display;
+    body.style.display = isHidden ? 'flex' : 'none';
+    if (chevron) chevron.textContent = isHidden ? '▲ 收起' : '▼ 展开';
+  }
+
+  function setLicNotice(msg, type = 'info') {
+    const el = document.getElementById('licActionNotice');
+    if (!el) return;
+    if (!msg) {
+      el.style.display = 'none';
+      el.textContent = '';
+      return;
+    }
+    el.style.display = 'block';
+    el.textContent = msg;
+    if (type === 'error') {
+      el.style.background = '#FEF2F2';
+      el.style.border = '1px solid #FECDD3';
+      el.style.color = '#DC2626';
+    } else if (type === 'success') {
+      el.style.background = '#ECFDF5';
+      el.style.border = '1px solid #A7F3D0';
+      el.style.color = '#059669';
+    } else {
+      el.style.background = '#F8FAFC';
+      el.style.border = '1px solid #CBD5E1';
+      el.style.color = '#334155';
+    }
+  }
+
+  function copyLicenseMac() {
+    const mac = document.getElementById('licMacText')?.textContent;
+    if (!mac || mac === '识别中...') return;
+    navigator.clipboard.writeText(mac);
+    const btn = document.getElementById('btnCopyMac');
+    if (btn) {
+      btn.textContent = '✅';
+      setTimeout(() => btn.textContent = '📋', 1500);
+    }
+    showNotice('已复制设备 MAC: ' + mac);
+  }
+
+  function copyContactEmail() {
+    navigator.clipboard.writeText('wenkan_g@163.com');
+    const btn = document.getElementById('btnCopyEmail');
+    if (btn) {
+      btn.textContent = '✅ 已复制邮箱';
+      setTimeout(() => btn.textContent = '📋 复制邮箱', 1500);
+    }
+    showNotice('已复制联系邮箱: wenkan_g@163.com');
+  }
+
+  function updateLicenseUI(info) {
+    if (!info) return;
+    const state = info.state || {};
+    window._currentLicenseState = state;
+
+    const isAuthorized = (state.isAuthorized === true) || (state.status === 'valid' || state.status === 'grace_offline');
+
+    // 1. 顶部 Header 胶囊
+    const headerPill = document.getElementById('licenseHeaderPill');
+    const headerPillIcon = document.getElementById('licenseHeaderPillIcon');
+    const headerPillText = document.getElementById('licenseHeaderPillText');
+
+    if (headerPill && headerPillText) {
+      if (state.status === 'valid') {
+        headerPill.style.borderColor = '#A7F3D0';
+        headerPill.style.background = '#ECFDF5';
+        headerPill.style.color = '#059669';
+        if (headerPillIcon) headerPillIcon.textContent = '🛡️';
+        headerPillText.textContent = `已授权 · 剩余 ${state.remainingDays ?? '--'} 天`;
+      } else if (state.status === 'grace_offline') {
+        headerPill.style.borderColor = '#FDE68A';
+        headerPill.style.background = '#FFFBEB';
+        headerPill.style.color = '#D97706';
+        if (headerPillIcon) headerPillIcon.textContent = '⚠️';
+        headerPillText.textContent = `离线宽限 · 剩余 ${state.graceRemainingDays ?? 7} 天`;
+      } else if (state.status === 'expired') {
+        headerPill.style.borderColor = '#FECDD3';
+        headerPill.style.background = '#FEF2F2';
+        headerPill.style.color = '#DC2626';
+        if (headerPillIcon) headerPillIcon.textContent = '❌';
+        headerPillText.textContent = '授权已过期';
+      } else {
+        headerPill.style.borderColor = '#CBD5E1';
+        headerPill.style.background = '#F8FAFC';
+        headerPill.style.color = '#64748B';
+        if (headerPillIcon) headerPillIcon.textContent = '🛡️';
+        headerPillText.textContent = '未配置授权';
+      }
+    }
+
+    // 2. 授权锁定遮罩 (除检查更新外)
+    const masks = document.querySelectorAll('.unauthorized-glass-mask');
+    masks.forEach(mask => {
+      mask.style.display = isAuthorized ? 'none' : 'flex';
+    });
+
+    const btnSave = document.getElementById('btnSave');
+    const btnTest = document.getElementById('btnTest');
+    const btnTestLive = document.getElementById('btnTestLiveAll');
+    if (btnSave) {
+      btnSave.disabled = !isAuthorized;
+      btnSave.style.opacity = isAuthorized ? '1' : '0.45';
+      btnSave.title = isAuthorized ? '' : '未激活商业授权，功能已锁定';
+    }
+    if (btnTest) {
+      btnTest.disabled = !isAuthorized;
+      btnTest.style.opacity = isAuthorized ? '1' : '0.45';
+      btnTest.title = isAuthorized ? '' : '未激活商业授权，功能已锁定';
+    }
+    if (btnTestLive) {
+      btnTestLive.disabled = !isAuthorized;
+      btnTestLive.style.opacity = isAuthorized ? '1' : '0.45';
+    }
+
+    // 3. Modal 浅色组件
+    const modalBadge = document.getElementById('licModalBadge');
+    const modalBadgeIcon = document.getElementById('licModalBadgeIcon');
+    const modalBadgeText = document.getElementById('licModalBadgeText');
+    const statusCard = document.getElementById('licStatusCard');
+    const resultMsg = document.getElementById('licResultMsg');
+    const daysNumber = document.getElementById('licDaysNumber');
+    const macText = document.getElementById('licMacText');
+    const expireTime = document.getElementById('licExpireTimeText');
+    const currentKey = document.getElementById('licMaskedKeyText');
+    const lastVerified = document.getElementById('licLastVerifyText');
+    const inputKey = document.getElementById('inputLicKey');
+
+    if (macText) macText.textContent = info.mac || state.macAddress || '识别中...';
+    if (expireTime) expireTime.textContent = state.expireTime ? state.expireTime.replace('T', ' ').substring(0, 19) : '--';
+    if (currentKey) currentKey.textContent = state.maskedKey || (state.licenseKey ? state.licenseKey.substring(0, 5) + '-****' : '未激活');
+    if (inputKey && state.licenseKey && !inputKey.value) inputKey.value = state.licenseKey;
+    if (lastVerified) {
+      lastVerified.textContent = state.lastVerifyTime ? state.lastVerifyTime.replace('T', ' ').substring(0, 19) : (state.lastVerifiedAt ? new Date(state.lastVerifiedAt).toLocaleString('zh-CN', { hour12: false }) : '从未');
+    }
+
+    if (daysNumber) {
+      daysNumber.textContent = state.remainingDays !== null && state.remainingDays !== undefined ? state.remainingDays : '--';
+    }
+
+    if (statusCard && resultMsg && modalBadge) {
+      if (state.status === 'valid') {
+        statusCard.style.borderColor = '#86EFAC';
+        statusCard.style.background = '#F0FDF4';
+        resultMsg.style.color = '#059669';
+        resultMsg.textContent = state.message || '心跳校验通过 · 授权正常运行';
+        if (daysNumber) daysNumber.style.color = '#059669';
+
+        modalBadge.style.borderColor = '#A7F3D0';
+        modalBadge.style.background = '#ECFDF5';
+        modalBadge.style.color = '#059669';
+        if (modalBadgeIcon) modalBadgeIcon.textContent = '🛡️';
+        if (modalBadgeText) modalBadgeText.textContent = `授权有效 · 剩余 ${state.remainingDays ?? '--'} 天`;
+      } else if (state.status === 'grace_offline') {
+        statusCard.style.borderColor = '#FDE68A';
+        statusCard.style.background = '#FFFBEB';
+        resultMsg.style.color = '#D97706';
+        resultMsg.textContent = state.message || '网络连接超时 · 处于本地 7 天离线宽限保护期';
+        if (daysNumber) daysNumber.style.color = '#D97706';
+
+        modalBadge.style.borderColor = '#FDE68A';
+        modalBadge.style.background = '#FFFBEB';
+        modalBadge.style.color = '#D97706';
+        if (modalBadgeIcon) modalBadgeIcon.textContent = '⚠️';
+        if (modalBadgeText) modalBadgeText.textContent = `宽限中 · 剩余 ${state.graceRemainingDays ?? 7} 天`;
+      } else if (state.status === 'expired') {
+        statusCard.style.borderColor = '#FECDD3';
+        statusCard.style.background = '#FEF2F2';
+        resultMsg.style.color = '#DC2626';
+        resultMsg.textContent = state.message || '授权码已过期，请及时续期';
+        if (daysNumber) daysNumber.style.color = '#DC2626';
+
+        modalBadge.style.borderColor = '#FECDD3';
+        modalBadge.style.background = '#FEF2F2';
+        modalBadge.style.color = '#DC2626';
+        if (modalBadgeIcon) modalBadgeIcon.textContent = '❌';
+        if (modalBadgeText) modalBadgeText.textContent = '授权已过期';
+      } else {
+        statusCard.style.borderColor = '#E2E8F0';
+        statusCard.style.background = '#F8FAFC';
+        resultMsg.style.color = '#64748B';
+        resultMsg.textContent = state.message || '尚未激活授权，请输入授权码激活本机';
+        if (daysNumber) daysNumber.style.color = '#64748B';
+
+        modalBadge.style.borderColor = '#CBD5E1';
+        modalBadge.style.background = '#F1F5F9';
+        modalBadge.style.color = '#475569';
+        if (modalBadgeIcon) modalBadgeIcon.textContent = '🛡️';
+        if (modalBadgeText) modalBadgeText.textContent = '未配置授权';
+      }
+    }
+  }
+
+  async function refreshLicenseState() {
+    try {
+      const info = await ipcRenderer.invoke('license:get-info');
+      updateLicenseUI(info);
+    } catch (e) {
+      console.warn('获取 License 状态异常:', e);
+    }
+  }
+
+  async function handleActivateLicense() {
+    const input = document.getElementById('inputLicKey');
+    const key = (input?.value || '').trim();
+    if (!key) {
+      setLicNotice('请输入授权码后再点击激活', 'error');
+      if (input) input.focus();
+      return;
+    }
+    const btn = document.getElementById('btnActivateLic');
+    if (btn) btn.disabled = true;
+    setLicNotice('正在连接云端服务器激活并绑定本机...', 'info');
+
+    try {
+      const res = await ipcRenderer.invoke('license:activate', { licenseKey: key });
+      const isOk = !!(res && (res.ok || res.success));
+      if (isOk) {
+        setLicNotice('🎉 ' + (res.message || '激活成功！已完成单机物理绑定'), 'success');
+        showNotice('商业授权激活成功！');
+      } else {
+        setLicNotice('❌ ' + (res?.message || '激活失败，请检查授权码或网络连接'), 'error');
+      }
+    } catch (err) {
+      setLicNotice('❌ 激活调用异常: ' + (err.message || String(err)), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      await refreshLicenseState();
+    }
+  }
+
+  async function handleHeartbeatVerify() {
+    const btn = document.getElementById('btnLicVerifyNow');
+    if (btn) btn.disabled = true;
+    setLicNotice('正在向云端发起心跳校验...', 'info');
+
+    try {
+      const res = await ipcRenderer.invoke('license:verify');
+      const isOk = !!(res && (res.ok || res.success || (res.message && res.message.includes('通过'))));
+      if (isOk) {
+        setLicNotice('✅ ' + (res.message || '心跳校验通过'), 'success');
+      } else {
+        setLicNotice('⚠️ ' + (res?.message || '校验未通过'), 'error');
+      }
+    } catch (err) {
+      setLicNotice('❌ 心跳异常: ' + (err.message || String(err)), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      await refreshLicenseState();
+    }
+  }
+
+  function triggerImportLicFile() {
+    const input = document.getElementById('fileLicInput');
+    if (input) input.click();
+  }
+
+  async function handleFileLicChange(e) {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    setLicNotice('正在读取并验签离线证书: ' + file.name, 'info');
+
+    try {
+      const text = await file.text();
+      const res = await ipcRenderer.invoke('license:verify-offline', text);
+      if (res && res.success) {
+        setLicNotice('🎉 离线证书验签成功！已在当前设备生效', 'success');
+        showNotice('离线证书验签成功！');
+      } else {
+        setLicNotice('❌ 证书验签未通过: ' + (res?.message || '文件损坏或与本机 MAC 不匹配'), 'error');
+      }
+    } catch (err) {
+      setLicNotice('❌ 证书解析错误: ' + (err.message || String(err)), 'error');
+    } finally {
+      e.target.value = '';
+      await refreshLicenseState();
+    }
+  }
+
+  async function handleClearLicense() {
+    if (!confirm('确定要清除当前设备的本地授权信息吗？清除后功能将恢复未授权状态。')) return;
+    try {
+      await ipcRenderer.invoke('license:clear');
+      setLicNotice('已清除本地授权，当前处于未授权状态', 'info');
+      showNotice('已清除本地授权');
+      const input = document.getElementById('inputLicKey');
+      if (input) input.value = '';
+    } catch (err) {
+      setLicNotice('清除授权异常: ' + err.message, 'error');
+    } finally {
+      await refreshLicenseState();
+    }
+  }
+
+  async function handleSaveLicProxy() {
+    const proxyInput = document.getElementById('licCustomProxyInput');
+    const proxyUrl = (proxyInput?.value || '').trim();
+    try {
+      await ipcRenderer.invoke('license:set-proxy', proxyUrl);
+      setLicNotice('外网代理已更新: ' + (proxyUrl || '已重置直连'), 'success');
+    } catch (err) {
+      setLicNotice('保存代理异常: ' + err.message, 'error');
+    }
+  }
+
+  // 绑定全局函数以便调试或点击调用
+  window.openLicenseModal = openLicenseModal;
+  window.closeLicenseModal = closeLicenseModal;
+  window.updateLicenseUI = updateLicenseUI;
+  window.refreshLicenseState = refreshLicenseState;
+
+  // 页面启动拉取 License 状态
+  refreshLicenseState();
+
+
+
+    // 🔑 微信公众平台扫码授权 - UI 控制逻辑
+    async function updateWechatAuthBanner() {
+      const banner = document.getElementById('wechatAuthBanner');
+      const icon = document.getElementById('wechatAuthIcon');
+      const label = document.getElementById('wechatAuthLabel');
+      const desc = document.getElementById('wechatAuthDesc');
+      const loginBtn = document.getElementById('btnWechatQrLogin');
+      const loginText = document.getElementById('wechatQrLoginText');
+      const clearBtn = document.getElementById('btnWechatClearAuth');
+      const modeBadge = document.getElementById('wechatAuthModeBadge');
+      if (!banner) return;
+
+      try {
+        const status = await ipcRenderer.invoke('wechat:get-auth-status');
+        if (status && status.authorized) {
+          banner.style.borderColor = '#07C160';
+          banner.style.background = '#F0FFF4';
+          if (icon) icon.textContent = '🟢';
+          if (label) { label.textContent = '微信公众平台已授权'; label.style.color = '#166534'; }
+          if (desc) {
+            desc.textContent = `全网任意公众号实时精准搜索 · 官方高清头像 · 最新推文同步 (剩余约 ${status.remain_min || 0} 分钟)`;
+            desc.style.color = '#15803D';
+          }
+          if (loginText) loginText.textContent = '刷新授权';
+          if (clearBtn) clearBtn.style.display = 'inline-flex';
+          if (modeBadge) {
+            modeBadge.textContent = '✅ 官方API授权模式';
+            modeBadge.style.background = '#DCFCE7';
+            modeBadge.style.color = '#166534';
+          }
+        } else if (status && status.expired) {
+          banner.style.borderColor = '#F59E0B';
+          banner.style.background = '#FFFBEB';
+          if (icon) icon.textContent = '🟡';
+          if (label) { label.textContent = '微信授权已过期'; label.style.color = '#92400E'; }
+          if (desc) { desc.textContent = '请重新扫码授权以恢复全网搜索能力'; desc.style.color = '#B45309'; }
+          if (loginText) loginText.textContent = '重新扫码';
+          if (clearBtn) clearBtn.style.display = 'inline-flex';
+          if (modeBadge) {
+            modeBadge.textContent = '⚠️ 授权已过期';
+            modeBadge.style.background = '#FEF3C7';
+            modeBadge.style.color = '#92400E';
+          }
+        } else {
+          banner.style.borderColor = '#CBD5E1';
+          banner.style.background = '#F8FAFC';
+          if (icon) icon.textContent = '⚪';
+          if (label) { label.textContent = '未授权微信公众平台'; label.style.color = '#334155'; }
+          if (desc) { desc.textContent = '扫码授权后支持全网任意公众号实时精准搜索、高清官方头像与最新推文同步'; desc.style.color = '#64748B'; }
+          if (loginText) loginText.textContent = '扫码授权';
+          if (clearBtn) clearBtn.style.display = 'none';
+          if (modeBadge) {
+            modeBadge.textContent = '方案 1: RSS / 开放协议';
+            modeBadge.style.background = '#E8F5E9';
+            modeBadge.style.color = '#166534';
+          }
+        }
+      } catch (e) {}
+    }
+
+    window.updateWechatAuthBanner = updateWechatAuthBanner;
+
+  // ==========================================
+  // 💬 微信公众号与服务号交互完整逻辑
+  // ==========================================
+  let currentPreviewWechatAccount = null;
+
+  function toggleWechatPresetChips() {
+    const container = document.getElementById('wechatPresetChipsContainer');
+    const textEl = document.getElementById('wechatPresetChipsToggleText');
+    const iconEl = document.getElementById('wechatPresetChipsToggleIcon');
+    if (!container) return;
+    if (container.style.display === 'none') {
+      container.style.display = 'flex';
+      if (textEl) textEl.textContent = '收起推荐';
+      if (iconEl) iconEl.textContent = '▲';
+    } else {
+      container.style.display = 'none';
+      if (textEl) textEl.textContent = '展开推荐';
+      if (iconEl) iconEl.textContent = '▼';
+    }
+  }
+
+  function quickFillWeChat(name) {
+    const input = document.getElementById('wechatInputHandle');
+    if (input) {
+      input.value = name;
+      const clearBtn = document.getElementById('btnWechatClearInput');
+      if (clearBtn) clearBtn.style.display = 'inline-block';
+      lookupWechatAccount(name);
+    }
+  }
+
+  function clearWechatInput() {
+    const input = document.getElementById('wechatInputHandle');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    const clearBtn = document.getElementById('btnWechatClearInput');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const notice = document.getElementById('wechatLookupNotice');
+    if (notice) notice.style.display = 'none';
+    const preview = document.getElementById('wechatPreviewCard');
+    if (preview) preview.style.display = 'none';
+    currentPreviewWechatAccount = null;
+  }
+
+  function setWechatNotice(msg, type = 'info') {
+    const el = document.getElementById('wechatLookupNotice');
+    if (!el) return;
+    if (!msg) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+    el.textContent = msg;
+    if (type === 'error') {
+      el.style.background = '#FEF2F2';
+      el.style.color = '#991B1B';
+      el.style.border = '1px solid #FECACA';
+    } else if (type === 'success') {
+      el.style.background = '#F0FDF4';
+      el.style.color = '#166534';
+      el.style.border = '1px solid #BBF7D0';
+    } else {
+      el.style.background = '#F8FAFC';
+      el.style.color = '#334155';
+      el.style.border = '1px solid #E2E8F0';
+    }
+  }
+
+  async function updateWechatPreviewCardState() {
+    if (!currentPreviewWechatAccount) return;
+    const btn = document.getElementById('btnConfirmAddWechat');
+    if (!btn) return;
+
+    let accounts = [];
+    try {
+      accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+    } catch (e) {
+      accounts = [];
+    }
+
+    const subIndex = accounts.findIndex(a => 
+      (a.id && currentPreviewWechatAccount.id && a.id === currentPreviewWechatAccount.id) ||
+      (a.name && currentPreviewWechatAccount.name && a.name.trim().toLowerCase() === currentPreviewWechatAccount.name.trim().toLowerCase())
+    );
+    const isSubbed = subIndex !== -1;
+
+    if (isSubbed) {
+      btn.textContent = '取消订阅';
+      btn.style.background = '#FEE2E2';
+      btn.style.borderColor = '#FECDD3';
+      btn.style.color = '#DC2626';
+      btn.title = '该公众号已在监控中，点击取消订阅';
+      setWechatNotice(`ℹ️ 【${currentPreviewWechatAccount.name}】已在您的监控列表中，可在此直接取消订阅`, 'info');
+    } else {
+      btn.textContent = '订阅';
+      btn.style.background = '#07C160';
+      btn.style.borderColor = '#059669';
+      btn.style.color = '#FFFFFF';
+      btn.title = '加入实时推文监控';
+      setWechatNotice(`✅ 已成功解析【${currentPreviewWechatAccount.name}】，点击【订阅】即可加入实时监听`, 'success');
+    }
+  }
+
+  async function lookupWechatAccount(query) {
+    const q = (query || document.getElementById('wechatInputHandle')?.value || '').trim();
+    if (!q) {
+      setWechatNotice('请输入公众号名称、Biz ID 或链接', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnLookupWechat');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> <span>验证中...</span>';
+    }
+    setWechatNotice('正在解析公众号信息并核实真实性...', 'info');
+
+    try {
+      const res = await ipcRenderer.invoke('wechat:lookup-account', q);
+      if (res && res.success && res.account) {
+        currentPreviewWechatAccount = res.account;
+
+        const previewCard = document.getElementById('wechatPreviewCard');
+        const previewName = document.getElementById('wechatPreviewName');
+        const previewDesc = document.getElementById('wechatPreviewDesc');
+        const previewAvatar = document.getElementById('wechatPreviewAvatar');
+        const previewAvatarPlaceholder = document.getElementById('wechatPreviewAvatarPlaceholder');
+        const previewTitle = document.getElementById('wechatPreviewLatestTitle');
+
+        if (previewName) previewName.textContent = res.account.name || q;
+        if (previewDesc) previewDesc.textContent = res.account.description || '暂无简介';
+        if (previewTitle) previewTitle.textContent = res.account.latest_title || '等待最新发文推送';
+
+        if (res.account.avatar && previewAvatar) {
+          previewAvatar.src = res.account.avatar;
+          previewAvatar.style.display = 'block';
+          if (previewAvatarPlaceholder) previewAvatarPlaceholder.style.display = 'none';
+        } else {
+          if (previewAvatar) previewAvatar.style.display = 'none';
+          if (previewAvatarPlaceholder) {
+            previewAvatarPlaceholder.style.display = 'flex';
+            previewAvatarPlaceholder.textContent = (res.account.name || '公').charAt(0);
+          }
+        }
+
+        if (previewCard) previewCard.style.display = 'block';
+        await updateWechatPreviewCardState();
+        showNotice('✅ 验证成功: ' + res.account.name);
+      } else {
+        currentPreviewWechatAccount = null;
+        setWechatNotice('解析失败: ' + ((res && res.msg) || '未搜索到对应公众号，请检查名称是否正确'), 'error');
+        const previewCard = document.getElementById('wechatPreviewCard');
+        if (previewCard) previewCard.style.display = 'none';
+      }
+    } catch (err) {
+      currentPreviewWechatAccount = null;
+      setWechatNotice('验证异常: ' + err.message, 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔍</span> <span>验证公众号</span>';
+      }
+    }
+  }
+
+  async function confirmAddWechat() {
+    if (!currentPreviewWechatAccount) {
+      setWechatNotice('请先验证公众号', 'error');
+      return;
+    }
+    try {
+      const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+      const subIndex = accounts.findIndex(a => 
+        (a.id && currentPreviewWechatAccount.id && a.id === currentPreviewWechatAccount.id) ||
+        (a.name && currentPreviewWechatAccount.name && a.name.trim().toLowerCase() === currentPreviewWechatAccount.name.trim().toLowerCase())
+      );
+
+      if (subIndex !== -1) {
+        // 当前已订阅 -> 执行取消订阅 (完全对齐 X 交互体验)
+        const removed = accounts.splice(subIndex, 1)[0];
+        await ipcRenderer.invoke('wechat:save-accounts', accounts, accounts.length === 0);
+        await renderWechatAccountsList();
+        await updateWechatPreviewCardState();
+        setWechatNotice(`ℹ️ 已取消对【${removed.name}】的订阅，可随时再次点击【订阅】重新添加`, 'info');
+        showNotice(`🗑️ 已取消订阅【${removed.name}】`);
+        return;
+      }
+
+      // 未订阅 -> 执行订阅加入监控
+      const added = {
+        id: currentPreviewWechatAccount.id || ('biz_' + Date.now()),
+        name: currentPreviewWechatAccount.name,
+        description: currentPreviewWechatAccount.description || '',
+        avatar: currentPreviewWechatAccount.avatar || '',
+        latest_title: currentPreviewWechatAccount.latest_title || '',
+        enable_ai: true
+      };
+      accounts.push(added);
+      await ipcRenderer.invoke('wechat:save-accounts', accounts, false);
+      await renderWechatAccountsList();
+      await updateWechatPreviewCardState();
+      setWechatNotice(`🎉 成功订阅【${added.name}】！已加入实时推文监控`, 'success');
+      showNotice(`🎉 成功订阅【${added.name}】`);
+    } catch (err) {
+      setWechatNotice('操作失败: ' + err.message, 'error');
+    }
+  }
+
+  async function removeWechatAccount(accId) {
+    try {
+      const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+      const target = accounts.find(a => a.id === accId || a.name === accId);
+      const updated = accounts.filter(a => a.id !== accId && a.name !== accId);
+      await ipcRenderer.invoke('wechat:save-accounts', updated, updated.length === 0);
+      await renderWechatAccountsList();
+      await updateWechatPreviewCardState();
+      const name = target ? target.name : '该公众号';
+      setWechatNotice(`已取消订阅【${name}】`, 'info');
+      showNotice(`🗑️ 已取消订阅【${name}】`);
+    } catch (err) {
+      setWechatNotice('删除失败: ' + err.message, 'error');
+    }
+  }
+
+  async function toggleWechatAccountAi(accId, enabled) {
+    try {
+      const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+      for (const a of accounts) {
+        if (a.id === accId || a.name === accId) {
+          a.enable_ai = enabled;
+        }
+      }
+      await ipcRenderer.invoke('wechat:save-accounts', accounts);
+    } catch (err) {}
+  }
+
+  async function resetWechatDefaultSubscriptions() {
+    try {
+      const res = await ipcRenderer.invoke('wechat:restore-defaults');
+      if (res && res.success) {
+        setWechatNotice('已恢复官方推荐的预设头部公众号媒体', 'success');
+        await renderWechatAccountsList();
+      }
+    } catch (err) {
+      setWechatNotice('恢复预设失败: ' + err.message, 'error');
+    }
+  }
+
+  async function renderWechatAccountsList() {
+    const listEl = document.getElementById('wechatAccountsList');
+    const countEl = document.getElementById('wechatAccountsCount');
+    if (!listEl) return;
+
+    try {
+      const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+      if (countEl) countEl.textContent = accounts.length;
+
+      if (accounts.length === 0) {
+        listEl.innerHTML = '<div style="color: #94A3B8; font-size: 12px; text-align: center; padding: 16px 0; background: #F8FAFC; border-radius: 6px; border: 1px dashed #CBD5E1;">暂无已订阅的公众号，可通过上方快捷推荐或搜索输入添加</div>';
+        return;
+      }
+
+      listEl.innerHTML = accounts.map(acc => {
+        const initial = (acc.name || '公').charAt(0);
+        const avatarHtml = acc.avatar 
+          ? `<img src="${acc.avatar}" alt="头像" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1;" />`
+          : `<div style="width: 34px; height: 34px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">${initial}</div>`;
+
+        const coolingTag = acc.isCooling
+          ? `<span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #FEF3C7; color: #92400E;">冷却中 (${acc.coolingRemainingSec}s)</span>`
+          : `<span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #DCFCE7; color: #166534;">监控中</span>`;
+
+        const safeId = (acc.id || acc.name).replace(/'/g, "\\'");
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; transition: all 0.15s ease;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+              ${avatarHtml}
+              <div style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <b style="font-size: 12.5px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${acc.name}</b>
+                  ${coolingTag}
+                </div>
+                <div style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                  最新: ${acc.latest_title || '等待最新发文'}
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+              <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #475569; cursor: pointer; margin: 0;">
+                <input type="checkbox" ${acc.enable_ai !== false ? 'checked' : ''} onchange="toggleWechatAccountAi('${safeId}', this.checked)" style="cursor: pointer;" />
+                <span>AI 研判</span>
+              </label>
+              <button type="button" onclick="removeWechatAccount('${safeId}')" style="background: transparent; border: none; color: #EF4444; font-size: 11.5px; cursor: pointer; padding: 2px 6px; border-radius: 4px;" title="取消订阅">
+                ✕ 移除
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      listEl.innerHTML = '<div style="color: #EF4444; font-size: 11.5px; padding: 8px;">加载已订阅列表失败: ' + err.message + '</div>';
+    }
+  }
+
+  // 挂载全局方法给 inline onclick 调用
+  window.toggleWechatPresetChips = toggleWechatPresetChips;
+  window.quickFillWeChat = quickFillWeChat;
+  window.clearWechatInput = clearWechatInput;
+  window.lookupWechatAccount = lookupWechatAccount;
+  window.updateWechatPreviewCardState = updateWechatPreviewCardState;
+  window.confirmAddWechat = confirmAddWechat;
+  window.removeWechatAccount = removeWechatAccount;
+  window.toggleWechatAccountAi = toggleWechatAccountAi;
+  window.resetWechatDefaultSubscriptions = resetWechatDefaultSubscriptions;
+  window.renderWechatAccountsList = renderWechatAccountsList;
+
+  // 微信事件监听初始化
+  function initWechatEventBindings() {
+    const btnLogin = document.getElementById('btnWechatQrLogin');
+    if (btnLogin) {
+      btnLogin.addEventListener('click', async () => {
+        try {
+          btnLogin.disabled = true;
+          const res = await ipcRenderer.invoke('wechat:open-qr-login');
+          if (res && res.success) {
+            setWechatNotice('🎉 微信公众平台扫码授权成功！已开启官方精准搜索能力', 'success');
+            await updateWechatAuthBanner();
+          } else if (res && res.msg && res.msg !== '登录窗口已关闭') {
+            setWechatNotice('扫码授权未完成: ' + res.msg, 'error');
+          }
+        } catch (err) {
+          setWechatNotice('打开扫码授权异常: ' + err.message, 'error');
+        } finally {
+          btnLogin.disabled = false;
+        }
+      });
+    }
+
+    const btnClearAuth = document.getElementById('btnWechatClearAuth');
+    if (btnClearAuth) {
+      btnClearAuth.addEventListener('click', async () => {
+        if (!confirm('确定要退出当前微信公众平台授权吗？')) return;
+        try {
+          await ipcRenderer.invoke('wechat:clear-auth');
+          await updateWechatAuthBanner();
+          setWechatNotice('已退出微信平台授权', 'info');
+        } catch (err) {
+          setWechatNotice('退出异常: ' + err.message, 'error');
+        }
+      });
+    }
+
+    const btnLookup = document.getElementById('btnLookupWechat');
+    if (btnLookup) {
+      btnLookup.addEventListener('click', () => {
+        lookupWechatAccount();
+      });
+    }
+
+    const inputHandle = document.getElementById('wechatInputHandle');
+    if (inputHandle) {
+      inputHandle.addEventListener('input', (e) => {
+        const clearBtn = document.getElementById('btnWechatClearInput');
+        if (clearBtn) {
+          clearBtn.style.display = e.target.value ? 'inline-block' : 'none';
+        }
+      });
+      inputHandle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          lookupWechatAccount();
+        }
+      });
+    }
+
+    const btnConfirm = document.getElementById('btnConfirmAddWechat');
+    if (btnConfirm) {
+      btnConfirm.addEventListener('click', confirmAddWechat);
+    }
+
+    const btnRestore = document.getElementById('btnRestoreDefaultWechat');
+    if (btnRestore) {
+      btnRestore.addEventListener('click', () => {
+        if (confirm('确定要恢复微信公众号官方默认预设推荐媒体吗？')) {
+          resetWechatDefaultSubscriptions();
+        }
+      });
+    }
+  }
+
+  // 页面就绪后绑定微信事件并初次拉取数据
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initWechatEventBindings();
+      updateWechatAuthBanner();
+      renderWechatAccountsList();
+    });
+  } else {
+    initWechatEventBindings();
+    updateWechatAuthBanner();
+    renderWechatAccountsList();
+  }
+
+
+
+</script>
+
+  <!-- 🛡️ License 软件授权管理弹窗 (快讯通专属浅色高质感风格) -->
+  <div id="licenseModalOverlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px;">
+    <!-- 弹窗主体白盒 (固定最大高度，纵向 flex，Footer 牢牢锁在底部) -->
+    <div style="position: relative; width: 620px; max-width: 96%; max-height: 90vh; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden; display: flex; flex-direction: column; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      
+      <!-- 1. 头部 Header (固定不滚动) -->
+      <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="licHeaderIconBox" style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+            🔑
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h3 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0F172A;">License 软件授权管理</h3>
+              <span id="licModalBadge" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; border: 1px solid #A7F3D0; background: #ECFDF5; color: #059669;">
+                <span id="licModalBadgeIcon">🛡️</span>
+                <span id="licModalBadgeText">授权有效 · 剩余 365 天</span>
+              </span>
+            </div>
+            <p style="margin: 3px 0 0 0; font-size: 11px; color: #64748B;">单机设备绑定 · 支持在线授权码激活与离线证书验签</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="closeLicenseModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1; transition: all 0.15s ease;" onmouseover="this.style.color='#0F172A'; this.style.background='#E2E8F0'" onmouseout="this.style.color='#94A3B8'; this.style.background='transparent'">✕</button>
+      </div>
+
+      <!-- 2. 内容主体 Body (可纵向滚动) -->
+      <div style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+        
+        <!-- 卡片 1: 当前校验状态与硬件明细 -->
+        <div id="licStatusCard" style="border: 1.5px solid #E2E8F0; background: #F8FAFC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s ease;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 11px; color: #64748B;">当前校验结果：</div>
+              <div id="licResultMsg" style="font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; word-break: break-all;">心跳校验通过</div>
+            </div>
+            <div id="licDaysBox" style="flex-shrink: 0; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px 18px; min-width: 86px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+              <div style="font-size: 10.5px; color: #64748B; text-align: center;">可用天数</div>
+              <div style="font-size: 20px; font-weight: 700; color: #059669; font-family: monospace; line-height: 1.1; margin-top: 2px; text-align: center;">
+                <span id="licDaysNumber">365</span>
+                <span style="font-size: 11px; font-weight: normal; color: #64748B; margin-left: 2px;">天</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2x2 硬件与授权明细网格 (在状态卡片内部下部) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-top: 10px; border-top: 1px solid #E2E8F0; font-family: monospace; font-size: 11px;">
+            <div style="background: #FFFFFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+              <span style="color: #64748B;">设备 MAC:</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span id="licMacText" style="color: #0F172A; font-weight: 600;">识别中...</span>
+                <button type="button" onclick="copyLicenseMac()" id="btnCopyMac" title="复制设备 MAC 地址" style="background: transparent; border: none; cursor: pointer; font-size: 11px; padding: 0 2px;">📋</button>
+              </div>
+            </div>
+
+            <div style="background: #FFFFFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+              <span style="color: #64748B;">到期时间:</span>
+              <span id="licExpireTimeText" style="color: #0F172A; font-weight: 600;">--</span>
+            </div>
+
+            <div style="background: #FFFFFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+              <span style="color: #64748B;">当前 Key:</span>
+              <span id="licMaskedKeyText" style="color: #059669; font-weight: 700;">未激活</span>
+            </div>
+
+            <div style="background: #FFFFFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+              <span style="color: #64748B;">最近校验:</span>
+              <span id="licLastVerifyText" style="color: #64748B;">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 动态操作反馈提示框 -->
+        <div id="licActionNotice" style="display: none; padding: 8px 14px; border-radius: 6px; font-size: 11.5px;"></div>
+
+        <!-- 卡片 2: 在线授权码激活 -->
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <b style="font-size: 12.5px; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              <span>🔑</span>
+              <span>在线授权码激活</span>
+            </b>
+            <span style="font-size: 11px; color: #64748B;">超时 35s · 多通道自动连通</span>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="inputLicKey" placeholder="输入授权码，例如 MM8E9-996HU-VVY7G" style="flex: 1; padding: 8px 12px; font-size: 13px; font-family: monospace; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 6px; color: #0F172A; outline: none; transition: all 0.15s ease;" onfocus="this.style.borderColor='#2563EB'; this.style.background='#FFFFFF'" onblur="this.style.borderColor='#CBD5E1'; this.style.background='#F8FAFC'" />
+            <button type="button" id="btnActivateLic" onclick="handleActivateLicense()" style="background: #059669; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2); transition: all 0.15s ease;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+              <span>🛡️</span>
+              <span>激活并绑定本机</span>
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding-top: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" onclick="triggerImportLicFile()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">
+                <span>📤</span>
+                <span>导入离线 .lic 证书</span>
+              </button>
+              <input type="file" id="fileLicInput" accept=".lic,.json" style="display: none;" onchange="handleFileLicChange(event)" />
+              
+              <button type="button" onclick="handleHeartbeatVerify()" id="btnLicVerifyNow" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">
+                <span>🔄</span>
+                <span>立即心跳校验</span>
+              </button>
+            </div>
+
+            <button type="button" onclick="handleClearLicense()" style="background: #FFF1F2; border: 1px solid #FECDD3; color: #E11D48; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#FFE4E6'" onmouseout="this.style.background='#FFF1F2'">
+              <span>🗑️</span>
+              <span>清除本地授权</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 获取或购买 License 授权 (浅蓝清新，二维码更精炼协调) -->
+        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="flex: 1; min-width: 0;">
+            <b style="font-size: 12.5px; color: #1D4ED8; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span>📱</span>
+              <span>获取或购买 License 授权</span>
+            </b>
+            <div style="font-size: 11px; color: #334155; line-height: 1.5; margin-bottom: 8px;">
+              如需购买正式授权码、续期或申请离线证书，请将上方「设备 MAC」发送至下方邮箱或微信扫码联系：
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 5px; background: #FFFFFF; border: 1px solid #BFDBFE; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #1E40AF;">
+                <span>✉️</span>
+                <span>wenkan_g@163.com</span>
+              </div>
+              <button type="button" onclick="copyContactEmail()" id="btnCopyEmail" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+                📋 复制邮箱
+              </button>
+            </div>
+          </div>
+
+          <!-- 用户微信二维码图片容器 -->
+          <div style="flex-shrink: 0; text-align: center;">
+            <div style="padding: 4px; background: #FFFFFF; border: 1px solid #BFDBFE; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+              <img src="../../assets/wechat_contact_qr.png" alt="微信联系二维码" style="width: 80px; height: 80px; display: block; border-radius: 4px; object-fit: contain;" />
+            </div>
+            <div style="font-size: 10.5px; color: #475569; margin-top: 4px; font-weight: 600;">微信扫码联系</div>
+          </div>
+        </div>
+
+        <!-- 卡片 4: 高级网络设置 (美化折叠卡片，彻底解决文字贴边问题) -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+          <div onclick="toggleLicProxyAdvanced()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #475569; font-size: 11.5px; user-select: none;">
+            <span style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+              <span>🌐</span>
+              <span>高级网络设置 (外网访问代理配置)</span>
+            </span>
+            <span id="licProxyChevron" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 11px; font-weight: 500; transition: all 0.15s ease;">▼ 展开</span>
+          </div>
+
+          <div id="licProxyBody" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #CBD5E1;">
+            <div style="font-size: 11px; color: #64748B;">
+              若服务器在外网且办公环境需要代理，可在此配置 HTTP / SOCKS5 代理：
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="licCustomProxyInput" placeholder="例如 http://127.0.0.1:7890" style="flex: 1; padding: 5px 8px; font-size: 11px; font-family: monospace; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 5px; color: #0F172A;" />
+              <button type="button" onclick="handleSaveLicProxy()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; cursor: pointer;">
+                保存代理
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 校验说明 -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #64748B; line-height: 1.5;">
+          <b style="color: #475569;">校验说明：</b><br>
+          1. <b>单机物理绑定</b>：授权码与本机真实硬件 MAC 绑定，一机一码；<br>
+          2. <b>弱网不断流</b>：激活后即使断网或波动，自动享 7 天本地离线宽限，业务不中断；<br>
+          3. <b>硬性拦截</b>：未激活或过期时锁定业务核心执行，仅开放更新与配置浏览。
+        </div>
+
+      </div>
+
+      <!-- 3. 底部 Footer (固定在白盒底部，右侧对齐，样式优雅统一) -->
+      <div style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 12px 20px; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;">
+        <button type="button" onclick="closeLicenseModal()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 7px 22px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#1D4ED8'" onmouseout="this.style.background='#2563EB'">
+          完成并继续使用
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </body>
 </html>

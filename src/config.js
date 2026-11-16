@@ -338,6 +338,62 @@ class ConfigManager {
           sector_keywords: ['省政府', '省府', '湘府', '友谊', '新韶', '天悦', '黑石铺', '暮云', '先锋', '大托', '地铁8号线', '地铁7号线'],
           custom_keywords: '',
           only_replied: false // 是否仅推送已官方正式答复的件
+        },
+        wechat: {
+          name: '微信公众号',
+          enabled: true,
+          poll_interval_sec: 180,
+          weight: 85,
+          impact_filter_enabled: false,
+          impact_min_score: 60,
+          fetching_strategy: {
+            mode: 'today_24h',
+            max_age_hours: 24,
+            cold_start_silent: true,
+            intercept_historical: true
+          },
+          accounts: [
+            {
+              id: 'xinhuashe',
+              name: '新华社',
+              wechat_id: 'xinhuashefabu1',
+              type: '订阅号',
+              avatar: '../../assets/wechat_avatars/xinhuashe.png',
+              desc: '新华社官方微信公众账号，传播中国声音，播发权威资讯。',
+              enabled: true,
+              ai_analysis_enabled: true
+            },
+            {
+              id: 'rmrb',
+              name: '人民日报',
+              wechat_id: 'rmrbwx',
+              type: '订阅号',
+              avatar: '../../assets/wechat_avatars/rmrb.png',
+              desc: '参与、沟通、记录时代。人民日报官方微信公众号。',
+              enabled: true,
+              ai_analysis_enabled: true
+            },
+            {
+              id: 'dian_shang_pro',
+              name: '电商Pro',
+              wechat_id: 'EC-PRO',
+              type: '订阅号',
+              avatar: '../../assets/wechat_avatars/dian_shang_pro.png',
+              desc: '看电商重磅头条，读行业趋势动向。深圳简联科技有限公司官方认证。',
+              enabled: true,
+              ai_analysis_enabled: true
+            },
+            {
+              id: 'beijing_bendibao',
+              name: '北京本地宝',
+              wechat_id: 'bjbdb',
+              type: '订阅号',
+              avatar: '../../assets/wechat_avatars/beijing_bendibao.png',
+              desc: '为北京用户提供精准的便民生活资讯，让人性之光照亮生活！深圳市汇深网信息科技有限公司官方认证。',
+              enabled: true,
+              ai_analysis_enabled: false
+            }
+          ]
         }
       },
       rules: {
@@ -455,7 +511,8 @@ class ConfigManager {
             xueqiu: { ...defaults.sources.xueqiu, ...((parsed.sources && parsed.sources.xueqiu) || {}) },
             maimai: { ...defaults.sources.maimai, ...((parsed.sources && parsed.sources.maimai) || {}) },
             x_twitter: { ...defaults.sources.x_twitter, ...((parsed.sources && parsed.sources.x_twitter) || {}) },
-            local_gov: { ...defaults.sources.local_gov, ...((parsed.sources && parsed.sources.local_gov) || {}) }
+            local_gov: { ...defaults.sources.local_gov, ...((parsed.sources && parsed.sources.local_gov) || {}) },
+            wechat: { ...defaults.sources.wechat, ...((parsed.sources && parsed.sources.wechat) || {}) }
           },
           rules: { ...defaults.rules, ...(parsed.rules || {}) },
           watchlist: { ...defaults.watchlist, ...(parsed.watchlist || {}) },
@@ -657,7 +714,8 @@ class ConfigManager {
         xueqiu: { ...((cur.sources && cur.sources.xueqiu) || {}), ...((newConfig.sources && newConfig.sources.xueqiu) || {}) },
         maimai: { ...((cur.sources && cur.sources.maimai) || {}), ...((newConfig.sources && newConfig.sources.maimai) || {}) },
         x_twitter: { ...((cur.sources && cur.sources.x_twitter) || {}), ...((newConfig.sources && newConfig.sources.x_twitter) || {}) },
-        local_gov: { ...((cur.sources && cur.sources.local_gov) || {}), ...((newConfig.sources && newConfig.sources.local_gov) || {}) }
+        local_gov: { ...((cur.sources && cur.sources.local_gov) || {}), ...((newConfig.sources && newConfig.sources.local_gov) || {}) },
+        wechat: { ...((cur.sources && cur.sources.wechat) || {}), ...((newConfig.sources && newConfig.sources.wechat) || {}) }
       },
       rules: { ...(cur.rules || {}), ...(newConfig.rules || {}) },
       watchlist: { ...(cur.watchlist || {}), ...(newConfig.watchlist || {}) },

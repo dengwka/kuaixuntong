@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
   <title>快讯通</title>
   <style>
     * {
@@ -391,6 +392,22 @@
       align-items: center;
       gap: 5px;
       padding: 2.5px 7px;
+    }
+    .badge-wechat {
+      background: #07C160;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2.5px 7px;
+    }
+    .wx-author-badge {
+      font-size: 10.5px;
+      background: #DCFCE7;
+      color: #166534;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
     }
     .x-author-card {
       display: flex;
@@ -1038,6 +1055,18 @@
           <div class="x-author-subtext" id="xAuthorSubtext">实时推文播报</div>
         </div>
       </div>
+      <!-- 💬 微信公众号专属发布信息 -->
+      <div class="x-author-card" id="wxAuthorCard" style="display: none; cursor: pointer;" title="点击直接在浏览器中打开微信原文">
+        <img class="x-author-avatar" id="wxAuthorAvatar" src="" referrerpolicy="no-referrer" onerror="window.handleToastAvatarError(this)" />
+        <div class="x-author-info" style="flex: 1; min-width: 0;">
+          <div class="x-author-name-row">
+            <span class="x-author-name" id="wxAuthorName">--</span>
+            <span class="wx-author-badge" id="wxAuthorType">订阅号</span>
+          </div>
+          <div class="x-author-subtext" id="wxAuthorSubtext">微信推文播报</div>
+        </div>
+        <span class="wx-jump-hint" style="margin-left: auto; color: #07C160; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; background: #DCFCE7; border-radius: 4px;">🔗 查看原文 ↗</span>
+      </div>
       <div class="title-text" id="titleText"></div>
       <div class="body-text" id="bodyText"></div>
       <div id="econArea"></div>
@@ -1096,6 +1125,15 @@
 
   <script>
     const { ipcRenderer, shell } = require('electron');
+    let authorTranslator = null;
+    try {
+      const path = require('path');
+      authorTranslator = require(path.join(__dirname, '..', 'authorTranslator'));
+    } catch (e) {
+      try {
+        authorTranslator = require('../authorTranslator');
+      } catch (e2) {}
+    }
 
     function openImage(picUrl) {
       if (!picUrl) return;
@@ -1515,7 +1553,8 @@
       // 3. 消息来源说明（明确来源于 金十快讯、重要事件、雪球、脉脉、𝕏、金色VIP特报 还是 测试演练）
       const badge = document.getElementById('sourceBadge');
       const srcName = alertData.source || '';
-      const isXTwitter = (alertData.source_key === 'x_twitter' || srcName.includes('𝕏') || alertData.source_key === 'x' || !!alertData.author_handle);
+      const isXTwitter = (alertData.source_key === 'x_twitter' || (srcName.includes('𝕏') && alertData.source_key !== 'wechat') || alertData.source_key === 'x' || (!!alertData.author_handle && alertData.source_key !== 'wechat'));
+      const isWeChat = (alertData.source_key === 'wechat' || srcName.includes('微信'));
       const isVip = !!alertData.is_vip;
       const isUpdate = (alertData.source_key === 'system' || alertData.source_key === 'update' || srcName.includes('版本更新') || srcName.includes('软件更新') || String(alertData.id || '').startsWith('update_'));
 
@@ -1530,6 +1569,10 @@
           const testBadge = isTest ? ' [测试]' : '';
           badge.textContent = `𝕏 关注动态${testBadge}`;
           badge.className = 'badge badge-x';
+        } else if (isWeChat) {
+          const testBadge = isTest ? ' [测试]' : '';
+          badge.textContent = `💬 微信公众号${testBadge}`;
+          badge.className = 'badge badge-wechat';
         } else if (isTest || srcName.includes('测试')) {
           badge.textContent = '🧪 测试演练';
           badge.className = 'badge badge-test';
@@ -1634,7 +1677,10 @@
 
       // 4. 标题与正文（智能提取并兜底，彻底杜绝无标题与空白尴尬）
       const xAuthorCard = document.getElementById('xAuthorCard');
+      const wxAuthorCard = document.getElementById('wxAuthorCard');
+
       if (isXTwitter) {
+        if (wxAuthorCard) wxAuthorCard.style.display = 'none';
         let authorName = (alertData.author_name || '').trim();
         let authorHandle = (alertData.author_handle || '').trim().replace(/^@+/, '');
 
@@ -1651,6 +1697,11 @@
         }
         if (!authorName) {
           authorName = authorHandle || '推特动态';
+        }
+
+        const showChineseName = !!(currentConfig && currentConfig.sources && currentConfig.sources.x_twitter && currentConfig.sources.x_twitter.show_chinese_name);
+        if (authorTranslator && typeof authorTranslator.formatAuthorName === 'function') {
+          authorName = authorTranslator.formatAuthorName(authorName, authorHandle, showChineseName, alertData.author_chinese_name);
         }
 
         // 𝕏 消息顶部展示博主原生发布信息 (头像 + 昵称 + @用户名 + 发布时间)，正文直接展示推文
@@ -1686,8 +1737,76 @@
             subTextEl.textContent = pubTime ? `${pubTime} · 实时推文` : '实时推文播报';
           }
         }
+      } else if (isWeChat) {
+        if (xAuthorCard) xAuthorCard.style.display = 'none';
+        titleEl.style.display = 'block';
+        titleEl.textContent = extractDisplayTitle(alertData);
+
+        if (wxAuthorCard) {
+          wxAuthorCard.style.display = 'flex';
+          const authorName = (alertData.author_name || alertData.author_handle || '微信公众号').trim();
+          const avatarEl = document.getElementById('wxAuthorAvatar');
+          if (avatarEl) {
+            avatarEl.dataset.authorName = authorName;
+            avatarEl.onerror = () => { avatarEl.src = getFallbackAvatar(authorName, 38); };
+            const WECHAT_OFFICIAL_AVATARS = {
+              'xinhuashe': '../../assets/wechat_avatars/xinhuashe.png',
+              '新华社': '../../assets/wechat_avatars/xinhuashe.png',
+              'rmrb': '../../assets/wechat_avatars/rmrb.png',
+              '人民日报': '../../assets/wechat_avatars/rmrb.png',
+              'lian_yue': '../../assets/wechat_avatars/lian_yue.png',
+              '连岳': '../../assets/wechat_avatars/lian_yue.png',
+              '36kr': '../../assets/wechat_avatars/36kr.png',
+              '36氪': '../../assets/wechat_avatars/36kr.png',
+              'dian_shang_pro': '../../assets/wechat_avatars/dian_shang_pro.png',
+              '电商Pro': '../../assets/wechat_avatars/dian_shang_pro.png',
+              'latepost': '../../assets/wechat_avatars/latepost.png',
+              '晚点LatePost': '../../assets/wechat_avatars/latepost.png',
+              'jiqizhixin': '../../assets/wechat_avatars/jiqizhixin.png',
+              '机器之心': '../../assets/wechat_avatars/jiqizhixin.png',
+              'liangziwei': '../../assets/wechat_avatars/liangziwei.png',
+              '量子位': '../../assets/wechat_avatars/liangziwei.png',
+              'wallstreetcn': '../../assets/wechat_avatars/wallstreetcn.png',
+              '华尔街见闻': '../../assets/wechat_avatars/wallstreetcn.png',
+              'cls': '../../assets/wechat_avatars/cls.png',
+              '财联社': '../../assets/wechat_avatars/cls.png',
+              'yueliang_writing': '../../assets/wechat_avatars/yueliang_writing.png',
+              '月亮爱写作': '../../assets/wechat_avatars/yueliang_writing.png',
+              'huxiu': '../../assets/wechat_avatars/huxiu.png',
+              '虎嗅': '../../assets/wechat_avatars/huxiu.png',
+              'chaping': '../../assets/wechat_avatars/chaping.png',
+              '差评': '../../assets/wechat_avatars/chaping.png',
+              'banfoxianren': '../../assets/wechat_avatars/banfoxianren.png',
+              '半佛仙人': '../../assets/wechat_avatars/banfoxianren.png',
+              'bymooneye': '../../assets/wechat_avatars/bymooneye.png',
+              '李月亮': '../../assets/wechat_avatars/bymooneye.png',
+              'xinzhiyuan': '../../assets/wechat_avatars/xinzhiyuan.png',
+              '新智元': '../../assets/wechat_avatars/xinzhiyuan.png',
+              'beijing_bendibao': '../../assets/wechat_avatars/beijing_bendibao.png',
+              '北京本地宝': '../../assets/wechat_avatars/beijing_bendibao.png',
+              'bjbdb': '../../assets/wechat_avatars/beijing_bendibao.png'
+            };
+            let av = WECHAT_OFFICIAL_AVATARS[authorName] || WECHAT_OFFICIAL_AVATARS[alertData.author_handle] || alertData.author_avatar;
+            if (av && av.includes('/wechat_avatars/')) {
+              av = av.replace(/\.svg$/i, '.png');
+            }
+            avatarEl.src = av || getFallbackAvatar(authorName, 38);
+          }
+          const nameEl = document.getElementById('wxAuthorName');
+          if (nameEl) nameEl.textContent = authorName;
+          const typeEl = document.getElementById('wxAuthorType');
+          if (typeEl) typeEl.textContent = alertData.account_type || '订阅号';
+          const subTextEl = document.getElementById('wxAuthorSubtext');
+          if (subTextEl) {
+            const pubTime = alertData.pub_time || alertData.time || '';
+            subTextEl.textContent = pubTime ? `${pubTime} · 公众号发文` : '微信公众号最新推文';
+          }
+          wxAuthorCard.style.cursor = 'pointer';
+          wxAuthorCard.title = '点击直接在浏览器中打开微信原文';
+        }
       } else {
         if (xAuthorCard) xAuthorCard.style.display = 'none';
+        if (wxAuthorCard) wxAuthorCard.style.display = 'none';
         titleEl.style.display = 'block';
         const rawTitle = extractDisplayTitle(alertData);
         if (isVip && rawTitle.startsWith('【') && rawTitle.includes('】')) {
@@ -2047,15 +2166,18 @@
     if (contentAreaEl) {
       contentAreaEl.addEventListener('click', (e) => {
         markRead();
-        // 如果是测试演练内容，不可点击跳转
-        if (currentAlert && currentAlert.is_test) return;
         // 避免用户选中文本进行复制时误触发跳转
         const sel = window.getSelection().toString();
         if (sel && sel.trim().length > 0) return;
 
-        const url = (currentAlert && currentAlert.url) || 'https://www.jin10.com';
-        ipcRenderer.send('toast-open-url', url);
-        closeToast();
+        const url = (currentAlert && currentAlert.url) || '';
+        if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+          ipcRenderer.send('toast-open-url', url);
+          closeToast();
+        } else if (!currentAlert?.is_test) {
+          ipcRenderer.send('toast-open-url', 'https://www.jin10.com');
+          closeToast();
+        }
       });
     }
 

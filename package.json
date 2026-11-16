@@ -1,6 +1,6 @@
 {
   "name": "kuaixuntong",
-  "version": "1.4.3",
+  "version": "1.0.0",
   "description": "快讯通 - 实时突发财经与宏观事件监控助手",
   "main": "src/main.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish never",
     "dist:win": "electron-builder --win --publish never",
-    "dist:mac": "electron-builder --mac --publish never"
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
   },
   "keywords": [
     "kuaixuntong",
@@ -92,6 +93,15 @@
           "path": "/Applications"
         }
       ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/app_icon.png",
+      "category": "Finance",
+      "artifactName": "kuaixuntong-${version}-${arch}.${ext}"
     }
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ const https = require('https');
 const { URL } = require('url');
 const logger = require('./logger');
 const historyManager = require('./history');
+const { formatAuthorName, getAuthorChineseName } = require('./authorTranslator');
 
 class XFetcher {
   constructor(configManager, translator, financialAi = null) {
@@ -1029,7 +1030,9 @@ class XFetcher {
         }
       }
 
-      const titlePrefix = tweet.is_retweet ? `X ${account.name} (转推)` : `X ${account.name}`;
+      const showChineseName = !!(xCfg && xCfg.show_chinese_name);
+      const displayAuthorName = formatAuthorName(account.name, account.screen_name, showChineseName, account.chinese_name);
+      const titlePrefix = tweet.is_retweet ? `X ${displayAuthorName} (转推)` : `X ${displayAuthorName}`;
 
       // 针对指定开启了 AI 分析的博主（如特朗普），调用 AI/金十宏观研判与利多利空分析
       let aiAnalysis = null;
@@ -1046,8 +1049,10 @@ class XFetcher {
         id: itemUid,
         source: '𝕏 监控',
         source_key: 'x_twitter',
-        source_name: `𝕏 ${account.name}`,
-        author_name: account.name,
+        source_name: `𝕏 ${displayAuthorName}`,
+        author_name: displayAuthorName,
+        author_name_raw: account.name,
+        author_chinese_name: getAuthorChineseName(account.name, account.screen_name, account.chinese_name),
         author_handle: account.screen_name,
         author_avatar: account.avatar || tweet.author_avatar,
         time: timeStr,

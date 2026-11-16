@@ -72,10 +72,10 @@ class ToastManager {
     });
 
     ipcMain.on('toast-open-url', (event, url) => {
-      if (this.currentAlertData) {
+      if (this.currentAlertData && !this.currentAlertData.is_test) {
         historyManager.recordInteraction(this.currentAlertData.id, 'clicked', this.currentAlertData);
       }
-      if (url && !this.currentAlertData?.is_test) {
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
         try {
           shell.openExternal(url);
         } catch (e) {

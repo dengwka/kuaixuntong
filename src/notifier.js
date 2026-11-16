@@ -104,6 +104,7 @@ class NotifierService {
 
     // 3. 关注的 X (Twitter) 大V博主发推
     if (mobileConfig.trigger_on_x !== false && alertData.source_key === 'x_twitter') return true;
+    if (alertData.source_key === 'wechat') return true;
 
     // 4. 命中自选股票 / 加密货币持仓
     if (mobileConfig.trigger_on_watchlist !== false) {
@@ -150,6 +151,9 @@ class NotifierService {
     } else if (alertData.source_key === 'x_twitter') {
       const handle = alertData.author_handle || alertData.author || '';
       sourceTag = `X 动态播报${handle ? ` · @${handle}` : ''}`;
+    } else if (alertData.source_key === 'wechat') {
+      const name = alertData.author_name || alertData.author_handle || '微信公众号';
+      sourceTag = `💬 微信公众号 · ${name}`;
     } else if (alertData.source_key === 'xueqiu') {
       sourceTag = '❄️ 雪球快讯';
     } else if (alertData.source_key === 'maimai') {
@@ -294,6 +298,9 @@ class NotifierService {
     } else if (alertData.source_key === 'x_twitter') {
       const handle = alertData.author_handle || alertData.author || '';
       sourcePrefix = `𝕏推特${handle ? `@${handle}` : ''}`;
+    } else if (alertData.source_key === 'wechat') {
+      const name = alertData.author_name || '公众号';
+      sourcePrefix = `💬微信·${name}`;
     } else if (alertData.source_key === 'xueqiu') {
       sourcePrefix = '❄️雪球';
     } else if (alertData.source_key === 'maimai') {
@@ -445,7 +452,7 @@ class NotifierService {
     if (isLocalGov) {
       titlePrefix = `📍【本地周边·${alertData.sub_source || '民生问答'}】`;
     }
-    const cardTemplate = isVip ? 'red' : (isLocalGov ? 'purple' : (alertData.source_key === 'x_twitter' ? 'turquoise' : 'blue'));
+    const cardTemplate = isVip ? 'red' : (isLocalGov ? 'purple' : (alertData.source_key === 'wechat' ? 'green' : (alertData.source_key === 'x_twitter' ? 'turquoise' : 'blue')));
 
     let cleanTitle = (alertData.title || alertData.content || '').trim().replace(/[\r\n]+/g, ' ');
     cleanTitle = cleanTitle.replace(/\u{1D54F}/gu, 'X').replace(/𝕏/g, 'X');

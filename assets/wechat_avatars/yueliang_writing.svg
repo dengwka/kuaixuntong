@@ -1,0 +1,24 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+      <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1E1B4B"/>
+          <stop offset="50%" stop-color="#312E81"/>
+          <stop offset="100%" stop-color="#4338CA"/>
+        </linearGradient>
+        <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FDE047"/>
+          <stop offset="100%" stop-color="#F59E0B"/>
+        </linearGradient>
+      </defs>
+      <!-- Circular Background -->
+      <circle cx="128" cy="128" r="120" fill="url(#bgGrad)" stroke="#6366F1" stroke-width="6"/>
+      <!-- Golden Crescent Moon -->
+      <path d="M145,50 A70,70 0 0,0 145,185 A58,58 0 0,1 145,50 Z" fill="url(#moonGrad)"/>
+      <!-- Feather Pen / Nib -->
+      <path d="M100,165 L175,90 C180,85 185,85 188,88 C191,91 191,96 186,101 L111,176 L95,185 Z" fill="#E0E7FF" opacity="0.95"/>
+      <path d="M95,185 L108,175 L103,170 Z" fill="#F59E0B"/>
+      <!-- Text: 月亮爱写作 -->
+      <text x="128" y="218" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="bold" fill="#F8FAFC" text-anchor="middle" letter-spacing="2">月亮爱写作</text>
+    </svg>
+  

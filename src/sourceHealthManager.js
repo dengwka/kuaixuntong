@@ -93,6 +93,19 @@ class SourceHealthManager {
         totalFailures: 0,
         errorMsg: null,
         apiUrl: 'wzapi.rednet.cn / zygh.changsha.gov.cn'
+      },
+      wechat: {
+        key: 'wechat',
+        name: '微信公众号',
+        icon: '💬',
+        status: 'idle',
+        latencyMs: 0,
+        lastSyncTime: '--',
+        lastCount: 0,
+        totalSuccess: 0,
+        totalFailures: 0,
+        errorMsg: null,
+        apiUrl: 'WeWe-RSS / RSSHub / 开放通道'
       }
     };
 
@@ -190,7 +203,7 @@ class SourceHealthManager {
 
     const sourceReports = Object.values(this.sources).map(s => {
       const conf = cfgSources[s.key] || {};
-      const isEnabled = s.key === 'x_twitter' ? (conf.enabled === true) : (conf.enabled !== false);
+      const isEnabled = (s.key === 'x_twitter' || s.key === 'wechat') ? (conf.enabled === true) : (conf.enabled !== false);
       let displayStatus = s.status;
       if (!isEnabled) {
         displayStatus = 'disabled';
