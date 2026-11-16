@@ -1,3 +1,100 @@
+const TOP_10_PROVIDERS = [
+  {
+    id: 'deepseek',
+    name: 'DeepSeek (深度求索)',
+    desc: '国产大模型性价比之王，金融逻辑严密，综合性价比极高',
+    url: 'https://api.deepseek.com/chat/completions',
+    balanceUrl: 'https://api.deepseek.com/user/balance',
+    defaultModel: 'deepseek-chat',
+    tag: '首选高精',
+    hasBalanceApi: true
+  },
+  {
+    id: 'zhipu',
+    name: '智谱 GLM (清言)',
+    desc: '清华系全能模型，glm-4-flash 极速低成本、高并发保障',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    defaultModel: 'glm-4-flash',
+    tag: '极速轻量',
+    hasBalanceApi: false
+  },
+  {
+    id: 'moonshot',
+    name: '月之暗面 Kimi',
+    desc: '长上下文先驱，超大窗口宏观事件脉络梳理能力拔群',
+    url: 'https://api.moonshot.cn/v1/chat/completions',
+    balanceUrl: 'https://api.moonshot.cn/v1/users/me/balance',
+    defaultModel: 'moonshot-v1-8k',
+    tag: '长文先驱',
+    hasBalanceApi: true
+  },
+  {
+    id: 'qwen',
+    name: '通义千问 (阿里百炼)',
+    desc: '阿里云通义千问兼容接口，金融与政经理解全面稳定',
+    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    defaultModel: 'qwen-turbo',
+    tag: '阿里百炼',
+    hasBalanceApi: false
+  },
+  {
+    id: 'siliconflow',
+    name: '硅基流动 (SiliconFlow)',
+    desc: '云端聚合加速，预置 DeepSeek-V3 / Qwen2.5 满血版算力',
+    url: 'https://api.siliconflow.cn/v1/chat/completions',
+    balanceUrl: 'https://api.siliconflow.cn/v1/user/info',
+    defaultModel: 'deepseek-ai/DeepSeek-V3',
+    tag: '聚合加速',
+    hasBalanceApi: true
+  },
+  {
+    id: 'stepfun',
+    name: '阶跃星辰 (StepFun)',
+    desc: '跃问阶跃星辰系列，强逻辑严密推理与因果归因',
+    url: 'https://api.stepfun.com/v1/chat/completions',
+    defaultModel: 'step-1-8k',
+    tag: '逻辑推理',
+    hasBalanceApi: false
+  },
+  {
+    id: 'lingyi',
+    name: '零一万物 (01.AI / Yi)',
+    desc: '李开复团队零一万物，yi-lightning 毫秒级闪电推理',
+    url: 'https://api.lingyiwanwu.com/v1/chat/completions',
+    defaultModel: 'yi-lightning',
+    tag: '闪电轻快',
+    hasBalanceApi: false
+  },
+  {
+    id: 'minimax',
+    name: 'MiniMax (海螺 AI)',
+    desc: '自研 MoE 架构，中文财经语义与深度对话精准自然',
+    url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    defaultModel: 'abab6.5s-chat',
+    tag: '海螺自研',
+    hasBalanceApi: false
+  },
+  {
+    id: 'baichuan',
+    name: '百川智能 (Baichuan)',
+    desc: '百川智能大模型，中文政经百科知识储备底蕴深厚',
+    url: 'https://api.baichuan-ai.com/v1/chat/completions',
+    defaultModel: 'Baichuan4-Air',
+    tag: '中文深厚',
+    hasBalanceApi: false
+  },
+  {
+    id: 'custom',
+    name: 'OpenAI 规范 / 自定义代理',
+    desc: '支持 OneAPI、NewAPI、自建反代或 OpenAI 官方中转',
+    url: 'https://api.openai.com/v1/chat/completions',
+    defaultModel: 'gpt-4o-mini',
+    tag: '通用中转',
+    hasBalanceApi: false,
+    isCustom: true
+  }
+];
+
 let electronNet = null;
 try {
   const electron = require('electron');
@@ -5,6 +102,80 @@ try {
 } catch (e) {}
 
 class FinancialAIEngine {
+
+  getAvailableProviders(aiCfg) {
+    const list = [];
+    const keysMap = (aiCfg && typeof aiCfg.keys === 'object' && aiCfg.keys !== null) ? aiCfg.keys : {};
+
+    const dsKey = (keysMap.deepseek || aiCfg.deepseek_api_key || aiCfg.api_key || '').trim();
+    const zpKey = (keysMap.zhipu || aiCfg.zhipu_api_key || '').trim();
+
+    for (const prov of TOP_10_PROVIDERS) {
+      let key = '';
+      if (prov.id === 'deepseek') key = dsKey;
+      else if (prov.id === 'zhipu') key = zpKey;
+      else key = (keysMap[prov.id] || '').trim();
+
+      if (key) {
+        const url = (prov.id === 'custom' && aiCfg.custom_url) ? aiCfg.custom_url.trim() : prov.url;
+        const model = (prov.id === 'custom' && aiCfg.custom_model) ? aiCfg.custom_model.trim() : prov.defaultModel;
+        list.push({
+          id: prov.id,
+          name: prov.name,
+          url,
+          key,
+          model,
+          tag: prov.tag
+        });
+      }
+    }
+    return list;
+  }
+
+  async checkDeepSeekBalance(apiKey) {
+    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+    const resp = await fetchFn('https://api.deepseek.com/user/balance', {
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && Array.isArray(data.balance_infos) && data.balance_infos.length > 0) {
+        const info = data.balance_infos[0];
+        const curr = info.currency === 'CNY' ? '¥' : String.fromCharCode(36);
+        return curr + info.total_balance;
+      }
+    }
+    return null;
+  }
+
+  async checkMoonshotBalance(apiKey) {
+    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+    const resp = await fetchFn('https://api.moonshot.cn/v1/users/me/balance', {
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.data && data.data.available_balance !== undefined) {
+        return '¥' + Number(data.data.available_balance).toFixed(2);
+      }
+    }
+    return null;
+  }
+
+  async checkSiliconFlowBalance(apiKey) {
+    const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+    const resp = await fetchFn('https://api.siliconflow.cn/v1/user/info', {
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.data && (data.data.balance !== undefined || data.data.totalBalance !== undefined)) {
+        const bal = data.data.balance || data.data.totalBalance;
+        return '¥' + Number(bal).toFixed(2);
+      }
+    }
+    return null;
+  }
   constructor(configManager) {
     this.configManager = configManager;
     this.roundRobinIndex = 0;
@@ -319,35 +490,7 @@ ${watchlistHint}
     const watchlist = (cfg.watchlist && cfg.watchlist.stocks) || [];
     const watchlistNames = watchlist.map(s => s.name).filter(Boolean);
 
-    // 检查 DeepSeek 与 智谱 API Keys
-    const deepseekKey = (aiCfg.deepseek_api_key || aiCfg.api_key || '').trim();
-    const zhipuKey = (aiCfg.zhipu_api_key || '').trim();
-
-    const deepseekUrl = (aiCfg.deepseek_api_url || 'https://api.deepseek.com/chat/completions').trim();
-    const zhipuUrl = (aiCfg.zhipu_api_url || 'https://open.bigmodel.cn/api/paas/v4/chat/completions').trim();
-
-    const deepseekModel = aiCfg.deepseek_model || 'deepseek-chat';
-    const zhipuModel = aiCfg.zhipu_model || 'glm-4-flash';
-
-    const availableProviders = [];
-    if (deepseekKey) {
-      availableProviders.push({
-        id: 'deepseek',
-        name: 'DeepSeek',
-        url: deepseekUrl,
-        key: deepseekKey,
-        model: deepseekModel
-      });
-    }
-    if (zhipuKey) {
-      availableProviders.push({
-        id: 'zhipu',
-        name: '智谱 GLM',
-        url: zhipuUrl,
-        key: zhipuKey,
-        model: zhipuModel
-      });
-    }
+    const availableProviders = this.getAvailableProviders(aiCfg);
 
     // 关键分支：针对“本地周边”专属民生政务规划，不参与任何金融多空评级，专精于大白话提炼事实干货
     if (alertData && (alertData.source_key === 'local_gov' || alertData.source === '本地周边')) {
@@ -360,58 +503,57 @@ ${watchlistHint}
     let lastErrorReason = null;
 
     if (availableProviders.length > 0 && aiCfg.enabled !== false) {
-      // 动态选择首选模型（如果都配置了，双向轮流调度）
-      let primaryIdx = 0;
-      if (availableProviders.length > 1) {
-        primaryIdx = (this.roundRobinIndex++) % availableProviders.length;
-      }
-      const first = availableProviders[primaryIdx];
-      const second = availableProviders.length > 1 ? availableProviders[(primaryIdx + 1) % availableProviders.length] : null;
+      const strategy = aiCfg.strategy || 'failover';
+      let candidateQueue = [];
 
-      try {
-        const res = await this.callLlmApi(first.id, first.url, first.key, first.model, text, timeoutSec, watchlistNames);
-        if (res) {
-          finalResult = {
-            ai_source: first.name,
-            source_type: first.id,
-            is_pending: false,
-            summary: res.summary,
-            impact_score: res.impact_score !== undefined ? res.impact_score : null,
-            impacts: this.formatImpacts(res.impacts),
-            watchlist_impact: res.watchlist_impact || null
-          };
+      if (strategy === 'designated') {
+        const targetId = aiCfg.designated_provider || 'deepseek';
+        const target = availableProviders.find(p => p.id === targetId);
+        if (target) {
+          candidateQueue = [target, ...availableProviders.filter(p => p.id !== targetId)];
+        } else {
+          candidateQueue = [...availableProviders];
         }
-      } catch (e) {
-        console.warn(`[FinancialAI] ${first.name} 调用异常:`, e.message);
-        if (e.message.includes('402') || e.message.includes('Insufficient Balance')) {
-          lastErrorReason = `${first.name}余额不足`;
-        } else if (e.message.includes('401')) {
-          lastErrorReason = `${first.name}Key无效`;
-        } else if (e.message.includes('abort') || e.message.includes('timeout')) {
-          lastErrorReason = `${first.name}超时`;
-        }
+      } else if (strategy === 'round_robin') {
+        const startIdx = (this.roundRobinIndex++) % availableProviders.length;
+        candidateQueue = [
+          ...availableProviders.slice(startIdx),
+          ...availableProviders.slice(0, startIdx)
+        ];
+      } else {
+        // failover: 默认智能主备容灾
+        candidateQueue = [...availableProviders];
       }
 
-      // 如果首选失败且配置了第二模型，动态无缝切换至备选模型
-      if (!finalResult && second) {
+      for (let i = 0; i < candidateQueue.length; i++) {
+        const prov = candidateQueue[i];
         try {
-          const res2 = await this.callLlmApi(second.id, second.url, second.key, second.model, text, timeoutSec, watchlistNames);
-          if (res2) {
+          const res = await this.callLlmApi(prov.id, prov.url, prov.key, prov.model, text, timeoutSec, watchlistNames);
+          if (res) {
             finalResult = {
-              ai_source: second.name,
-              source_type: second.id,
+              ai_source: prov.name,
+              source_type: prov.id,
               is_pending: false,
-              summary: res2.summary,
-              impact_score: res2.impact_score !== undefined ? res2.impact_score : null,
-              impacts: this.formatImpacts(res2.impacts),
-              watchlist_impact: res2.watchlist_impact || null
+              summary: res.summary,
+              impact_score: res.impact_score !== undefined ? res.impact_score : null,
+              impacts: this.formatImpacts(res.impacts),
+              watchlist_impact: res.watchlist_impact || null
             };
             lastErrorReason = null;
+            break;
           }
-        } catch (e2) {
-          console.warn(`[FinancialAI] 备选 ${second.name} 亦异常:`, e2.message);
-          if (e2.message.includes('402') || e2.message.includes('Insufficient Balance')) {
-            lastErrorReason = `${second.name}余额不足`;
+        } catch (e) {
+          console.warn('[FinancialAI] ' + prov.name + ' 调用异常:', e.message);
+          if (e.message.includes('402') || e.message.includes('Insufficient Balance') || e.message.includes('balance') || e.message.includes('quota')) {
+            lastErrorReason = prov.name + '余额不足';
+          } else if (e.message.includes('401')) {
+            lastErrorReason = prov.name + 'Key无效';
+          } else if (e.message.includes('abort') || e.message.includes('timeout')) {
+            lastErrorReason = prov.name + '超时';
+          } else if (e.message.includes('429')) {
+            lastErrorReason = prov.name + '限流';
+          } else {
+            lastErrorReason = prov.name + '异常';
           }
         }
       }
@@ -423,7 +565,7 @@ ${watchlistHint}
       if (lastErrorReason) {
         finalResult.ai_source = `本地策略分析 (${lastErrorReason})`;
       } else {
-        finalResult.ai_source = '本地规则默认分析 (免 Key)';
+        finalResult.ai_source = '本地策略离线分析';
       }
       finalResult.source_type = 'rule_engine';
     }
@@ -546,8 +688,7 @@ ${watchlistHint}
     } else {
       const macroKeywords = [
         '降息', '加息', '非农', 'cpi', '关税', '通胀', '违约', '制裁', '涨停', '跌停', '暴涨', '暴跌', '印花税', '熔断', '崩盘',
-        '就业', '招聘', '失业率', '荣枯线', 'pmi', 'gdp', 'ppi', '停火', '停战', '宣战', '冲突',
-        '裁员', '裁减', '陷入困境', '销售疲软', '需求疲软', '净利润', '业绩超预期', '扭亏为盈', '亏损'
+        '就业', '招聘', '失业率', '荣枯线', 'pmi', 'gdp', 'ppi', '停火', '停战', '宣战', '冲突'
       ];
       const hitMacro = macroKeywords.some(w => fullText.includes(w));
       if (hitMacro) {
@@ -629,27 +770,15 @@ ${watchlistHint}
     // 3. 产油国组织与能源核心
     if (/欧佩克|opec\+|opec|沙特阿美|产油国/i.test(t)) return { name: 'OPEC+产油国', cb: null, curr: '原油' };
     
-    // 4. 全球核心资产与产业跨国龙头
+    // 4. 全球核心硬科技与资产龙头
     if (/英伟达|nvidia/i.test(t)) return { name: '英伟达', cb: null, curr: '科技股' };
     if (/微软|microsoft/i.test(t)) return { name: '微软', cb: null, curr: '科技股' };
     if (/苹果|apple/i.test(t)) return { name: '苹果', cb: null, curr: '消费电子' };
     if (/特斯拉|tesla/i.test(t)) return { name: '特斯拉', cb: null, curr: '新能源车' };
-    if (/百事|百事公司|百事可乐|pepsi|可口可乐|coca-cola|雀巢|nestle|宝洁|p&g|联合利华|unilever/i.test(t)) {
-      const m = t.match(/百事公司|百事可乐|百事|可口可乐|雀巢|宝洁|联合利华/i);
-      return { name: m ? m[0] : '快消龙头', cb: null, curr: '大消费/零售' };
-    }
-    if (/谷歌|google|alphabet|亚马逊|amazon|meta|脸书|甲骨文|oracle|amd|英特尔|intel|高通|qualcomm/i.test(t)) {
-      const m = t.match(/谷歌|alphabet|亚马逊|meta|脸书|甲骨文|amd|英特尔|高通/i);
-      return { name: m ? m[0] : '全球科技龙头', cb: null, curr: '科技股' };
-    }
-    if (/沃尔玛|walmart|开市客|costco|家得宝|target|波音|空客/i.test(t)) {
-      const m = t.match(/沃尔玛|开市客|家得宝|波音|空客/i);
-      return { name: m ? m[0] : '产业巨头', cb: null, curr: '核心蓝筹' };
-    }
     if (/比特币|btc/i.test(t)) return { name: '比特币', cb: null, curr: '加密货币' };
     if (/以太坊|eth/i.test(t)) return { name: '以太坊', cb: null, curr: '加密货币' };
-    if (/台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i.test(t)) {
-      const m = t.match(/台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i);
+    if (/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i.test(t)) {
+      const m = t.match(/波音|空客|台积电|asml|丰田|大众|比亚迪|宁德时代|中芯国际|腾讯|阿里|美团/i);
       return { name: m[0], cb: null, curr: '核心标的' };
     }
     
@@ -690,23 +819,19 @@ ${watchlistHint}
     const m1 = text.match(/(?:近|创)?(?:[\d一二三四五六七八九十]+个?月|[\d一二三四五六七八九十]+年)?(?:来)?(?:首次|首度)[^，,。；;\s]{2,10}/);
     if (m1) parts.push(m1[0].trim());
 
-    // 2. 裁员人数与岗位精简 (e.g. 裁员1000人, 裁减约1000个工作岗位, 缩减5000个岗位)
-    const mLayoffs = text.match(/(?:裁员|裁减|裁撤|缩减|削减)\s*(?:约|超)?\s*[\d,]+(?:\.\d+)?\s*(?:人|名|个岗位|个工作岗位)/);
-    if (mLayoffs) parts.push(mLayoffs[0].trim());
-
-    // 3. 荣枯线破位/重回 (e.g. 跌破50荣枯线, 重返荣枯线上方)
+    // 2. 荣枯线破位/重回 (e.g. 跌破50荣枯线, 重返荣枯线上方)
     const m2 = text.match(/(?:跌破|跌穿|跌落|重回|升破|站上|处于)?\s*(?:\d+(?:\.\d+)?\s*)?荣枯线/);
     if (m2 && (!m1 || !m1[0].includes('荣枯线'))) parts.push(m2[0].trim());
 
-    // 4. 政策利率与基点 (e.g. 降息25个基点, 加息50个基点)
+    // 3. 政策利率与基点 (e.g. 降息25个基点, 加息50个基点)
     const m3 = text.match(/(?:降息|加息|降准|上调|下调)\s*\d+(?:\.\d+)?\s*(?:个?基点|个?百分点|%|bps)/i);
     if (m3) parts.push(m3[0].trim());
 
-    // 5. 行情价格与点位大关 (e.g. 突破90000美元, 站上3000点)
+    // 4. 行情价格与点位大关 (e.g. 突破90000美元, 站上3000点)
     const m4 = text.match(/(?:突破|站上|跌破)\s*[\d,]+(?:\.\d+)?\s*(?:点|美元|元)/);
     if (m4) parts.push(m4[0].trim());
 
-    // 6. 核心地产/实物/能源动作 (e.g. 首套房首付降至15%, 取消限购, 全部售罄, 日均220万桶)
+    // 5. 核心地产/实物/能源动作 (e.g. 首套房首付降至15%, 取消限购, 全部售罄, 日均220万桶)
     const mDownPayment = text.match(/(?:首套房)?首付(?:比例)?(?:降至|下调至)?\s*\d+%/);
     if (mDownPayment) {
       parts.push(mDownPayment[0].trim());
@@ -714,19 +839,13 @@ ${watchlistHint}
     const m5 = text.match(/(?:取消限购|降低首付|全部售罄|日均\s*\d+(?:\.\d+)?\s*万桶)/);
     if (m5 && !parts.some(p => p.includes(m5[0]))) parts.push(m5[0].trim());
 
-    // 7. 资金量级/利润规模与幅度 (e.g. 净利润大增120%, 净流入超10亿美元, 增加化债资源10万亿元)
-    const mProfit = text.match(/(?:净利润|利润|营收|净利)?\s*(?:大增|暴增|增长|下滑|亏损|缩减)\s*[\d,]+(?:\.\d+)?%/);
-    if (mProfit && !parts.some(p => p.includes(mProfit[0]))) parts.push(mProfit[0].trim());
-
-    const m6 = text.match(/(?:净流入|流入|成交|增产|减产|化债资源|自愿减产)\s*(?:超|达)?\s*[\d,]+(?:\.\d+)?\s*(?:万桶|亿美元|亿元|万亿元)/);
+    // 6. 资金量级/利润规模 (e.g. 净流入超10亿美元, 增加化债资源10万亿元, 净利润增长超40%)
+    const m6 = text.match(/(?:净流入|流入|成交|净利润|增产|减产|化债资源|自愿减产)?\s*(?:超|达)?\s*[\d,]+(?:\.\d+)?\s*(?:万桶|亿美元|亿元|万亿元|%)/);
     if (m6 && !m3 && !m4 && !mDownPayment && !parts.some(p => p.includes(m6[0]))) parts.push(m6[0].trim());
 
-    // 8. 专利/合作
+    // 7. 专利/资质
     const m7 = text.match(/获.*?专利授权/);
     if (m7) parts.push(m7[0].trim());
-
-    const m8 = text.match(/签署.*?合作协议/);
-    if (m8) parts.push(m8[0].trim());
 
     return parts.filter(Boolean).slice(0, 2).join('，');
   }
@@ -753,7 +872,6 @@ ${watchlistHint}
   }
 
   extractDynamicHeadlineSummary(text, alertData = null, sub = null, ms = '') {
-    const rawTitle = (alertData && alertData.title ? alertData.title : '').trim();
     let clean = (alertData && alertData.title ? alertData.title + ' ' : '') + (alertData && alertData.content ? alertData.content : (text || ''));
     clean = clean
       .replace(/【(?:快讯|独家|突发|特报|要闻|重磅|盘中|午评|收评|盘前|早报|晚报|简讯|公告)】/g, ' ')
@@ -764,33 +882,28 @@ ${watchlistHint}
       .replace(/\s+/g, ' ')
       .trim();
 
-    // 严禁原样复制标题！必须做主体提取、事件动作提炼与专业因果研判
-    const sName = (sub && sub.name) ? sub.name : (rawTitle.match(/^[\u4e00-\u9fa5A-Za-z0-9]{2,8}/) ? rawTitle.match(/^[\u4e00-\u9fa5A-Za-z0-9]{2,8}/)[0] : '微观主体');
-
-    let action = ms || '';
-    let commentary = '微观主体与行业生态动态演进；系统性宏观影响有限，重在板块内部结构性分化';
-
-    if (/裁员|裁撤|缩减|亏损|下滑|疲软|困境|关停|违约|暴跌|跌超/i.test(clean)) {
-      commentary = '终端需求走弱倒逼企业战略收缩；行业处于成本防御与存量出清周期，关注盈利兑现承压';
-      if (!action) action = '经营承压与防守调整';
-    } else if (/大增|暴增|超预期|增长|创新高|突破|回升|爆发|涨超/i.test(clean)) {
-      commentary = '业务高景气与盈利基本面修复；显著提振板块风险偏好与估值溢价空间';
-      if (!action) action = '业绩高增与基本面改善';
-    } else if (/签约|合作|收购|并购|入股|中标|投资|扩产|投产/i.test(clean)) {
-      commentary = '产业战略协同与外延扩张落地；中长期观察业务整合效应与商业化变现转化';
-      if (!action) action = '产业布局与战略推进';
-    } else if (/专利|获批|许可|首发|自研|认证|上市/i.test(clean)) {
-      commentary = '知识产权与核心研发壁垒夯实；提升中长期核心竞争力，关注后续产业化落地进展';
-      if (!action) action = '技术创新与资质落地';
-    } else if (/调查|通报|违规|处罚|问询|警告|整改/i.test(clean)) {
-      commentary = '合规警示与潜在经营风险发酵；压制短期风险偏好，资金倾向避险审慎观望';
-      if (!action) action = '合规监管与整改问询';
+    // 优先提取清晰简练的标题
+    if (alertData && alertData.title) {
+      let tClean = alertData.title
+        .replace(/【[^】]+】/g, '')
+        .replace(/（[^）]+）/g, '')
+        .replace(/\([^)]+\)/g, '')
+        .trim();
+      if (tClean.length >= 10 && tClean.length <= 40) {
+        return tClean;
+      }
     }
 
-    if (action) {
-      return `${sName}业务动态（${action}）；${commentary}`;
+    const firstSentence = clean.split(/[。！？\n]/)[0].trim();
+    if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 40) {
+      return firstSentence;
     }
-    return `${sName}要闻动态；${commentary}`;
+
+    if (sub && sub.name && ms) {
+      return `${sub.name}核心要闻（${ms}）；关注后续实际商业化与市场流动性传导`;
+    }
+
+    return firstSentence.substring(0, 36) + (firstSentence.length > 36 ? '...' : '');
   }
 
   ruleBasedAnalysis(text, alertData = null) {
@@ -1154,67 +1267,9 @@ ${watchlistHint}
     }
 
     // ==========================================
-    // 12. 企业微观经营、业绩异动与裁员重组模型
+    // 12. 权益市场（A股/港股）基本面驱动与资本市场改革
     // ==========================================
-    // 12.1 企业经营承压、陷入困境、降本裁员与销售疲软
-    const corporateDistressKeywords = [
-      '陷入困境', '业务困境', '裁员', '裁减', '裁撤', '削减工作岗位', '裁减工作岗位', '裁减岗位',
-      '裁员计划', '计划裁员', '缩减岗位', '销售疲软', '本土市场销售疲软', '需求疲软', '销售下滑',
-      '营收下滑', '业绩承压', '业绩爆雷', '巨额亏损', '亏损扩大', '关停工厂', '停产', '精简运营'
-    ];
-
-    if (corporateDistressKeywords.some(w => t.includes(w))) {
-      const isLayoff = ['裁员', '裁减', '裁撤', '削减工作岗位', '缩减岗位'].some(w => t.includes(w));
-      const actionName = isLayoff ? '精简运营降本裁员' : '经营承压与防守调整';
-      res.summary = this.formatPrecisionSummary(
-        sub, 
-        ms || '应对销售疲软', 
-        actionName, 
-        '终端需求走弱倒逼企业战略收缩；行业处于成本防御与存量出清周期'
-      );
-      res.impact_score = 48;
-      res.impacts['A股'] = '利空';
-      res.impacts['原油'] = '利空'; // 实体消费品需求萎缩利空工业与大宗能源
-      res.impacts['美元'] = '中性';
-      res.impacts['黄金'] = '中性';
-      res.impacts['虚拟币'] = '中性';
-      return res;
-    }
-
-    // 12.2 监管立案调查、合规处罚与重大违规
-    const corporateBearKeywords = [
-      '立案调查', '受到行政处罚', '重大违法', '财务造假', '强制退市', '退市风险', '实控人被拘', '被证监会立案', '突发被查'
-    ];
-    if (corporateBearKeywords.some(w => t.includes(w))) {
-      res.summary = this.formatPrecisionSummary(
-        sub,
-        ms,
-        '突发合规风险与涉嫌违规立案',
-        '合规黑天鹅与信用风险冲击基本面底线；短线资金避险离场，标的面临估值剧烈杀跌压力'
-      );
-      res.impact_score = 75;
-      res.impacts['A股'] = '利空';
-      return res;
-    }
-
-    // 12.3 业绩高增、扭亏为盈与大额回购
-    const corporateBullKeywords = [
-      '净利润大增', '净利润暴增', '业绩超预期', '扭亏为盈', '营收创新高', '订单饱满', '订单大幅增长', '上调业绩指引', '大额回购注销'
-    ];
-    if (corporateBullKeywords.some(w => t.includes(w))) {
-      res.summary = this.formatPrecisionSummary(
-        sub,
-        ms,
-        '业绩高增与盈利爆发',
-        '主营业务高景气与盈利能力强劲验证；显著提振板块基本面信心，打开估值溢价空间'
-      );
-      res.impact_score = 65;
-      res.impacts['A股'] = '利好';
-      return res;
-    }
-
-    // 12.4 权益市场（A股/港股）基本面驱动与资本市场改革
-    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '引导长期资金', '市值管理', '分红'].some(w => t.includes(w))) {
+    if (['a股', '股票', '股市', '大盘', '上证', '深证', '创业板', '汇金', '增持回购', '回购', '扭亏为盈', '净利润增长', '引导长期资金', '市值管理', '分红'].some(w => t.includes(w))) {
       res.summary = this.formatPrecisionSummary(sub, ms, '基本面改善与资本回报提升', '盈利预期稳健或股东增持回购加码，稳固宏观风险偏好与估值修复');
       res.impact_score = 58;
       res.impacts['A股'] = '利好';
@@ -1232,71 +1287,87 @@ ${watchlistHint}
     return res;
   }
 
-  async testApiKey(provider, apiKey) {
+  async testApiKey(provider, apiKey, customUrl, customModel) {
     const key = String(apiKey || '').trim();
     if (!key) {
       return { success: false, msg: '请先填入 API Key 再测试' };
     }
 
-    const cfg = this.configManager.config;
-    const aiCfg = cfg.ai_analysis || {};
-    const isDs = provider === 'deepseek';
-
-    const apiUrl = isDs
-      ? (aiCfg.deepseek_api_url || 'https://api.deepseek.com/chat/completions')
-      : (aiCfg.zhipu_api_url || 'https://open.bigmodel.cn/api/paas/v4/chat/completions');
-    const model = isDs
-      ? (aiCfg.deepseek_model || 'deepseek-chat')
-      : (aiCfg.zhipu_model || 'glm-4-flash');
+    const prov = TOP_10_PROVIDERS.find(p => p.id === provider) || TOP_10_PROVIDERS[0];
+    const apiUrl = (prov.id === 'custom' && customUrl) ? customUrl.trim() : (prov.url || 'https://api.deepseek.com/chat/completions');
+    const model = (prov.id === 'custom' && customModel) ? customModel.trim() : (prov.defaultModel || 'deepseek-chat');
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
     const fetchFn = (electronNet && electronNet.fetch) ? electronNet.fetch.bind(electronNet) : global.fetch;
+
+    const startTime = Date.now();
+    let balanceStr = null;
+
+    if (provider === 'deepseek') {
+      try { balanceStr = await this.checkDeepSeekBalance(key); } catch (e) {}
+    } else if (provider === 'moonshot') {
+      try { balanceStr = await this.checkMoonshotBalance(key); } catch (e) {}
+    } else if (provider === 'siliconflow') {
+      try { balanceStr = await this.checkSiliconFlowBalance(key); } catch (e) {}
+    }
 
     try {
       const resp = await fetchFn(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${key}`,
+          'Authorization': 'Bearer ' + key,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model,
-          messages: [{ role: 'user', content: 'hello' }],
-          max_tokens: 5
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 2
         }),
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
+      const latencyMs = Date.now() - startTime;
 
       if (resp.ok) {
-        return { success: true, msg: '鉴权成功！大模型响应正常就绪' };
+        let msg = '可用 (延迟 ' + latencyMs + 'ms) · 连通正常';
+        if (balanceStr) {
+          msg = '可用 (延迟 ' + latencyMs + 'ms) · 💰 余额: ' + balanceStr;
+        }
+        return { success: true, latency: latencyMs, balance: balanceStr, msg };
       } else {
         let rawErr = '';
         try {
           const errJson = await resp.json();
           rawErr = errJson.error ? (errJson.error.message || JSON.stringify(errJson.error)) : JSON.stringify(errJson);
         } catch (e) {
-          rawErr = `HTTP ${resp.status} (${resp.statusText})`;
+          rawErr = 'HTTP ' + resp.status + ' (' + resp.statusText + ')';
         }
 
         let userFriendlyMsg = rawErr;
-        if (resp.status === 402 || rawErr.includes('Insufficient Balance')) {
-          userFriendlyMsg = `账户余额不足 (HTTP 402 Insufficient Balance)，请前往平台充值额度`;
-        } else if (resp.status === 401 || rawErr.includes('invalid') || rawErr.includes('Authentication')) {
-          userFriendlyMsg = `API Key 无效或未授权 (HTTP 401)，请核对 Key 是否正确`;
+        if (resp.status === 402 || rawErr.includes('Insufficient Balance') || rawErr.includes('quota') || rawErr.includes('balance')) {
+          userFriendlyMsg = '余额不足 (HTTP 402)，请充值' + (balanceStr ? ' (当前余额: ' + balanceStr + ')' : '');
+        } else if (resp.status === 401 || rawErr.includes('invalid') || rawErr.includes('Authentication') || rawErr.includes('Unauthorized')) {
+          userFriendlyMsg = 'API Key 无效或未授权 (HTTP 401)';
         } else if (resp.status === 429) {
-          userFriendlyMsg = `接口并发超限或配额耗尽 (HTTP 429 Too Many Requests)`;
+          userFriendlyMsg = '接口并发超限或限流 (HTTP 429)';
+        } else if (resp.status === 404) {
+          userFriendlyMsg = '模型不存在或接口地址有误 (HTTP 404): ' + model;
         }
 
-        return { success: false, msg: userFriendlyMsg };
+        return { success: false, balance: balanceStr, msg: userFriendlyMsg };
       }
     } catch (e) {
       clearTimeout(timeoutId);
-      return { success: false, msg: `网络请求失败: ${e.message}` };
+      if (e.name === 'AbortError' || e.message.includes('abort') || e.message.includes('timeout')) {
+        return { success: false, msg: '连接超时 (超过 7 秒未响应)' };
+      }
+      return { success: false, msg: '网络连接异常: ' + e.message };
     }
   }
 }
 
 module.exports = FinancialAIEngine;
+module.exports.FinancialAIEngine = FinancialAIEngine;
+module.exports.TOP_10_PROVIDERS = TOP_10_PROVIDERS;

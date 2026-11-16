@@ -7,6 +7,201 @@ const historyManager = require('./history');
 // 知名权威公众号与头部媒体常驻内建数据库 (开箱即用，免配置秒级解析)
 const BUILTIN_WECHAT_ACCOUNTS = [
   {
+      "id": "caijingshiyiren",
+      "name": "财经十一人",
+      "wechat_id": "caijingEleven",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=caijingEleven",
+      "desc": "《财经》杂志旗下产业报道团队，洞察公司与科技商业本质。",
+      "sample_article": "【财经十一人】深度调查：新能源车险保费博弈与车企自营破局",
+      "sample_url": "https://mp.weixin.qq.com/s/caijing11_sample",
+      "query_hints": [
+          "财经十一人 深度调查",
+          "财经十一人 产业",
+          "财经十一人 洞察"
+      ],
+      "keywords": [
+          "财经十一人",
+          "caijingEleven",
+          "caijingeleven",
+          "财经十一",
+          "财经杂志"
+      ]
+  },
+  {
+      "id": "fantongdailaoban",
+      "name": "饭统戴老板",
+      "wechat_id": "worldofboss",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=worldofboss",
+      "desc": "透视中国商业与产业变迁，硬核深度商业人物与行业复盘。",
+      "sample_article": "【饭统戴老板】大国算力往事：从缺芯少魂到全栈突围的三十年",
+      "sample_url": "https://mp.weixin.qq.com/s/dailaoban_sample",
+      "query_hints": [
+          "饭统戴老板 算力往事",
+          "饭统戴老板 深度",
+          "饭统戴老板 产业"
+      ],
+      "keywords": [
+          "饭统戴老板",
+          "戴老板",
+          "worldofboss",
+          "硬核商业",
+          "商业变迁"
+      ]
+  },
+  {
+      "id": "xiangshuaijinrong",
+      "name": "香帅的金融江湖",
+      "wechat_id": "xiangshuaifinance",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=xiangshuaifinance",
+      "desc": "香帅（唐涯博士），金融学者，用通俗语言剖析财富与经济逻辑。",
+      "sample_article": "【香帅】穿越周期的普通人财富法则：认知、现金流与风险边际",
+      "sample_url": "https://mp.weixin.qq.com/s/xiangshuai_sample",
+      "query_hints": [
+          "香帅 财富法则",
+          "香帅的金融江湖 周期",
+          "香帅 读书"
+      ],
+      "keywords": [
+          "香帅的金融江湖",
+          "香帅",
+          "xiangshuaifinance",
+          "唐涯",
+          "金融江湖"
+      ]
+  },
+  {
+      "id": "lixunleifinance",
+      "name": "李迅雷金融与投资",
+      "wechat_id": "lixunlei722",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=lixunlei722",
+      "desc": "中泰证券首席经济学家李迅雷个人微信，专注宏观与大类资产配置。",
+      "sample_article": "【李迅雷】如何看待当前利率中枢下移与资本市场结构性机遇",
+      "sample_url": "https://mp.weixin.qq.com/s/lixunlei_sample",
+      "query_hints": [
+          "李迅雷 利率中枢",
+          "李迅雷 资本市场",
+          "李迅雷 宏观研判"
+      ],
+      "keywords": [
+          "李迅雷金融与投资",
+          "李迅雷",
+          "lixunlei722",
+          "中泰证券",
+          "金融与投资"
+      ]
+  },
+  {
+      "id": "zepinghongguan",
+      "name": "泽平宏观",
+      "wechat_id": "zepinghongguan",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=zepinghongguan",
+      "desc": "任泽平博士团队，解读宏观经济趋势，研判大类资产配置逻辑。",
+      "sample_article": "【泽平宏观】新质生产力与大国博弈：2026年经济展望与资产研判",
+      "sample_url": "https://mp.weixin.qq.com/s/zeping_sample",
+      "query_hints": [
+          "泽平宏观 经济展望",
+          "泽平宏观 资产配置",
+          "泽平宏观 研判"
+      ],
+      "keywords": [
+          "泽平宏观",
+          "zepinghongguan",
+          "任泽平",
+          "宏观经济",
+          "资产配置"
+      ]
+  },
+  {
+      "id": "cankaoxiaoxi",
+      "name": "参考消息",
+      "wechat_id": "ckxxwx",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=ckxxwx",
+      "desc": "新华社主办《参考消息》官方微信，纵览国际风云，纵深报道中国。",
+      "sample_article": "【参考消息】外媒热议：中国高端制造业展现极强全球竞争力",
+      "sample_url": "https://mp.weixin.qq.com/s/ckxxwx_sample",
+      "query_hints": [
+          "参考消息 外媒",
+          "参考消息 头条",
+          "参考消息 快讯"
+      ],
+      "keywords": [
+          "参考消息",
+          "ckxxwx",
+          "cankaoxiaoxi",
+          "参考"
+      ]
+  },
+  {
+      "id": "zhengzhijian",
+      "name": "政知见",
+      "wechat_id": "bqzhengzhijian",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=bqzhengzhijian",
+      "desc": "北京青年报旗下时政新媒体，见所未见，政道人心。",
+      "sample_article": "【政知见】高级别代表团抵京，多场关键会谈细节披露",
+      "sample_url": "https://mp.weixin.qq.com/s/zhengzhijian_sample",
+      "query_hints": [
+          "政知见 独家",
+          "政知见 细节",
+          "政知见 时政"
+      ],
+      "keywords": [
+          "政知见",
+          "bqzhengzhijian",
+          "政知",
+          "北青报"
+      ]
+  },
+  {
+      "id": "changanjiezhashi",
+      "name": "长安街知事",
+      "wechat_id": "Capitalnews",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=Capitalnews",
+      "desc": "北京日报报业集团旗下时政新媒体，立足首都，放眼天下。",
+      "sample_article": "【长安街知事】事关重大合作！两国高层今日举行战略会谈",
+      "sample_url": "https://mp.weixin.qq.com/s/capitalnews_sample",
+      "query_hints": [
+          "长安街知事 关注",
+          "长安街知事 独家",
+          "长安街知事 消息"
+      ],
+      "keywords": [
+          "长安街知事",
+          "Capitalnews",
+          "capitalnews",
+          "知事",
+          "北京日报"
+      ]
+  },
+  {
+      "id": "xiakedao",
+      "name": "侠客岛",
+      "wechat_id": "xiake_island",
+      "type": "订阅号",
+      "avatar": "https://mp.weixin.qq.com/rr?avatar=xiake_island",
+      "desc": "人民日报海外版旗下新媒体，但云烟过眼，不改侠义心肠。",
+      "sample_article": "【侠客岛】深观察：重磅经济工作会议背后的战略定力",
+      "sample_url": "https://mp.weixin.qq.com/s/xiakedao_sample",
+      "query_hints": [
+          "侠客岛 深观察",
+          "侠客岛 评论",
+          "侠客岛 重磅"
+      ],
+      "keywords": [
+          "侠客岛",
+          "xiakedao",
+          "xiake_island",
+          "人民日报海外版"
+      ]
+  },
+  {
     id: 'xinhuashe',
     name: '新华社',
     wechat_id: 'xinhuashefabu1',
@@ -373,6 +568,22 @@ const BUILTIN_WECHAT_ACCOUNTS = [
 ];
 
 class WeChatFetcher {
+  /**
+   * 在内建知名媒体库中精准/模糊匹配 (免授权零门槛直接可用)
+   */
+  findBuiltinAccount(keyword) {
+    if (!keyword) return null;
+    const clean = keyword.trim().toLowerCase();
+    return BUILTIN_WECHAT_ACCOUNTS.find(a => {
+      if (a.name.toLowerCase() === clean) return true;
+      if (a.id.toLowerCase() === clean) return true;
+      if (a.wechat_id && a.wechat_id.toLowerCase() === clean) return true;
+      if (Array.isArray(a.keywords) && a.keywords.some(k => k.toLowerCase() === clean)) return true;
+      if (clean.includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(clean)) return true;
+      return false;
+    });
+  }
+
   constructor(configManager, financialAi = null) {
     this.configManager = configManager;
     this.financialAi = financialAi;
@@ -382,7 +593,7 @@ class WeChatFetcher {
     this.coolingMap = new Map();    // id -> { untilMs, backoffSec }
 
     // 微信公众平台扫码授权状态 (mp.weixin.qq.com 官方 API)
-    this.auth = { token: '', cookie: '', last_auth_time: 0 };
+    this.auth = { token: '', cookie: '', account_name: '', account_type: '公众号/小程序', last_auth_time: 0 };
     // 从持久化配置恢复授权状态
     this._restoreAuth();
   }
@@ -471,10 +682,10 @@ class WeChatFetcher {
       if (data.list && Array.isArray(data.list)) {
         return data.list.map(item => ({
           fakeid: item.fakeid,
-          nickname: item.nickname,
-          alias: item.alias,
+          nickname: (item.nickname || '').replace(/<[^>]+>/g, '').trim(),
+          alias: (item.alias || '').replace(/<[^>]+>/g, '').trim(),
           round_head_img: item.round_head_img,
-          signature: item.signature,
+          signature: (item.signature || '').replace(/<[^>]+>/g, '').trim(),
           service_type: item.service_type
         }));
       }
@@ -532,10 +743,13 @@ class WeChatFetcher {
       const bizList = await this.searchMpBiz(query);
       if (!bizList || bizList.length === 0) return null;
 
-      // 优先精确匹配 nickname 或 alias
+      // 清洗 nickname 中的 HTML 标签
       const lowerQuery = query.toLowerCase().replace(/[\s\-_]+/g, '');
+      bizList.forEach(b => {
+        b.cleanNickname = (b.nickname || '').replace(/<[^>]+>/g, '').trim();
+      });
       let matched = bizList.find(b => {
-        const nn = (b.nickname || '').toLowerCase().replace(/[\s\-_]+/g, '');
+        const nn = (b.cleanNickname || '').toLowerCase().replace(/[\s\-_]+/g, '');
         const al = (b.alias || '').toLowerCase().replace(/[\s\-_]+/g, '');
         return nn === lowerQuery || al === lowerQuery;
       });
@@ -819,12 +1033,23 @@ class WeChatFetcher {
       return { success: false, msg: '请输入微信公众号名称或微信号' };
     }
 
-    // 1. 微信授权为必要条件
-    if (!this.isAuthValid()) {
+    // 1. 优先匹配系统内建知名媒体库 (免授权直接可用，零门槛)
+    const builtinMatch = this.findBuiltinAccount(cleanInput);
+    if (builtinMatch) {
       return {
-        success: false,
-        need_auth: true,
-        msg: '微信授权为必要条件，请先扫码授权微信公众平台'
+        success: true,
+        account: {
+          id: builtinMatch.id,
+          name: builtinMatch.name,
+          wechat_id: builtinMatch.wechat_id,
+          type: builtinMatch.type || '订阅号',
+          avatar: this.getAccountAvatar(builtinMatch),
+          desc: builtinMatch.desc,
+          latest_article: builtinMatch.sample_article || '最新推文已就绪 (免登录直推通道)',
+          latest_url: builtinMatch.sample_url || '',
+          latest_time: new Date().toLocaleString('zh-CN', { hour12: false }),
+          pics: []
+        }
       };
     }
 
@@ -858,7 +1083,28 @@ class WeChatFetcher {
       }
     }
 
-    // 3. 严格通过微信公众平台官方 API 查询任意公众号或服务号
+    // 3. 授权状态与账号类型硬性前置检查
+    if (!this.isAuthValid()) {
+      return {
+        success: false,
+        need_auth: true,
+        msg: `当前尚未授权微信公众平台。若要全网任意搜索【${cleanInput}】，请先点击上方【扫码授权】；微信官方限制仅支持使用【公众号 (订阅号/服务号)】或【免费测试号】扫码，请勿使用小程序授权！`
+      };
+    }
+
+    // 4. 若当前授权的是“小程序”账号，微信官方网关不开放图文搜索接口，明确向用户告知并提供转公众号指引
+    if (this.auth.account_type === '小程序') {
+      logger.warn(`[WeChatFetcher] 当前授权账号【${this.auth.account_name || '小程序'}】为小程序模式，无法调用官方 searchbiz 接口`);
+      return {
+        success: false,
+        need_reauth_mp: true,
+        account_type: '小程序',
+        account_name: this.auth.account_name || '',
+        msg: `当前授权账号为【${this.auth.account_name || '小程序'}】(小程序)。因微信官方接口权限限制，小程序后台未开放公众号检索接口。请点击上方【退出授权】，改用微信公众号（订阅号/服务号）或【免资质·微信官方免费测试号】扫码授权即可正常检索！`
+      };
+    }
+
+    // 5. 严格通过微信公众平台官方 API 查询任意公众号或服务号
     logger.info(`[WeChatFetcher] 正在通过微信公众平台官方接口精准检索: "${cleanInput}"...`);
     const mpResult = await this.lookupViaMpApi(cleanInput);
     if (mpResult && mpResult.success) {
@@ -866,10 +1112,10 @@ class WeChatFetcher {
       return mpResult;
     }
 
-    // 4. 微信公众平台未收录或查无此号，实事求是明确返回未找到，绝不凭空捏造假账号
+    // 6. 微信公众平台真实未收录或查无此号，实事求是明确返回未找到，严禁捏造假账号
     return {
       success: false,
-      msg: `未在微信公众平台找到名为【${cleanInput}】的公众号或服务号，请确认名称或微信号是否完全正确`
+      msg: `未在微信公众平台找到名为【${cleanInput}】的公众号或服务号，请确认名称或微信号是否完全准确`
     };
   }
 

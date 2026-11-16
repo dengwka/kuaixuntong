@@ -283,6 +283,106 @@ class ConfigManager {
           impact_min_score: 60,
           accounts: [
             {
+              "id": "caijingshiyiren",
+              "name": "财经十一人",
+              "wechat_id": "caijingEleven",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=caijingEleven",
+              "desc": "《财经》杂志旗下产业报道团队，洞察公司与科技商业本质。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "fantongdailaoban",
+              "name": "饭统戴老板",
+              "wechat_id": "worldofboss",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=worldofboss",
+              "desc": "透视中国商业与产业变迁，硬核深度商业人物与行业复盘。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "latepost",
+              "name": "晚点LatePost",
+              "wechat_id": "postlate",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=postlate",
+              "desc": "报道商业世界的真实与深刻。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "xiangshuaijinrong",
+              "name": "香帅的金融江湖",
+              "wechat_id": "xiangshuaifinance",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=xiangshuaifinance",
+              "desc": "香帅（唐涯博士），金融学者，用通俗语言剖析财富与经济逻辑。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "lixunleifinance",
+              "name": "李迅雷金融与投资",
+              "wechat_id": "lixunlei722",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=lixunlei722",
+              "desc": "中泰证券首席经济学家李迅雷个人微信，专注宏观与大类资产配置。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "zepinghongguan",
+              "name": "泽平宏观",
+              "wechat_id": "zepinghongguan",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=zepinghongguan",
+              "desc": "任泽平博士团队，解读宏观经济趋势，研判大类资产配置逻辑。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "cankaoxiaoxi",
+              "name": "参考消息",
+              "wechat_id": "ckxxwx",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=ckxxwx",
+              "desc": "新华社主办《参考消息》官方微信，纵览国际风云，纵深报道中国。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "zhengzhijian",
+              "name": "政知见",
+              "wechat_id": "bqzhengzhijian",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=bqzhengzhijian",
+              "desc": "北京青年报旗下时政新媒体，见所未见，政道人心。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "changanjiezhashi",
+              "name": "长安街知事",
+              "wechat_id": "Capitalnews",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=Capitalnews",
+              "desc": "北京日报报业集团旗下时政新媒体，立足首都，放眼天下。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
+              "id": "xiakedao",
+              "name": "侠客岛",
+              "wechat_id": "xiake_island",
+              "type": "订阅号",
+              "avatar": "https://mp.weixin.qq.com/rr?avatar=xiake_island",
+              "desc": "人民日报海外版旗下新媒体，但云烟过眼，不改侠义心肠。",
+              "enabled": true,
+              "ai_analysis_enabled": true
+            },
+            {
               id: 'realdonaldtrump',
               screen_name: 'realDonaldTrump',
               name: 'Donald J. Trump',

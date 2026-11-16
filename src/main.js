@@ -147,7 +147,7 @@ function detectSystemProxyOnMac() {
 
 // 快速探测本机常见科学上网代理端口 (Clash/Surge/v2ray: 7890, 7892, 10809, 6152, 10808)
 function checkLocalPort(port, timeoutMs = 150) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const net = require('net');
     const s = new net.Socket();
     s.setTimeout(timeoutMs);
@@ -367,7 +367,7 @@ function triggerTestToast(targetSourceKey) {
       source_key: 'wechat',
       author: '新华社',
       author_name: '新华社',
-      author_avatar: '../../assets/wechat_avatars/xinhua.png',
+      author_avatar: '../../assets/wechat_avatars/xinhuashe.png',
       time: timeStr,
       pub_time: pubTimeStr,
       title: '新华社：重磅发布！我国在关键核心技术自主攻关领域取得重大战略突破',
@@ -1078,8 +1078,8 @@ app.whenReady().then(() => {
     return await notifier.sendWxOfficialTestMessage(wxConfig, configManager.config);
   });
 
-  ipcMain.handle('test-ai-key', async (event, { provider, key }) => {
-    return await financialAi.testApiKey(provider, key);
+  ipcMain.handle('test-ai-key', async (event, { provider, key, customUrl, customModel }) => {
+    return await financialAi.testApiKey(provider, key, customUrl, customModel);
   });
 
   // 𝕏 (Twitter) 监控模块 IPC 处理器
@@ -1173,23 +1173,52 @@ app.whenReady().then(() => {
     return { success: true, accounts: cfg.sources.wechat.accounts };
   });
 
-  // 📱 微信公众平台扫码授权 IPC 处理器
+  // 📱 微信公众平台扫码授权 IPC 处理器 (全面兼容公众号与小程序)
+  let wechatLoginWin = null;
+
   ipcMain.handle('wechat:open-qr-login', async () => {
+    // 1. 若已有打开的窗口，强制销毁重建，杜绝因异常卡死导致再次点击无反应
+    if (wechatLoginWin && !wechatLoginWin.isDestroyed()) {
+      try {
+        wechatLoginWin.destroy();
+      } catch (e) {}
+      wechatLoginWin = null;
+    }
+
+    // 2. 扫码授权前清理残留会话 Cookie，确保 100% 弹出全新未登录二维码供用户扫码
+    try {
+      await session.defaultSession.clearStorageData({
+        storages: ['cookies', 'localstorage', 'sessionstorage', 'cache'],
+        origin: 'https://mp.weixin.qq.com'
+      });
+      const cookiesAll = await session.defaultSession.cookies.get({});
+      for (const cookie of cookiesAll) {
+        if (cookie.domain.includes('weixin.qq.com')) {
+          const url = (cookie.secure ? 'https://' : 'http://') + cookie.domain.replace(/^\./, '') + cookie.path;
+          await session.defaultSession.cookies.remove(url, cookie.name).catch(() => {});
+        }
+      }
+    } catch (e) {}
+
     return new Promise((resolve) => {
+      // 纯净极简授权窗口：仅展示提示文案卡片与核心二维码
       const loginWin = new BrowserWindow({
-        width: 380,
-        height: 440,
+        width: 420,
+        height: 520,
+        minWidth: 400,
+        minHeight: 480,
         title: '微信公众平台扫码授权',
         resizable: false,
         minimizable: false,
         maximizable: false,
         autoHideMenuBar: true,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#FFFFFF',
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true
         }
       });
+      wechatLoginWin = loginWin;
 
       let resolved = false;
       const done = (result) => {
@@ -1198,85 +1227,202 @@ app.whenReady().then(() => {
         resolve(result);
       };
 
-      // 页面加载完成后注入样式：精准只保留并放大居中二维码卡片，隐藏外部全部背景与导航，彻底免除左右滚动拉扯
-      const cleanQrCss = `
-        html, body {
-          overflow: hidden !important;
-          background: #F8FAFC !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-        }
-        body::before {
-          content: '' !important;
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          background: #F8FAFC !important;
-          z-index: 999999 !important;
-        }
-        .login_frame {
-          position: fixed !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          z-index: 9999999 !important;
-          background: #FFFFFF !important;
-          border: 1px solid #E2E8F0 !important;
-          border-radius: 14px !important;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.06) !important;
-          margin: 0 !important;
-          width: 300px !important;
-          padding: 18px 16px !important;
-          box-sizing: border-box !important;
-        }
-        .login__type__container__select-type {
-          display: none !important;
-        }
-        .login__type__container__scan__qrcode {
-          width: 180px !important;
-          height: 180px !important;
-          margin: 10px auto !important;
-          display: block !important;
-        }
-        .login__type__container__scan__info__desc {
-          font-size: 13px !important;
-          color: #475569 !important;
-          text-align: center !important;
-          margin-top: 8px !important;
-        }
-      `;
-
+      // 仅展示提示文案与二维码的核心注入逻辑 (过滤官方星空背景、头部导航、slogan等无关元素)
       loginWin.webContents.on('did-finish-load', () => {
-        loginWin.webContents.insertCSS(cleanQrCss).catch(() => {});
+        loginWin.webContents.executeJavaScript(`
+          (() => {
+            if (!document.getElementById('pureGlobalStyle')) {
+              const s = document.createElement('style');
+              s.id = 'pureGlobalStyle';
+              s.textContent = \`
+                html, body {
+                  overflow: hidden !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #FFFFFF !important;
+                }
+                .login__type__container__select-type,
+                .login__type__container__select-type__scan,
+                .login__type__container__account,
+                .login_frame .weui-desktop-global-mod,
+                .login_frame .login__type__container__scan__info__title {
+                  display: none !important;
+                }
+              \`;
+              document.head.appendChild(s);
+            }
+
+            function setupPureModal() {
+              const loginFrame = document.querySelector('.login_frame');
+              if (!loginFrame) return;
+
+              // 1. 创建纯净居中容器
+              let modalWrap = document.getElementById('pureWechatModalWrap');
+              if (!modalWrap) {
+                modalWrap = document.createElement('div');
+                modalWrap.id = 'pureWechatModalWrap';
+                modalWrap.style.cssText = \`
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  right: 0 !important;
+                  bottom: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  background: #FFFFFF !important;
+                  z-index: 2147483647 !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  align-items: center !important;
+                  justify-content: center !important;
+                  padding: 16px 20px !important;
+                  box-sizing: border-box !important;
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                  overflow: hidden !important;
+                \`;
+                document.body.appendChild(modalWrap);
+              }
+
+              // 2. 注入顶部提示文案卡片
+              let tipCard = document.getElementById('pureTipCard');
+              if (!tipCard) {
+                tipCard = document.createElement('div');
+                tipCard.id = 'pureTipCard';
+                tipCard.style.cssText = \`
+                  background: #FFFBEB !important;
+                  border: 1.5px solid #FCD34D !important;
+                  border-radius: 8px !important;
+                  padding: 10px 14px !important;
+                  margin-bottom: 14px !important;
+                  width: 320px !important;
+                  box-sizing: border-box !important;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+                \`;
+                tipCard.innerHTML = \`
+                  <div style="font-size: 12.5px; font-weight: 700; color: #B45309; display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
+                    <span>⚠️</span> <span>授权提醒 (请务必留意)</span>
+                  </div>
+                  <div style="font-size: 11px; color: #92400E; line-height: 1.5;">
+                    1. 微信官方仅对<b>【公众号】(订阅号/服务号)</b>开放搜索接口；<br>
+                    2. 扫码后请在手机微信中选择<b>【公众号】</b>登录；<br>
+                    3. 若误选【小程序】将无法检索公众号！
+                  </div>
+                \`;
+                modalWrap.appendChild(tipCard);
+              }
+
+              // 3. 将 login_frame 移动到 modalWrap 中
+              if (loginFrame.parentNode !== modalWrap) {
+                modalWrap.appendChild(loginFrame);
+              }
+
+              // 4. 重塑 login_frame 样式
+              loginFrame.style.cssText = \`
+                position: static !important;
+                width: 320px !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+              \`;
+
+              // 确保二维码居中且尺寸清晰
+              const qrcodeEl = loginFrame.querySelector('.login__type__container__scan__qrcode');
+              if (qrcodeEl) {
+                qrcodeEl.style.width = '200px';
+                qrcodeEl.style.height = '200px';
+                qrcodeEl.style.margin = '0 auto 8px auto';
+                qrcodeEl.style.display = 'block';
+              }
+
+              const descEl = loginFrame.querySelector('.login__type__container__scan__info__desc');
+              if (descEl) {
+                descEl.style.fontSize = '12px';
+                descEl.style.color = '#64748B';
+                descEl.style.textAlign = 'center';
+                descEl.style.marginTop = '4px';
+              }
+            }
+
+            setupPureModal();
+            const observer = new MutationObserver(setupPureModal);
+            observer.observe(document.body, { childList: true, subtree: true });
+          })()
+        `).catch(() => {});
       });
 
       loginWin.loadURL('https://mp.weixin.qq.com/');
 
-      // 监听导航：扫码登录成功后会跳转到含 token 的管理后台首页
+      // 监听导航：全面兼容公众号 (cgi-bin/home) 与小程序 (wxopen/home 或 wxopen/*) 登录跳转
       const handleNavigation = async (navUrl) => {
         try {
           const urlObj = new URL(navUrl);
-          // 登录成功后 URL 格式: https://mp.weixin.qq.com/cgi-bin/home?t=home/index&lang=zh_CN&token=XXXXXX
-          if (urlObj.pathname.includes('/cgi-bin/home') && urlObj.searchParams.get('token')) {
-            const token = urlObj.searchParams.get('token');
-            logger.info(`[WeChatAuth] 扫码登录成功，获取 token: ${token.substring(0, 6)}...`);
+          const token = urlObj.searchParams.get('token');
+          if (token && urlObj.hostname.includes('mp.weixin.qq.com')) {
+            const isMiniProgram = urlObj.pathname.includes('/wxopen');
+            const accountType = isMiniProgram ? '小程序' : '公众号';
+            logger.info(`[WeChatAuth] 扫码登录成功 (${accountType})，获取 token: ${token.substring(0, 6)}...`);
 
             // 获取 cookies
             const cookies = await session.defaultSession.cookies.get({ domain: 'mp.weixin.qq.com' });
             const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join('; ');
 
+            // 提取当前登录账号的真实名称与类型
+            let accountName = '';
+            try {
+              await new Promise(r => setTimeout(r, 400));
+              const extracted = await loginWin.webContents.executeJavaScript(`
+                (() => {
+                  let name = '';
+                  let type = '';
+                  try {
+                    if (window.wx && window.wx.commonData) {
+                      name = window.wx.commonData.nick_name || window.wx.commonData.user_name || '';
+                    }
+                  } catch (e) {}
+                  if (!name) {
+                    const el = document.querySelector('.weui-desktop-account__nickname, .mp-head-nav__account-name, .header_account_name, .account_name, .user_name');
+                    if (el) name = el.textContent.trim();
+                  }
+                  if (!name && document.title) {
+                    const t = document.title.replace(/[-_].*$/, '').trim();
+                    if (t && !t.includes('微信公众平台') && !t.includes('登录')) {
+                      name = t;
+                    }
+                  }
+                  const typeEl = document.querySelector('.weui-desktop-account__extra, .account_type, .type_name');
+                  if (typeEl) type = typeEl.textContent.trim();
+                  return { name, type };
+                })()
+              `).catch(() => null);
+
+              if (extracted && extracted.name) {
+                accountName = extracted.name;
+              }
+            } catch (eName) {}
+
             // 设置到 fetcher
             if (wechatFetcher) {
-              wechatFetcher.setAuth({ token, cookie: cookieStr });
+              wechatFetcher.setAuth({
+                token,
+                cookie: cookieStr,
+                account_name: accountName,
+                account_type: accountType
+              });
             }
 
             // 关闭登录窗口
             try { loginWin.close(); } catch (e) {}
-            done({ success: true, token });
+            done({
+              success: true,
+              token,
+              account_name: accountName,
+              account_type: accountType
+            });
             return;
           }
         } catch (e) {}
@@ -1287,6 +1433,9 @@ app.whenReady().then(() => {
 
       // 用户手动关闭窗口
       loginWin.on('closed', () => {
+        if (wechatLoginWin === loginWin) {
+          wechatLoginWin = null;
+        }
         done({ success: false, msg: '登录窗口已关闭' });
       });
     });

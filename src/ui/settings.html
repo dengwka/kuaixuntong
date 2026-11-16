@@ -747,7 +747,7 @@
         <span id="licenseHeaderPillIcon">🛡️</span>
         <span id="licenseHeaderPillText">未配置授权</span>
       </span>
-      <span class="status-badge" id="versionBadge">🟢 v1.0.0 · 运行中</span>
+      <span class="status-badge" id="versionBadge">🟢 v1.1.0 · 运行中</span>
     </div>
   </div>
 
@@ -1447,14 +1447,18 @@
               </div>
 
               <!-- 微信公众平台扫码授权区域 -->
-              <div id="wechatAuthBanner" style="margin: 8px 0 10px 0; padding: 10px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.2s ease;">
+              <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; font-size: 11px; color: #92400E; display: flex; align-items: center; gap: 6px;">
+                <span>⚠️</span>
+                <span><b>官方权限说明</b>：微信官方仅对【公众号 (订阅号/服务号)】开放全网搜索接口，请勿使用【小程序】扫码授权；若无公众号，可使用个人微信扫码 5 秒 <a href="javascript:void(0)" onclick="require('electron').shell.openExternal('https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login')" style="color: #B45309; font-weight: 700; text-decoration: underline;">免费开通官方测试公众号 ➔</a></span>
+              </div>
+              <div id="wechatAuthBanner" style="margin: 0 0 10px 0; padding: 10px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.2s ease;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <span id="wechatAuthIcon" style="font-size: 20px;">⚪</span>
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <b id="wechatAuthLabel" style="font-size: 13px; color: #1E293B;">未授权微信公众平台</b>
+                      <b id="wechatAuthLabel" style="font-size: 13px; color: #1E293B;">未授权微信公众平台 (需公众号或测试号)</b>
                     </div>
-                    <div id="wechatAuthDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">扫码授权后支持全网任意公众号实时精准搜索、官方高清头像与最新推文同步</div>
+                    <div id="wechatAuthDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">扫码授权支持全网精准搜索；无账号可直接使用免登录知名媒体库，或 <a href="javascript:void(0)" onclick="require('electron').shell.openExternal('https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login')" style="color: #2563EB; font-weight: 600; text-decoration: underline;">免费开通官方测试号 (个人微信5秒即开) ➔</a></div>
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
@@ -1482,10 +1486,23 @@
                     </button>
                   </div>
                   <div id="wechatPresetChipsContainer" style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('新华社')" style="font-size: 11.5px; padding: 4px 10px;">新华社 (权威央媒)</button>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('人民日报')" style="font-size: 11.5px; padding: 4px 10px;">人民日报 (官方党媒)</button>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('连岳')" style="font-size: 11.5px; padding: 4px 10px;">连岳 (见识与审美)</button>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('电商Pro')" style="font-size: 11.5px; padding: 4px 10px;">电商Pro (电商重磅头条)</button>
+                    <!-- 权威党媒与时政精选 -->
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('新华社')" style="font-size: 11px; padding: 3px 8px;">新华社 (权威央媒)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('人民日报')" style="font-size: 11px; padding: 3px 8px;">人民日报 (官方党媒)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('参考消息')" style="font-size: 11px; padding: 3px 8px;">参考消息 (国际风云)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('侠客岛')" style="font-size: 11px; padding: 3px 8px;">侠客岛 (时政独家)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('长安街知事')" style="font-size: 11px; padding: 3px 8px;">长安街知事 (首都时局)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('政知见')" style="font-size: 11px; padding: 3px 8px;">政知见 (时政深读)</button>
+                    <!-- 宏观策略与金融洞察 -->
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('泽平宏观')" style="font-size: 11px; padding: 3px 8px; color: #1E3A8A; background: #EFF6FF; border-color: #BFDBFE;">泽平宏观 (趋势研判)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('李迅雷金融与投资')" style="font-size: 11px; padding: 3px 8px; color: #1E3A8A; background: #EFF6FF; border-color: #BFDBFE;">李迅雷金融与投资 (首席视角)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('香帅的金融江湖')" style="font-size: 11px; padding: 3px 8px; color: #1E3A8A; background: #EFF6FF; border-color: #BFDBFE;">香帅的金融江湖 (财富通识)</button>
+                    <!-- 商业深度与科技特稿 -->
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('晚点LatePost')" style="font-size: 11px; padding: 3px 8px; color: #78350F; background: #FEF3C7; border-color: #FDE68A;">晚点LatePost (独家商界)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('饭统戴老板')" style="font-size: 11px; padding: 3px 8px; color: #78350F; background: #FEF3C7; border-color: #FDE68A;">饭统戴老板 (硬核产业)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('财经十一人')" style="font-size: 11px; padding: 3px 8px; color: #78350F; background: #FEF3C7; border-color: #FDE68A;">财经十一人 (深度调查)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('电商Pro')" style="font-size: 11px; padding: 3px 8px;">电商Pro (重磅头条)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="quickFillWeChat('连岳')" style="font-size: 11px; padding: 3px 8px;">连岳 (见识审美)</button>
                   </div>
                 </div>
 
@@ -1494,7 +1511,7 @@
                   <div style="display: flex; gap: 8px; align-items: center;">
                     <div style="position: relative; flex: 1;">
                       <span style="position: absolute; left: 8px; top: 7px; color: #166534; font-weight: 700; pointer-events: none; user-select: none;">💬</span>
-                      <input type="text" id="wechatInputHandle" class="form-control" placeholder="输入公众号名称、Biz ID 或搜狗微信链接进行解析" style="padding-left: 28px; font-size: 12px; height: 32px;" />
+                      <input type="text" id="wechatInputHandle" class="form-control" placeholder="输入公众号名称、微信号、Biz ID 或搜狗微信链接进行解析..." style="width: 100%; box-sizing: border-box; padding-left: 28px; padding-right: 28px; font-size: 12px; height: 34px; border: 1.5px solid #CBD5E1; border-radius: 6px;" />
                       <button type="button" id="btnWechatClearInput" onclick="clearWechatInput()" style="display: none; position: absolute; right: 8px; top: 6px; background: transparent; border: none; font-size: 13px; color: #94A3B8; cursor: pointer;">✕</button>
                     </div>
                     <button type="button" class="btn btn-primary btn-sm" id="btnLookupWechat" style="padding: 0 16px; height: 32px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
@@ -1700,6 +1717,7 @@
     </div>
 
     <!-- ==================== TAB 3: AI 观点研判 ==================== -->
+        <!-- ==================== TAB 3: AI 观点研判 (Top 10 主流大模型矩阵与调度容灾引擎) ==================== -->
     <div class="tab-pane" id="pane-ai">
       <!-- 🔒 未授权锁定遮罩 (仅在未激活时展示，点击打开授权弹窗) -->
       <div class="unauthorized-glass-mask" onclick="openLicenseModal()">
@@ -1715,39 +1733,114 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">
-          <span>💡 宏观观点分析与资产影响研判</span>
-          <span id="aiEngineStatus" style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #166534;">🟢 本地规则默认分析</span>
+      <!-- 模块1：AI研判总控与资产影响 -->
+      <div class="card" style="border-left: 4px solid #3B82F6;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 700; color: #0F172A;">💡 宏观观点分析与资产影响研判</span>
+            <span id="aiEngineStatus" style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #DCFCE7; color: #166534;">🟢 本地规则默认分析 (免 Key)</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnTestAllAiKeys" style="font-size: 11px; padding: 4px 10px; font-weight: 600;">
+            ⚡ 一键检测所有已配置 Key
+          </button>
         </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px;">
-          支持配置 DeepSeek 或 智谱 AI Key（若同时配置将动态智能双核调度）。若均不配置，系统将采用内置金融规则分析，免 Key 亦可完全正常运行。
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 12px; line-height: 1.5;">
+          实时深度评估【黄金/美元/原油/A股/虚拟币】影响；未配置或额度耗尽自动降级内置规则，<b>免 Key 亦稳定运行</b>。
         </div>
 
-        <div class="form-row" style="margin-bottom: 12px;">
-          <label class="checkbox-row">
+        <div class="form-row" style="margin-bottom: 6px;">
+          <label class="checkbox-row" style="cursor: pointer;">
             <input type="checkbox" id="aiEnabled" checked />
             <b style="color: #1E293B;">启用实时观点分析与五大资产（黄金、美元、原油、A股、虚拟币）利好利空研判</b>
           </label>
         </div>
+      </div>
 
-        <div class="form-row" style="margin-bottom: 4px;">
-          <span style="width: 140px; font-weight: 600;">DeepSeek API Key:</span>
-          <input type="text" id="deepseekApiKey" style="flex: 1; min-width: 0;" placeholder="sk-..." />
-          <button type="button" class="btn btn-secondary btn-sm" id="btnTestDsKey" style="flex-shrink: 0; padding: 5px 10px; font-size: 11px;">
-            ⚡ 检测可用性
-          </button>
+      <!-- 模块2：AI 调度策略与容灾机制 -->
+      <div class="card" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+        <div class="card-title" style="display: flex; align-items: center; gap: 6px;">
+          <span>⚙️ AI 调用与调度策略 (向用户透明公开)</span>
+          <span style="font-size: 10.5px; background: #E0E7FF; color: #3730A3; padding: 1px 6px; border-radius: 4px; font-weight: 600;">全自动故障转移</span>
         </div>
-        <div id="dsTestNotice" style="font-size: 11.5px; margin: 2px 0 8px 140px; display: none; font-weight: 600;"></div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px;">
+          支持智能主备容灾与多账号轮流调度，高频突发消息来临时永不中断：
+        </div>
 
-        <div class="form-row" style="margin-top: 8px;">
-          <span style="width: 140px; font-weight: 600;">智谱 GLM API Key:</span>
-          <input type="text" id="zhipuApiKey" style="flex: 1; min-width: 0;" placeholder="智谱开放平台 API Key..." />
-          <button type="button" class="btn btn-secondary btn-sm" id="btnTestZpKey" style="flex-shrink: 0; padding: 5px 10px; font-size: 11px;">
-            ⚡ 检测可用性
-          </button>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+          <!-- 策略1：智能主备容灾 -->
+          <label style="display: block; border: 1.5px solid #CBD5E1; background: #FFFFFF; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" id="labelStrategyFailover">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <input type="radio" name="aiStrategy" value="failover" id="strategyFailover" checked />
+              <b style="font-size: 12px; color: #0F172A;">🛡️ 智能主备容灾 (默认·推荐)</b>
+            </div>
+            <div style="font-size: 11px; color: #64748B; line-height: 1.4; padding-left: 20px;">
+              首选高精模型；遇欠费/限流/超时<b>毫秒级自动切换备用 Key</b>，全失败降级本地规则。
+            </div>
+          </label>
+
+          <!-- 策略2：负载均衡轮询 -->
+          <label style="display: block; border: 1.5px solid #CBD5E1; background: #FFFFFF; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" id="labelStrategyRoundRobin">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <input type="radio" name="aiStrategy" value="round_robin" id="strategyRoundRobin" />
+              <b style="font-size: 12px; color: #0F172A;">🔄 负载均衡轮询 (Round-Robin)</b>
+            </div>
+            <div style="font-size: 11px; color: #64748B; line-height: 1.4; padding-left: 20px;">
+              在所有已配 Key 之间<b>循环轮流调度</b>，均匀分摊并发限速与每日免费额度。
+            </div>
+          </label>
+
+          <!-- 策略3：指定单一模型 -->
+          <label style="display: block; border: 1.5px solid #CBD5E1; background: #FFFFFF; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" id="labelStrategyDesignated">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <input type="radio" name="aiStrategy" value="designated" id="strategyDesignated" />
+              <b style="font-size: 12px; color: #0F172A;">🎯 指定单一模型 (Designated)</b>
+            </div>
+            <div style="font-size: 11px; color: #64748B; line-height: 1.4; padding-left: 20px;">
+              严格锁定指定大模型研判；遇故障自动降级本地规则引擎兜底。
+            </div>
+          </label>
         </div>
-        <div id="zpTestNotice" style="font-size: 11.5px; margin: 2px 0 8px 140px; display: none; font-weight: 600;"></div>
+
+        <!-- 指定模型下拉框 (仅在选择“指定单一模型”时显示) -->
+        <div id="designatedModelRow" style="display: none; align-items: center; gap: 10px; background: #FFFFFF; border: 1px dashed #94A3B8; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;">
+          <span style="font-size: 11.5px; font-weight: 600; color: #334155;">🎯 请选择锁定的单一 AI 模型：</span>
+          <select id="aiDesignatedSelect" style="font-size: 12px; padding: 4px 8px; border-radius: 4px; border: 1px solid #CBD5E1; outline: none; background: #F8FAFC;">
+            <option value="deepseek">DeepSeek (深度求索 - deepseek-chat)</option>
+            <option value="zhipu">智谱 GLM (清言 - glm-4-flash)</option>
+            <option value="moonshot">月之暗面 Kimi (moonshot-v1-8k)</option>
+            <option value="qwen">通义千问 (阿里百炼 - qwen-turbo)</option>
+            <option value="siliconflow">硅基流动 (SiliconFlow - DeepSeek-V3)</option>
+            <option value="stepfun">阶跃星辰 (StepFun - step-1-8k)</option>
+            <option value="lingyi">零一万物 (01.AI - yi-lightning)</option>
+            <option value="minimax">MiniMax (海螺 AI - abab6.5s-chat)</option>
+            <option value="baichuan">百川智能 (Baichuan - Baichuan4-Air)</option>
+            <option value="custom">OpenAI 规范 / 自定义代理</option>
+          </select>
+        </div>
+
+        <!-- 调度策略工作原理卡片 -->
+        <div style="font-size: 11px; color: #475569; background: #FFFFFF; border-radius: 6px; padding: 6px 12px; line-height: 1.4; border: 1px solid #E2E8F0;">
+          💡 <b>调度机制</b>：首选模型发起请求（超时6秒）➔ 遇欠费/限流/超时自动切换备选 Key ➔ 全不可用降级本地规则引擎。弹窗底栏注明研判来源。
+        </div>
+      </div>
+
+      <!-- 模块3：Top 10 主流 AI 厂商配置矩阵 -->
+      <div class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>🏆 主流 AI 大模型服务矩阵 (Top 10)</span>
+            <span style="font-size: 11px; background: #FEF3C7; color: #92400E; padding: 1px 6px; border-radius: 4px; font-weight: 600;">已内置官方余额查询</span>
+          </div>
+          <span style="font-size: 11px; color: #64748B;">填入任意一家即可启用 · 支持多配并存</span>
+        </div>
+        <div style="font-size: 11.5px; color: #64748B; margin-bottom: 8px;">
+          点击【⚡ 检测可用性】探测延迟；若厂商开放余额接口（如 DeepSeek/Kimi/硅基流动），直接展示<b>账户可用余额</b>。
+        </div>
+
+        <!-- 10个AI卡片列表容器 -->
+        <div id="aiProvidersContainer" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- 动态或静态渲染 10 家大模型卡片 -->
+        </div>
       </div>
     </div>
 
@@ -2364,7 +2457,7 @@
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap;">
             <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; white-space: nowrap;">
               <span style="color: #475569;">当前版本:</span>
-              <b style="font-size: 13.5px; color: #0F172A;" id="updateCurrentVer">v1.0.0</b>
+              <b style="font-size: 13.5px; color: #0F172A;" id="updateCurrentVer">v1.1.0</b>
               <span id="updateTagDiff" style="display: none; background: #DCFCE7; color: #166534; font-size: 11px; padding: 1.5px 7px; border-radius: 12px; font-weight: 600;">已是最新版</span>
               <span style="color: #CBD5E1; margin: 0 4px;">|</span>
               <span style="color: #64748B;">最新版本: <b style="color: #0F172A;" id="updateLatestVer">--</b></span>
@@ -2509,7 +2602,7 @@
       <div style="background: linear-gradient(135deg, #2563EB, #1D4ED8); padding: 16px 20px; color: #FFFFFF;">
         <div style="font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
           <span>🚀 发现新版本</span>
-          <span id="modalNewVersion" style="background: rgba(255,255,255,0.25); font-size: 12px; padding: 2px 8px; border-radius: 10px;">v1.0.1</span>
+          <span id="modalNewVersion" style="background: rgba(255,255,255,0.25); font-size: 12px; padding: 2px 8px; border-radius: 10px;">v1.1.0</span>
         </div>
         <div id="modalReleaseTime" style="font-size: 11px; opacity: 0.85; margin-top: 4px;">发布时间: --</div>
       </div>
@@ -3170,12 +3263,44 @@
       renderWatchlistUI();
       fetchWatchlistLiveQuotes();
 
+      // 7. AI 观点研判与 Top 10 主流大模型
+      renderAiProvidersCards();
       const ai = cfg.ai_analysis || {};
-      const defaultDsKey = (typeof atob !== 'undefined') ? atob('c2stNzFkOGFiNjU1MzhkNGQwNjg4M2JhZTY5NWQ2MGI1NTI=') : '';
       document.getElementById('aiEnabled').checked = ai.enabled !== false;
-      document.getElementById('deepseekApiKey').value = (ai.deepseek_cleared ? '' : (ai.deepseek_api_key || ai.api_key || defaultDsKey));
-      document.getElementById('zhipuApiKey').value = ai.zhipu_api_key || '';
-      updateAiStatus();
+
+      // 还原策略
+      const savedStrategy = ai.strategy || 'failover';
+      const strategyRadio = document.querySelector(`input[name="aiStrategy"][value="${savedStrategy}"]`);
+      if (strategyRadio) strategyRadio.checked = true;
+
+      if (document.getElementById('aiDesignatedSelect') && ai.designated_provider) {
+        document.getElementById('aiDesignatedSelect').value = ai.designated_provider;
+      }
+
+      // 还原各 Key
+      const keysMap = (ai && typeof ai.keys === 'object' && ai.keys !== null) ? ai.keys : {};
+      const defaultDsKey = (typeof atob !== 'undefined') ? atob('c2stNzFkOGFiNjU1MzhkNGQwNjg4M2JhZTY5NWQ2MGI1NTI=') : '';
+
+      TOP_10_PROVIDERS_CONFIG.forEach(prov => {
+        const input = document.getElementById(`aiKeyInput_${prov.id}`);
+        if (!input) return;
+        let val = (keysMap[prov.id] || '').trim();
+        if (prov.id === 'deepseek' && !val && !ai.deepseek_cleared) {
+          val = (ai.deepseek_api_key || ai.api_key || defaultDsKey).trim();
+        } else if (prov.id === 'zhipu' && !val) {
+          val = (ai.zhipu_api_key || '').trim();
+        }
+        input.value = val;
+      });
+
+      if (document.getElementById('aiKeyInput_custom_url') && ai.custom_url) {
+        document.getElementById('aiKeyInput_custom_url').value = ai.custom_url;
+      }
+      if (document.getElementById('aiKeyInput_custom_model') && ai.custom_model) {
+        document.getElementById('aiKeyInput_custom_model').value = ai.custom_model;
+      }
+
+      updateAiEngineStatusUI();
 
       // 8. 虚拟币行情
       const cryptoCfg = cfg.crypto_prices || {};
@@ -3290,94 +3415,321 @@
       loadInitialSettings();
     }
 
-    function updateAiStatus() {
-      const ds = document.getElementById('deepseekApiKey').value.trim();
-      const zp = document.getElementById('zhipuApiKey').value.trim();
-      const badge = document.getElementById('aiEngineStatus');
+    // ==================== TOP 10 AI 大模型矩阵与调度容灾引擎客户端逻辑 ====================
+    const TOP_10_PROVIDERS_CONFIG = [
+      {
+        id: 'deepseek',
+        name: 'DeepSeek (深度求索)',
+        modelDesc: 'deepseek-chat',
+        desc: '国产大模型性价比之王，金融逻辑严密，综合性价比极高',
+        tag: '首选高精',
+        tagColor: '#2563EB',
+        tagBg: '#EFF6FF',
+        hasBalanceApi: true,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'zhipu',
+        name: '智谱 GLM (清言)',
+        modelDesc: 'glm-4-flash',
+        desc: '清华系全能模型，glm-4-flash 极速轻量、高并发保障',
+        tag: '极速轻量',
+        tagColor: '#7C3AED',
+        tagBg: '#F5F3FF',
+        hasBalanceApi: false,
+        placeholder: '智谱开放平台 API Key (如 xxx.yyy)...'
+      },
+      {
+        id: 'moonshot',
+        name: '月之暗面 Kimi',
+        modelDesc: 'moonshot-v1-8k',
+        desc: '长上下文先驱，超大窗口宏观事件脉络梳理能力拔群',
+        tag: '长文先驱',
+        tagColor: '#D97706',
+        tagBg: '#FEF3C7',
+        hasBalanceApi: true,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'qwen',
+        name: '通义千问 (阿里百炼)',
+        modelDesc: 'qwen-turbo',
+        desc: '阿里云通义千问兼容接口，金融与政经理解全面稳定',
+        tag: '阿里百炼',
+        tagColor: '#EA580C',
+        tagBg: '#FFF7ED',
+        hasBalanceApi: false,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'siliconflow',
+        name: '硅基流动 (SiliconFlow)',
+        modelDesc: 'DeepSeek-V3 满血版',
+        desc: '云端聚合加速，预置 DeepSeek-V3 满血版高性能算力',
+        tag: '聚合加速',
+        tagColor: '#059669',
+        tagBg: '#ECFDF5',
+        hasBalanceApi: true,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'stepfun',
+        name: '阶跃星辰 (StepFun)',
+        modelDesc: 'step-1-8k',
+        desc: '跃问阶跃星辰系列，强逻辑严密推理与因果归因',
+        tag: '逻辑推理',
+        tagColor: '#0284C7',
+        tagBg: '#F0F9FF',
+        hasBalanceApi: false,
+        placeholder: 'step-...'
+      },
+      {
+        id: 'lingyi',
+        name: '零一万物 (01.AI / Yi)',
+        modelDesc: 'yi-lightning',
+        desc: '李开复团队零一万物，yi-lightning 毫秒级闪电推理',
+        tag: '闪电轻快',
+        tagColor: '#0891B2',
+        tagBg: '#ECFEFF',
+        hasBalanceApi: false,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'minimax',
+        name: 'MiniMax (海螺 AI)',
+        modelDesc: 'abab6.5s-chat',
+        desc: '自研 MoE 架构，中文财经语义与深度对话精准自然',
+        tag: '海螺自研',
+        tagColor: '#9333EA',
+        tagBg: '#FAF5FF',
+        hasBalanceApi: false,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'baichuan',
+        name: '百川智能 (Baichuan)',
+        modelDesc: 'Baichuan4-Air',
+        desc: '百川智能大模型，中文政经百科知识储备底蕴深厚',
+        tag: '中文深厚',
+        tagColor: '#DC2626',
+        tagBg: '#FEF2F2',
+        hasBalanceApi: false,
+        placeholder: 'sk-...'
+      },
+      {
+        id: 'custom',
+        name: 'OpenAI 规范 / 自定义代理',
+        modelDesc: '支持自定义 BaseURL 与模型',
+        desc: '支持 OneAPI、NewAPI、自建反代或 OpenAI 官方中转',
+        tag: '通用中转',
+        tagColor: '#475569',
+        tagBg: '#F1F5F9',
+        hasBalanceApi: false,
+        isCustom: true,
+        placeholder: 'sk-...'
+      }
+    ];
 
-      if (ds && zp) {
-        badge.textContent = '⚡ DeepSeek / 智谱 动态双核调度';
-        badge.style.background = '#EFF6FF';
-        badge.style.color = '#1D4ED8';
-      } else if (ds) {
-        badge.textContent = '⚡ DeepSeek 大模型驱动';
-        badge.style.background = '#EFF6FF';
-        badge.style.color = '#1D4ED8';
-      } else if (zp) {
-        badge.textContent = '⚡ 智谱 GLM 大模型驱动';
-        badge.style.background = '#F5F3FF';
-        badge.style.color = '#6D28D9';
-      } else {
-        badge.textContent = '🟢 本地规则默认分析 (免 Key)';
-        badge.style.background = '#DCFCE7';
-        badge.style.color = '#166534';
+    function renderAiProvidersCards() {
+      const container = document.getElementById('aiProvidersContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      TOP_10_PROVIDERS_CONFIG.forEach(prov => {
+        const card = document.createElement('div');
+        card.className = 'ai-provider-card';
+        card.style.cssText = 'background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; transition: border-color 0.2s;';
+
+        let customInputsHtml = '';
+        if (prov.isCustom) {
+          customInputsHtml = `
+            <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+              <input type="text" id="aiKeyInput_custom_url" placeholder="API 接口端点 (默认: https://api.openai.com/v1/chat/completions)" style="flex: 2; font-size: 11.5px; padding: 4px 8px; border: 1px solid #CBD5E1; border-radius: 4px; outline: none;" />
+              <input type="text" id="aiKeyInput_custom_model" placeholder="模型名称 (默认: gpt-4o-mini)" style="flex: 1; font-size: 11.5px; padding: 4px 8px; border: 1px solid #CBD5E1; border-radius: 4px; outline: none;" />
+            </div>
+          `;
+        }
+
+        const balanceBadgeHtml = prov.hasBalanceApi
+          ? `<span style="font-size: 10.5px; background: #DCFCE7; color: #15803D; padding: 1px 6px; border-radius: 4px; font-weight: 600;">💰 支持查余额</span>`
+          : '';
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-weight: 700; font-size: 12.5px; color: #1E293B;">${prov.name}</span>
+              <span style="font-size: 10.5px; background: ${prov.tagBg}; color: ${prov.tagColor}; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${prov.tag}</span>
+              <span style="font-size: 11px; color: #64748B;">[${prov.modelDesc}]</span>
+              ${balanceBadgeHtml}
+            </div>
+            <span style="font-size: 11px; color: #94A3B8;">${prov.desc}</span>
+          </div>
+
+          ${customInputsHtml}
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="aiKeyInput_${prov.id}" placeholder="${prov.placeholder}" style="flex: 1; min-width: 0; font-size: 12px; padding: 5px 8px; border: 1px solid #CBD5E1; border-radius: 4px; outline: none; font-family: monospace;" />
+            <button type="button" class="btn btn-secondary btn-sm" id="btnTestKey_${prov.id}" style="flex-shrink: 0; padding: 5px 10px; font-size: 11px; font-weight: 600;">
+              ⚡ 检测可用性
+            </button>
+          </div>
+
+          <div id="aiTestNotice_${prov.id}" style="display: none; font-size: 11.5px; margin-top: 5px; padding: 4px 8px; border-radius: 4px; font-weight: 600;"></div>
+        `;
+
+        container.appendChild(card);
+
+        // 绑定单个检测按钮
+        const testBtn = card.querySelector(`#btnTestKey_${prov.id}`);
+        testBtn.addEventListener('click', () => testSingleAiKey(prov.id));
+
+        // 监听输入更新顶部状态
+        const inputEl = card.querySelector(`#aiKeyInput_${prov.id}`);
+        inputEl.addEventListener('input', updateAiEngineStatusUI);
+      });
+    }
+
+    async function testSingleAiKey(providerId) {
+      const prov = TOP_10_PROVIDERS_CONFIG.find(p => p.id === providerId);
+      if (!prov) return;
+
+      const keyInput = document.getElementById(`aiKeyInput_${prov.id}`);
+      const noticeEl = document.getElementById(`aiTestNotice_${prov.id}`);
+      const btn = document.getElementById(`btnTestKey_${prov.id}`);
+      const key = keyInput ? keyInput.value.trim() : '';
+
+      if (!key) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#FEF2F2';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `⚠️ 请先输入 ${prov.name} 的 API Key 后再检测`;
+        return;
+      }
+
+      noticeEl.style.display = 'block';
+      noticeEl.style.background = '#EFF6FF';
+      noticeEl.style.color = '#2563EB';
+      noticeEl.textContent = `⏳ 正在连通验证 ${prov.name}${prov.hasBalanceApi ? ' 并查询官方账户余额' : ''}...`;
+      btn.disabled = true;
+
+      const customUrl = prov.isCustom ? (document.getElementById('aiKeyInput_custom_url')?.value.trim() || '') : '';
+      const customModel = prov.isCustom ? (document.getElementById('aiKeyInput_custom_model')?.value.trim() || '') : '';
+
+      try {
+        const res = await ipcRenderer.invoke('test-ai-key', {
+          provider: prov.id,
+          key,
+          customUrl,
+          customModel
+        });
+        btn.disabled = false;
+
+        if (res && res.success) {
+          noticeEl.style.background = '#ECFDF5';
+          noticeEl.style.color = '#059669';
+          noticeEl.textContent = `✅ ${res.msg}`;
+        } else {
+          noticeEl.style.background = '#FEF2F2';
+          noticeEl.style.color = '#DC2626';
+          noticeEl.textContent = `❌ ${res ? res.msg : '连通失败，请检查 Key 或网络'}`;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        noticeEl.style.background = '#FEF2F2';
+        noticeEl.style.color = '#DC2626';
+        noticeEl.textContent = `❌ 连接异常: ${e.message}`;
       }
     }
 
-    document.getElementById('deepseekApiKey').addEventListener('input', updateAiStatus);
-    document.getElementById('zhipuApiKey').addEventListener('input', updateAiStatus);
+    async function testAllAiKeys() {
+      const activeKeys = [];
+      TOP_10_PROVIDERS_CONFIG.forEach(prov => {
+        const input = document.getElementById(`aiKeyInput_${prov.id}`);
+        if (input && input.value.trim()) {
+          activeKeys.push(prov.id);
+        }
+      });
 
-    document.getElementById('btnTestDsKey').addEventListener('click', async () => {
-      const key = document.getElementById('deepseekApiKey').value.trim();
-      const noticeEl = document.getElementById('dsTestNotice');
-      const btn = document.getElementById('btnTestDsKey');
-      if (!key) {
-        noticeEl.style.display = 'block';
-        noticeEl.style.color = '#DC2626';
-        noticeEl.textContent = '⚠️ 请先输入 DeepSeek API Key';
+      if (activeKeys.length === 0) {
+        alert('尚未填入任何 AI Key，系统默认使用本地量化规则引擎分析。如需大模型研判，请先至少填入一个 API Key！');
         return;
       }
-      noticeEl.style.display = 'block';
-      noticeEl.style.color = '#2563EB';
-      noticeEl.textContent = '⏳ 正在连接 DeepSeek 官方服务验证 Key...';
-      btn.disabled = true;
-      try {
-        const res = await ipcRenderer.invoke('test-ai-key', { provider: 'deepseek', key });
-        btn.disabled = false;
-        if (res && res.success) {
-          noticeEl.style.color = '#059669';
-          noticeEl.textContent = `✅ ${res.msg}`;
-        } else {
-          noticeEl.style.color = '#DC2626';
-          noticeEl.textContent = `❌ ${res ? res.msg : '验证未通过'}`;
-        }
-      } catch (e) {
-        btn.disabled = false;
-        noticeEl.style.color = '#DC2626';
-        noticeEl.textContent = `❌ 网络连接异常: ${e.message}`;
-      }
-    });
 
-    document.getElementById('btnTestZpKey').addEventListener('click', async () => {
-      const key = document.getElementById('zhipuApiKey').value.trim();
-      const noticeEl = document.getElementById('zpTestNotice');
-      const btn = document.getElementById('btnTestZpKey');
-      if (!key) {
-        noticeEl.style.display = 'block';
-        noticeEl.style.color = '#DC2626';
-        noticeEl.textContent = '⚠️ 请先输入 智谱 GLM API Key';
-        return;
+      for (const provId of activeKeys) {
+        await testSingleAiKey(provId);
       }
-      noticeEl.style.display = 'block';
-      noticeEl.style.color = '#2563EB';
-      noticeEl.textContent = '⏳ 正在连接 智谱开放平台 验证 Key...';
-      btn.disabled = true;
-      try {
-        const res = await ipcRenderer.invoke('test-ai-key', { provider: 'zhipu', key });
-        btn.disabled = false;
-        if (res && res.success) {
-          noticeEl.style.color = '#059669';
-          noticeEl.textContent = `✅ ${res.msg}`;
-        } else {
-          noticeEl.style.color = '#DC2626';
-          noticeEl.textContent = `❌ ${res ? res.msg : '验证未通过'}`;
+    }
+
+    function updateAiEngineStatusUI() {
+      let count = 0;
+      let activeNames = [];
+      TOP_10_PROVIDERS_CONFIG.forEach(prov => {
+        const input = document.getElementById(`aiKeyInput_${prov.id}`);
+        if (input && input.value.trim()) {
+          count++;
+          activeNames.push(prov.name.split(' ')[0]);
         }
-      } catch (e) {
-        btn.disabled = false;
-        noticeEl.style.color = '#DC2626';
-        noticeEl.textContent = `❌ 网络连接异常: ${e.message}`;
+      });
+
+      const badge = document.getElementById('aiEngineStatus');
+      const strategy = document.querySelector('input[name="aiStrategy"]:checked')?.value || 'failover';
+      const designatedRow = document.getElementById('designatedModelRow');
+
+      // 切换指定模型选择行
+      if (designatedRow) {
+        designatedRow.style.display = (strategy === 'designated') ? 'flex' : 'none';
       }
+
+      // 高亮选中的策略卡片
+      ['failover', 'round_robin', 'designated'].forEach(s => {
+        const idSuffix = s === 'failover' ? 'Failover' : (s === 'round_robin' ? 'RoundRobin' : 'Designated');
+        const card = document.getElementById('labelStrategy' + idSuffix);
+        if (card) {
+          if (s === strategy) {
+            card.style.borderColor = '#2563EB';
+            card.style.background = '#EFF6FF';
+          } else {
+            card.style.borderColor = '#CBD5E1';
+            card.style.background = '#FFFFFF';
+          }
+        }
+      });
+
+      if (!badge) return;
+
+      if (count === 0) {
+        badge.textContent = '🟢 本地规则默认分析 (免 Key)';
+        badge.style.background = '#DCFCE7';
+        badge.style.color = '#166534';
+      } else {
+        if (strategy === 'designated') {
+          const desId = document.getElementById('aiDesignatedSelect')?.value || 'deepseek';
+          const prov = TOP_10_PROVIDERS_CONFIG.find(p => p.id === desId);
+          badge.textContent = `🎯 指定模型驱动: ${prov ? prov.name.split(' ')[0] : desId} (已备 ${count} 家)`;
+          badge.style.background = '#F5F3FF';
+          badge.style.color = '#6D28D9';
+        } else if (strategy === 'round_robin') {
+          badge.textContent = `🔄 负载均衡轮询: 已激活 ${count} 家大模型`;
+          badge.style.background = '#ECFEFF';
+          badge.style.color = '#0E7490';
+        } else {
+          badge.textContent = `🛡️ 智能主备容灾: 已就绪 ${count} 家模型毫秒切换`;
+          badge.style.background = '#EFF6FF';
+          badge.style.color = '#1D4ED8';
+        }
+      }
+    }
+
+    // 绑定策略单选切换
+    document.querySelectorAll('input[name="aiStrategy"]').forEach(radio => {
+      radio.addEventListener('change', updateAiEngineStatusUI);
     });
+    if (document.getElementById('aiDesignatedSelect')) {
+      document.getElementById('aiDesignatedSelect').addEventListener('change', updateAiEngineStatusUI);
+    }
+    if (document.getElementById('btnTestAllAiKeys')) {
+      document.getElementById('btnTestAllAiKeys').addEventListener('click', testAllAiKeys);
+    }
 
     // 虚拟币与大宗合约管理逻辑
     const COIN_NAMES = {
@@ -5029,7 +5381,7 @@
         el.style.color = '#1D4ED8';
         el.style.border = '1px solid #BFDBFE';
       }
-      el.textContent = msg;
+      el.innerHTML = msg;
     }
 
     // 支持 Enter 键直接触发验证与输入清空联动
@@ -5388,13 +5740,29 @@
           stocks: currentWatchlist,
           stocks_cleared: window._stocksExplicitlyCleared === true
         },
-        ai_analysis: {
-          enabled: document.getElementById('aiEnabled').checked,
-          deepseek_api_key: document.getElementById('deepseekApiKey').value.trim(),
-          deepseek_cleared: document.getElementById('deepseekApiKey').value.trim() === '',
-          zhipu_api_key: document.getElementById('zhipuApiKey').value.trim(),
-          api_key: document.getElementById('deepseekApiKey').value.trim()
-        },
+        ai_analysis: (() => {
+          const collectedKeys = {};
+          TOP_10_PROVIDERS_CONFIG.forEach(prov => {
+            const el = document.getElementById(`aiKeyInput_${prov.id}`);
+            if (el) {
+              collectedKeys[prov.id] = el.value.trim();
+            }
+          });
+          const dsVal = collectedKeys.deepseek || '';
+          const zpVal = collectedKeys.zhipu || '';
+          return {
+            enabled: document.getElementById('aiEnabled').checked,
+            strategy: document.querySelector('input[name="aiStrategy"]:checked')?.value || 'failover',
+            designated_provider: document.getElementById('aiDesignatedSelect')?.value || 'deepseek',
+            keys: collectedKeys,
+            custom_url: document.getElementById('aiKeyInput_custom_url')?.value.trim() || '',
+            custom_model: document.getElementById('aiKeyInput_custom_model')?.value.trim() || '',
+            deepseek_api_key: dsVal,
+            deepseek_cleared: dsVal === '',
+            zhipu_api_key: zpVal,
+            api_key: dsVal
+          };
+        })(),
         crypto_prices: {
           enabled: document.getElementById('cryptoEnabled').checked,
           selected_coins: currentSelectedCoins,
@@ -6304,27 +6672,61 @@
       try {
         const status = await ipcRenderer.invoke('wechat:get-auth-status');
         if (status && status.authorized) {
-          banner.style.borderColor = '#07C160';
-          banner.style.background = '#F0FFF4';
-          if (icon) icon.textContent = '🟢';
-          if (label) { label.textContent = '微信公众平台已授权'; label.style.color = '#166534'; }
-          if (desc) {
-            desc.textContent = `全网任意公众号实时精准搜索 · 官方高清头像 · 最新推文同步 (剩余约 ${status.remain_min || 0} 分钟)`;
-            desc.style.color = '#15803D';
-          }
-          if (loginText) loginText.textContent = '刷新授权';
-          if (clearBtn) clearBtn.style.display = 'inline-flex';
-          if (modeBadge) {
-            modeBadge.textContent = '✅ 官方API授权模式';
-            modeBadge.style.background = '#DCFCE7';
-            modeBadge.style.color = '#166534';
+          const type = status.account_type || '公众号';
+          const isMini = type === '小程序';
+
+          if (isMini) {
+            // 小程序账号：微信官方不开放搜索接口，标橙提示
+            banner.style.borderColor = '#F59E0B';
+            banner.style.background = '#FFFBEB';
+            if (icon) icon.textContent = '⚠️';
+            if (label) {
+              label.innerHTML = status.account_name
+                ? `已授权账号：<b>【${escapeHtml(status.account_name)}】</b> <span style="font-size: 11px; background: #FEF3C7; color: #B45309; padding: 1px 7px; border-radius: 4px; font-weight: 600; margin-left: 4px;">小程序 · 无搜索权限</span>`
+                : `微信授权状态：<span style="font-size: 11px; background: #FEF3C7; color: #B45309; padding: 1px 7px; border-radius: 4px; font-weight: 600;">小程序 · 无搜索权限</span>`;
+              label.style.color = '#92400E';
+            }
+            if (desc) {
+              desc.innerHTML = `微信官方安全限制：小程序账号不具备公众号搜索接口权限。请点击右侧【退出授权】，改用【订阅号/服务号】或【官方免费测试号】重新扫码！`;
+              desc.style.color = '#B45309';
+            }
+            if (loginText) loginText.textContent = '重新扫码';
+            if (clearBtn) clearBtn.style.display = 'inline-flex';
+            if (modeBadge) {
+              modeBadge.textContent = status.account_name ? `⚠️ ${status.account_name} (小程序受限)` : `⚠️ 小程序账号 (受限)`;
+              modeBadge.style.background = '#FEF3C7';
+              modeBadge.style.color = '#92400E';
+            }
+          } else {
+            // 公众号 (订阅号/服务号/测试号)：正常就绪
+            banner.style.borderColor = '#07C160';
+            banner.style.background = '#F0FFF4';
+            if (icon) icon.textContent = '🟢';
+            if (label) {
+              label.innerHTML = status.account_name
+                ? `微信公众平台已授权 · <b>【${escapeHtml(status.account_name)}】</b> <span style="font-size: 11px; background: #DCFCE7; color: #15803D; padding: 1px 7px; border-radius: 4px; font-weight: 600; margin-left: 4px;">${escapeHtml(type)}</span>`
+                : `微信公众平台已授权 <span style="font-size: 11px; background: #DCFCE7; color: #15803D; padding: 1px 7px; border-radius: 4px; font-weight: 600; margin-left: 4px;">${escapeHtml(type)}</span>`;
+              label.style.color = '#166534';
+            }
+            if (desc) {
+              const accHint = status.account_name ? `当前绑定账号「${escapeHtml(status.account_name)}」(${type}) · ` : '';
+              desc.innerHTML = `${accHint}官方全网精准搜索已就绪 · 会话剩余约 ${status.remain_min || 0} 分钟`;
+              desc.style.color = '#15803D';
+            }
+            if (loginText) loginText.textContent = '刷新授权';
+            if (clearBtn) clearBtn.style.display = 'inline-flex';
+            if (modeBadge) {
+              modeBadge.textContent = status.account_name ? `✅ ${status.account_name} (${type})` : `✅ ${type}授权模式`;
+              modeBadge.style.background = '#DCFCE7';
+              modeBadge.style.color = '#166534';
+            }
           }
         } else if (status && status.expired) {
           banner.style.borderColor = '#F59E0B';
           banner.style.background = '#FFFBEB';
           if (icon) icon.textContent = '🟡';
           if (label) { label.textContent = '微信授权已过期'; label.style.color = '#92400E'; }
-          if (desc) { desc.textContent = '请重新扫码授权以恢复全网搜索能力'; desc.style.color = '#B45309'; }
+          if (desc) { desc.innerHTML = '请重新扫码授权以恢复全网搜索能力；无账号可使用免登录内建库'; desc.style.color = '#B45309'; }
           if (loginText) loginText.textContent = '重新扫码';
           if (clearBtn) clearBtn.style.display = 'inline-flex';
           if (modeBadge) {
@@ -6336,12 +6738,15 @@
           banner.style.borderColor = '#CBD5E1';
           banner.style.background = '#F8FAFC';
           if (icon) icon.textContent = '⚪';
-          if (label) { label.textContent = '未授权微信公众平台'; label.style.color = '#334155'; }
-          if (desc) { desc.textContent = '扫码授权后支持全网任意公众号实时精准搜索、高清官方头像与最新推文同步'; desc.style.color = '#64748B'; }
+          if (label) { label.textContent = '未授权微信公众平台 (兼容公众号与小程序)'; label.style.color = '#334155'; }
+          if (desc) {
+            desc.innerHTML = `扫码授权支持全网精准搜索；无账号可直接使用免登录知名媒体库，或 <a href="javascript:void(0)" onclick="require('electron').shell.openExternal('https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login')" style="color: #2563EB; font-weight: 600; text-decoration: underline;">免费开通官方测试号 (个人微信5秒即开) ➔</a>`;
+            desc.style.color = '#64748B';
+          }
           if (loginText) loginText.textContent = '扫码授权';
           if (clearBtn) clearBtn.style.display = 'none';
           if (modeBadge) {
-            modeBadge.textContent = '方案 1: RSS / 开放协议';
+            modeBadge.textContent = '方案 1: 免登录媒体库 / 开放协议';
             modeBadge.style.background = '#E8F5E9';
             modeBadge.style.color = '#166534';
           }
@@ -6503,7 +6908,7 @@
         showNotice('✅ 验证成功: ' + res.account.name);
       } else {
         currentPreviewWechatAccount = null;
-        setWechatNotice('解析失败: ' + ((res && res.msg) || '未搜索到对应公众号，请检查名称是否正确'), 'error');
+        if (res && res.need_auth) { setWechatNotice(res.msg, 'error'); } else { setWechatNotice('解析失败: ' + ((res && res.msg) || '未搜索到对应公众号，请检查名称是否正确'), 'error'); }
         const previewCard = document.getElementById('wechatPreviewCard');
         if (previewCard) previewCard.style.display = 'none';
       }
@@ -6678,9 +7083,11 @@
       btnLogin.addEventListener('click', async () => {
         try {
           btnLogin.disabled = true;
+          btnLogin.innerHTML = '<span>⏳</span> <span>正在打开...</span>';
           const res = await ipcRenderer.invoke('wechat:open-qr-login');
           if (res && res.success) {
-            setWechatNotice('🎉 微信公众平台扫码授权成功！已开启官方精准搜索能力', 'success');
+            const typeLabel = res.account_type || '公众号/小程序';
+            setWechatNotice(`🎉 微信平台 (${typeLabel}) 扫码授权成功！已开启官方精准搜索能力`, 'success');
             await updateWechatAuthBanner();
           } else if (res && res.msg && res.msg !== '登录窗口已关闭') {
             setWechatNotice('扫码授权未完成: ' + res.msg, 'error');
@@ -6689,6 +7096,8 @@
           setWechatNotice('打开扫码授权异常: ' + err.message, 'error');
         } finally {
           btnLogin.disabled = false;
+          btnLogin.innerHTML = '<span>📲</span> <span id="wechatQrLoginText">扫码授权</span>';
+          await updateWechatAuthBanner();
         }
       });
     }
