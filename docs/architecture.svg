@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070b14"/>
+      <stop offset="50%" stop-color="#0a1224"/>
+      <stop offset="100%" stop-color="#060a12"/>
+    </linearGradient>
+
+    <!-- Card Gradients -->
+    <linearGradient id="card-grad-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="card-grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c2738"/>
+      <stop offset="100%" stop-color="#133d54"/>
+    </linearGradient>
+
+    <linearGradient id="card-grad-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#062e24"/>
+      <stop offset="100%" stop-color="#0f4c3c"/>
+    </linearGradient>
+
+    <linearGradient id="card-grad-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#322209"/>
+      <stop offset="100%" stop-color="#4d350f"/>
+    </linearGradient>
+
+    <linearGradient id="card-grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#24133b"/>
+      <stop offset="100%" stop-color="#391e5e"/>
+    </linearGradient>
+
+    <linearGradient id="card-grad-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a2240"/>
+      <stop offset="100%" stop-color="#133563"/>
+    </linearGradient>
+
+    <!-- Accent Gradients -->
+    <linearGradient id="accent-brand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="50%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrow-emerald" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#c084fc"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#f59e0b"/>
+    </marker>
+
+    <!-- Filters -->
+    <filter id="shadow-card" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1000" height="640" rx="16" fill="url(#bg-grad)"/>
+  <rect width="998" height="638" x="1" y="1" rx="15" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Subtle Dot Grid -->
+  <g opacity="0.10">
+    <circle cx="50" cy="50" r="1.5" fill="#38bdf8"/><circle cx="150" cy="50" r="1.5" fill="#38bdf8"/>
+    <circle cx="250" cy="50" r="1.5" fill="#38bdf8"/><circle cx="350" cy="50" r="1.5" fill="#38bdf8"/>
+    <circle cx="450" cy="50" r="1.5" fill="#38bdf8"/><circle cx="550" cy="50" r="1.5" fill="#38bdf8"/>
+    <circle cx="650" cy="50" r="1.5" fill="#38bdf8"/><circle cx="750" cy="50" r="1.5" fill="#38bdf8"/>
+    <circle cx="850" cy="50" r="1.5" fill="#38bdf8"/><circle cx="950" cy="50" r="1.5" fill="#38bdf8"/>
+  </g>
+
+  <!-- Title Header Section -->
+  <g transform="translate(40, 24)">
+    <rect x="0" y="0" width="30" height="30" rx="7" fill="url(#accent-brand)"/>
+    <text x="15" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="15" fill="#ffffff" text-anchor="middle">⚡</text>
+    <text x="42" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="18" fill="#f8fafc">快讯通 (Kuaixuntong) · 系统全景技术架构图 (Architecture)</text>
+    <text x="735" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">v1.0.0 Production Release (3-Platforms Ready)</text>
+  </g>
+
+  <!-- ==================== TIER 1: 多源情报感知与采集层 (Perception & Ingestion Layer) ==================== -->
+  <g transform="translate(40, 68)">
+    <rect width="920" height="106" rx="12" fill="#0f172a" fill-opacity="0.85" stroke="#334155" stroke-width="1.2" filter="url(#shadow-card)"/>
+    <text x="20" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="12" fill="#38bdf8" letter-spacing="0.5">LAYER 1 · 全渠道突发情报感知与采集网络 (Multi-Source Ingestion Grid)</text>
+
+    <!-- Source 1: 金十财经 -->
+    <g transform="translate(20, 34)">
+      <rect width="138" height="60" rx="8" fill="url(#card-grad-amber)" stroke="#d97706" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#fbbf24">金十核心 / 宏观专题</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#fde68a">VIP/重要事件 (-8200)</text>
+      <text x="12" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#d97706">毫秒级 CDN 轮询</text>
+    </g>
+
+    <!-- Source 2: 雪球快讯 -->
+    <g transform="translate(168, 34)">
+      <rect width="138" height="60" rx="8" fill="url(#card-grad-blue)" stroke="#2563eb" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#60a5fa">雪球 7×24 财经</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#93c5fd">A股/美股/港股异动</text>
+      <text x="12" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#3b82f6">市场公告与突发快讯</text>
+    </g>
+
+    <!-- Source 3: X (Twitter) -->
+    <g transform="translate(316, 34)">
+      <rect width="144" height="60" rx="8" fill="url(#card-grad-dark)" stroke="#64748b" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#f1f5f9">𝕏 顶流关注与机构</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#cbd5e1">免梯/免登录 Syndication</text>
+      <text x="12" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#94a3b8">双通道中英极速翻译</text>
+    </g>
+
+    <!-- Source 4: 脉脉职言 -->
+    <g transform="translate(470, 34)">
+      <rect width="138" height="60" rx="8" fill="url(#card-grad-cyan)" stroke="#0891b2" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#22d3ee">脉脉高价值职言</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#67e8f9">大厂业务 / 裁员辟谣</text>
+      <text x="12" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#06b6d4">行业真实内幕声浪</text>
+    </g>
+
+    <!-- Source 5: 本地周边政务 -->
+    <g transform="translate(618, 34)">
+      <rect width="138" height="60" rx="8" fill="url(#card-grad-emerald)" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#34d399">本地周边 · 规划民生</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#a7f3d0">自规局规划 / 地铁审批</text>
+      <text x="12" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#10b981">政务人事与精准板块</text>
+    </g>
+
+    <!-- Source 6: 微信公众号 -->
+    <g transform="translate(766, 34)">
+      <rect width="134" height="60" rx="8" fill="url(#card-grad-purple)" stroke="#9333ea" stroke-width="1"/>
+      <text x="10" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#c084fc">微信公众号直连</text>
+      <text x="10" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#e9d5ff">权威官媒/研报推文</text>
+      <text x="10" y="52" font-family="-apple-system, sans-serif" font-size="9" fill="#a855f7">支持扫码授权/实时侦听</text>
+    </g>
+  </g>
+
+  <!-- Connectors L1 -> L2 -->
+  <path d="M 250 174 L 250 198" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <path d="M 500 174 L 500 198" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <path d="M 750 174 L 750 198" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- ==================== TIER 2: 降噪、时效与智能研判中枢 (Intelligence Hub) ==================== -->
+  <g transform="translate(40, 200)">
+    <rect width="920" height="120" rx="12" fill="#0f172a" fill-opacity="0.85" stroke="#334155" stroke-width="1.2" filter="url(#shadow-card)"/>
+    <text x="20" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="12" fill="#a855f7" letter-spacing="0.5">LAYER 2 · 降噪过滤、时效控制与双核大模型智能研判中枢 (Filter &amp; AI Analysis Engine)</text>
+
+    <!-- Sub-node 1: 抓取时效与双层去重 -->
+    <g transform="translate(20, 36)">
+      <rect width="280" height="70" rx="8" fill="url(#card-grad-dark)" stroke="#3b82f6" stroke-width="1"/>
+      <text x="14" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="12" fill="#93c5fd">时效模式策略 &amp; 双层去重</text>
+      <text x="14" y="40" font-family="-apple-system, sans-serif" font-size="10.5" fill="#cbd5e1">· 极速突发(≤2h) / 当日实时(≤24h) / 3天宽容</text>
+      <text x="14" y="56" font-family="-apple-system, sans-serif" font-size="10" fill="#64748b">· 内存 LRU 哈希环 + 本地文件落盘防重复</text>
+    </g>
+
+    <!-- Sub-node 2: 关键词规则与持仓匹配 -->
+    <g transform="translate(315, 36)">
+      <rect width="290" height="70" rx="8" fill="url(#card-grad-dark)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="14" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="12" fill="#fde68a">关键词矩阵 &amp; 自选持仓穿透</text>
+      <text x="14" y="40" font-family="-apple-system, sans-serif" font-size="10.5" fill="#cbd5e1">· 全局高亮优先级词库 + 一票否决黑名单</text>
+      <text x="14" y="56" font-family="-apple-system, sans-serif" font-size="10" fill="#f59e0b">· 自选股票池深度关联 (强烈利好/利空触达)</text>
+    </g>
+
+    <!-- Sub-node 3: 双核 LLM 研判 + 免Key 规则兜底 -->
+    <g transform="translate(620, 36)">
+      <rect width="280" height="70" rx="8" fill="url(#card-grad-purple)" stroke="#a855f7" stroke-width="1"/>
+      <text x="14" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="12" fill="#f3e8ff">双核 AI 研判 (DeepSeek / GLM-4)</text>
+      <text x="14" y="40" font-family="-apple-system, sans-serif" font-size="10.5" fill="#e9d5ff">· 五大类资产多空定性 (黄金/原油/A股/美股/币)</text>
+      <text x="14" y="56" font-family="-apple-system, sans-serif" font-size="10" fill="#a7f3d0">· 内置本地金融规则库 (免 Key 极速兜底分析)</text>
+    </g>
+  </g>
+
+  <!-- Connectors L2 -> L3 -->
+  <path d="M 200 320 L 200 348" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <path d="M 500 320 L 500 348" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <path d="M 800 320 L 800 348" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow-purple)"/>
+
+  <!-- ==================== TIER 3: 推送路由与多端分发网络 (Dispatch & Notification Gateway) ==================== -->
+  <g transform="translate(40, 350)">
+    <rect width="920" height="110" rx="12" fill="#0f172a" fill-opacity="0.85" stroke="#334155" stroke-width="1.2" filter="url(#shadow-card)"/>
+    <text x="20" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="12" fill="#10b981" letter-spacing="0.5">LAYER 3 · 消息推送路由与多端触达网络 (Dispatch &amp; Multi-Channel Push Gateway)</text>
+
+    <!-- Sub-node 1: 电脑桌面端独立控制 -->
+    <g transform="translate(20, 36)">
+      <rect width="435" height="60" rx="8" fill="url(#card-grad-emerald)" stroke="#059669" stroke-width="1"/>
+      <text x="16" y="24" font-family="-apple-system, sans-serif" font-weight="bold" font-size="12" fill="#a7f3d0">电脑桌面端：原生视网膜弹窗 (Native Notification Window)</text>
+      <text x="16" y="44" font-family="-apple-system, sans-serif" font-size="10.5" fill="#6ee7b7">Electron 独立置顶透明悬浮窗 · GPU硬件加速 · 底部持仓与行情轮播</text>
+    </g>
+
+    <!-- Sub-node 2: 手机移动端推送集群 -->
+    <g transform="translate(470, 36)">
+      <rect width="430" height="60" rx="8" fill="url(#card-grad-blue)" stroke="#2563eb" stroke-width="1"/>
+      <text x="16" y="24" font-family="-apple-system, sans-serif" font-weight="bold" font-size="12" fill="#bfdbfe">手机移动端：Webhook &amp; Bot 推送集群 (秒级直达)</text>
+      <text x="16" y="44" font-family="-apple-system, sans-serif" font-size="10.5" fill="#93c5fd">· 企业微信群机器人 (20条/分) · 飞书机器人 / 飞书自建智能体 · 钉钉 / Bark</text>
+    </g>
+  </g>
+
+  <!-- Connectors L3 -> L4 -->
+  <path d="M 235 460 L 235 488" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+  <path d="M 685 460 L 685 488" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- ==================== TIER 4: 客户端呈现、授权中台与 3端跨平台分发 (Client Presentation & Runtime) ==================== -->
+  <g transform="translate(40, 490)">
+    <rect width="920" height="120" rx="12" fill="#0b1728" stroke="#1d4ed8" stroke-width="1.3" filter="url(#shadow-card)"/>
+    <text x="20" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="12" fill="#60a5fa" letter-spacing="0.5">LAYER 4 · 客户端呈现、商业授权体系与 3 端跨平台构建矩阵 (Client Presentation &amp; Distribution)</text>
+
+    <!-- Sub-node 1: 黑金微质感卡片 -->
+    <g transform="translate(20, 36)">
+      <rect width="210" height="70" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#ffffff">黑金视网膜卡片 UI</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#93c5fd">毛玻璃微质感悬浮弹窗</text>
+      <text x="12" y="54" font-family="-apple-system, sans-serif" font-size="9.5" fill="#60a5fa">行情 92分 / 股票利好高亮</text>
+    </g>
+
+    <!-- Sub-node 2: 管理配置中枢控制台 -->
+    <g transform="translate(245, 36)">
+      <rect width="210" height="70" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#a7f3d0">常驻管理配置中枢</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#6ee7b7">8大标签面板 · 热生效保存</text>
+      <text x="12" y="54" font-family="-apple-system, sans-serif" font-size="9.5" fill="#34d399">一键演练测试 · 存活诊断</text>
+    </g>
+
+    <!-- Sub-node 3: 商业授权体系 (MAC绑定) -->
+    <g transform="translate(470, 36)">
+      <rect width="210" height="70" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#fde68a">商业授权 · MAC绑定</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#fcd34d">dengwk.ai.studio 在线激活</text>
+      <text x="12" y="54" font-family="-apple-system, sans-serif" font-size="9.5" fill="#fbbf24">离线.lic验签 / 7天弱网容错</text>
+    </g>
+
+    <!-- Sub-node 4: 跨平台打包体系 (Win/Mac/Linux) -->
+    <g transform="translate(695, 36)">
+      <rect width="205" height="70" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1"/>
+      <text x="12" y="22" font-family="-apple-system, sans-serif" font-weight="bold" font-size="11.5" fill="#e9d5ff">3 端跨平台构建矩阵</text>
+      <text x="12" y="38" font-family="-apple-system, sans-serif" font-size="10" fill="#c084fc">🪟 Windows (.exe)</text>
+      <text x="12" y="54" font-family="-apple-system, sans-serif" font-size="9.5" fill="#ddd6fe">🍎 Mac (M/Intel) · 🐧 Linux</text>
+    </g>
+  </g>
+</svg>
