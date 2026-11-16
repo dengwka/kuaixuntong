@@ -821,6 +821,32 @@ app.whenReady().then(() => {
   translator = new Translator(configManager, financialAi);
   xFetcher = new XFetcher(configManager, translator, financialAi);
   wechatFetcher = new WeChatFetcher(configManager, financialAi);
+
+  // 微信公众号预设精品账号智能增量对齐 (无缝注入侠客岛、晚点、泽平宏观等10大精选公众号，绝不覆盖用户已有自选)
+  try {
+    const wcCfg = configManager.config.sources?.wechat;
+    if (wcCfg && !wcCfg.accounts_cleared) {
+      const defaultAccounts = configManager.getDefaultConfig().sources?.wechat?.accounts || [];
+      const currentAccounts = Array.isArray(wcCfg.accounts) ? wcCfg.accounts : [];
+      const currentIds = new Set(currentAccounts.map(a => (a.wechat_id || a.id || a.name || '').toLowerCase()));
+      let hasNew = false;
+      for (const defAcc of defaultAccounts) {
+        const key = (defAcc.wechat_id || defAcc.id || defAcc.name || '').toLowerCase();
+        if (!currentIds.has(key)) {
+          currentAccounts.push(defAcc);
+          currentIds.add(key);
+          hasNew = true;
+        }
+      }
+      if (hasNew) {
+        wcCfg.accounts = currentAccounts;
+        configManager.saveConfig(configManager.config);
+        logger.info(`[WeChatFetcher] 自动增量补充官方精选公众号预设库，当前已订阅数: ${currentAccounts.length}`);
+      }
+    }
+  } catch (eWcAlign) {
+    logger.warn('[WeChatFetcher] 增量对齐预设公众号异常:', eWcAlign.message);
+  }
   jin10Fetcher = new Jin10Fetcher(configManager);
   topicFetcher = new Jin10TopicFetcher(configManager);
   xueqiuFetcher = new XueqiuFetcher(configManager);

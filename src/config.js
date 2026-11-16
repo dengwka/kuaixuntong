@@ -3,6 +3,150 @@ const path = require('path');
 const os = require('os');
 const { app } = require('electron');
 
+
+const DEFAULT_WECHAT_ACCOUNTS = [
+  {
+    "id": "xinhuashe",
+    "name": "新华社",
+    "wechat_id": "xinhuashefabu1",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=xinhuashefabu1",
+    "desc": "新华社官方微信公众账号，传播中国声音，播发权威资讯。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "rmrb",
+    "name": "人民日报",
+    "wechat_id": "rmrbwx",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=rmrbwx",
+    "desc": "参与、沟通、记录时代。人民日报官方微信公众号。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "cankaoxiaoxi",
+    "name": "参考消息",
+    "wechat_id": "ckxxwx",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=ckxxwx",
+    "desc": "新华社主办《参考消息》官方微信，纵览国际风云，纵深报道中国。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "xiakedao",
+    "name": "侠客岛",
+    "wechat_id": "xiake_island",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=xiake_island",
+    "desc": "人民日报海外版旗下新媒体，但云烟过眼，不改侠义心肠。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "changanjiezhashi",
+    "name": "长安街知事",
+    "wechat_id": "Capitalnews",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=Capitalnews",
+    "desc": "北京日报报业集团旗下时政新媒体，立足首都，放眼天下。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "zhengzhijian",
+    "name": "政知见",
+    "wechat_id": "bqzhengzhijian",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=bqzhengzhijian",
+    "desc": "北京青年报旗下时政新媒体，见所未见，政道人心。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "zepinghongguan",
+    "name": "泽平宏观",
+    "wechat_id": "zepinghongguan",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=zepinghongguan",
+    "desc": "任泽平博士团队，解读宏观经济趋势，研判大类资产配置逻辑。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "lixunleifinance",
+    "name": "李迅雷金融与投资",
+    "wechat_id": "lixunlei722",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=lixunlei722",
+    "desc": "中泰证券首席经济学家李迅雷个人微信，专注宏观与大类资产配置。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "xiangshuaijinrong",
+    "name": "香帅的金融江湖",
+    "wechat_id": "xiangshuaifinance",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=xiangshuaifinance",
+    "desc": "香帅（唐涯博士），金融学者，用通俗语言剖析财富与经济逻辑。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "latepost",
+    "name": "晚点LatePost",
+    "wechat_id": "postlate",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=postlate",
+    "desc": "报道商业世界的真实与深刻。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "fantongdailaoban",
+    "name": "饭统戴老板",
+    "wechat_id": "worldofboss",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=worldofboss",
+    "desc": "透视中国商业与产业变迁，硬核深度商业人物与行业复盘。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "caijingshiyiren",
+    "name": "财经十一人",
+    "wechat_id": "caijingEleven",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=caijingEleven",
+    "desc": "《财经》杂志旗下产业报道团队，洞察公司与科技商业本质。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "36kr",
+    "name": "36氪",
+    "wechat_id": "wow36kr",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=wow36kr",
+    "desc": "让一部分人先看到未来。聚焦全球前沿科技、创投与商业新趋势。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  },
+  {
+    "id": "dian_shang_pro",
+    "name": "电商Pro",
+    "wechat_id": "EC-PRO",
+    "type": "订阅号",
+    "avatar": "https://mp.weixin.qq.com/rr?avatar=EC-PRO",
+    "desc": "看电商重磅头条，读行业趋势动向。深圳简联科技有限公司官方认证。",
+    "enabled": true,
+    "ai_analysis_enabled": true
+  }
+];
+
 const DEFAULT_X_ACCOUNTS = [
   {
     id: 'realdonaldtrump',
@@ -51,12 +195,44 @@ class ConfigManager {
     this.apiKeyStorePath = path.join(os.homedir(), '.kuaixuntong_api_keys.json');
     this.apiKeyStorePath2 = path.join(process.env.APPDATA || os.homedir(), 'kuaixuntong_config_backup', '.api_keys.json');
     // 独立永久 X 监听博主保险箱文件
+        // 独立永久微信公众号保险箱文件 (卸载或更新安装包 100% 绝对保留)
+    this.wechatAccountsStorePath = path.join(os.homedir(), '.kuaixuntong', 'wechat_accounts.json');
+    this.wechatAccountsStorePath2 = path.join(process.env.APPDATA || os.homedir(), 'kuaixuntong_config_backup', 'wechat_accounts.json');
     this.xAccountsStorePath = path.join(os.homedir(), '.kuaixuntong', 'x_accounts.json');
     this.xAccountsStorePath2 = path.join(process.env.APPDATA || os.homedir(), 'kuaixuntong_config_backup', 'x_accounts.json');
 
     this.config = this.loadConfig();
     // 启动时自动将当前有效配置镜像同步到永久容灾安全备份区
     this.syncBackupFiles(this.config);
+  }
+
+  saveWechatAccounts(accounts) {
+    if (!Array.isArray(accounts) || accounts.length === 0) return;
+    const data = JSON.stringify(accounts, null, 2);
+    for (const p of [this.wechatAccountsStorePath, this.wechatAccountsStorePath2]) {
+      try {
+        if (p) {
+          const dir = path.dirname(p);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(p, data, 'utf-8');
+        }
+      } catch (e) {}
+    }
+  }
+
+  loadWechatAccounts() {
+    for (const p of [this.wechatAccountsStorePath, this.wechatAccountsStorePath2]) {
+      try {
+        if (p && fs.existsSync(p)) {
+          const raw = fs.readFileSync(p, 'utf-8');
+          const data = JSON.parse(raw);
+          if (Array.isArray(data) && data.length > 0) {
+            return data;
+          }
+        }
+      } catch (e) {}
+    }
+    return null;
   }
 
   saveXAccounts(accounts) {
@@ -133,6 +309,10 @@ class ConfigManager {
       if (cfg.ai_analysis && (cfg.ai_analysis.deepseek_api_key || cfg.ai_analysis.zhipu_api_key)) {
         this.saveApiKeys(cfg.ai_analysis);
       }
+            // 3. 同步保存微信公众号独立存储
+      if (cfg.sources && cfg.sources.wechat && Array.isArray(cfg.sources.wechat.accounts) && cfg.sources.wechat.accounts.length > 0) {
+        this.saveWechatAccounts(cfg.sources.wechat.accounts);
+      }
       // 2. 同步保存 X 账号独立存储
       if (cfg.sources && cfg.sources.x_twitter && Array.isArray(cfg.sources.x_twitter.accounts) && cfg.sources.x_twitter.accounts.length > 0) {
         this.saveXAccounts(cfg.sources.x_twitter.accounts);
@@ -159,6 +339,18 @@ class ConfigManager {
                 }
                 if (!safeCfg.ai_analysis.zhipu_api_key && old.ai_analysis.zhipu_api_key) {
                   safeCfg.ai_analysis.zhipu_api_key = old.ai_analysis.zhipu_api_key;
+                }
+              }
+                            if (old && old.sources && old.sources.wechat) {
+                if (!safeCfg.sources) safeCfg.sources = {};
+                if (!safeCfg.sources.wechat) safeCfg.sources.wechat = {};
+                if (old.sources.wechat.enabled !== undefined && safeCfg.sources.wechat.enabled === undefined) {
+                  safeCfg.sources.wechat.enabled = old.sources.wechat.enabled;
+                }
+                if (Array.isArray(old.sources.wechat.accounts) && old.sources.wechat.accounts.length > 0) {
+                  if (!safeCfg.sources.wechat.accounts_cleared && (!safeCfg.sources.wechat.accounts || safeCfg.sources.wechat.accounts.length === 0)) {
+                    safeCfg.sources.wechat.accounts = old.sources.wechat.accounts;
+                  }
                 }
               }
               if (old && old.sources && old.sources.x_twitter && Array.isArray(old.sources.x_twitter.accounts) && old.sources.x_twitter.accounts.length > 0) {
@@ -452,48 +644,7 @@ class ConfigManager {
             cold_start_silent: true,
             intercept_historical: true
           },
-          accounts: [
-            {
-              id: 'xinhuashe',
-              name: '新华社',
-              wechat_id: 'xinhuashefabu1',
-              type: '订阅号',
-              avatar: '../../assets/wechat_avatars/xinhuashe.png',
-              desc: '新华社官方微信公众账号，传播中国声音，播发权威资讯。',
-              enabled: true,
-              ai_analysis_enabled: true
-            },
-            {
-              id: 'rmrb',
-              name: '人民日报',
-              wechat_id: 'rmrbwx',
-              type: '订阅号',
-              avatar: '../../assets/wechat_avatars/rmrb.png',
-              desc: '参与、沟通、记录时代。人民日报官方微信公众号。',
-              enabled: true,
-              ai_analysis_enabled: true
-            },
-            {
-              id: 'dian_shang_pro',
-              name: '电商Pro',
-              wechat_id: 'EC-PRO',
-              type: '订阅号',
-              avatar: '../../assets/wechat_avatars/dian_shang_pro.png',
-              desc: '看电商重磅头条，读行业趋势动向。深圳简联科技有限公司官方认证。',
-              enabled: true,
-              ai_analysis_enabled: true
-            },
-            {
-              id: 'beijing_bendibao',
-              name: '北京本地宝',
-              wechat_id: 'bjbdb',
-              type: '订阅号',
-              avatar: '../../assets/wechat_avatars/beijing_bendibao.png',
-              desc: '为北京用户提供精准的便民生活资讯，让人性之光照亮生活！深圳市汇深网信息科技有限公司官方认证。',
-              enabled: true,
-              ai_analysis_enabled: false
-            }
-          ]
+          accounts: JSON.parse(JSON.stringify(DEFAULT_WECHAT_ACCOUNTS))
         }
       },
       rules: {
@@ -624,6 +775,16 @@ class ConfigManager {
           mobile_push: { ...defaults.mobile_push, ...(parsed.mobile_push || {}) }
         };
 
+                // 增量继承保护：微信公众号已订阅账号独立存储与容灾恢复
+        const isWcCleared = merged.sources && merged.sources.wechat && merged.sources.wechat.accounts_cleared === true;
+        if (!isWcCleared) {
+          const independentWcAccounts = this.loadWechatAccounts();
+          if (independentWcAccounts && independentWcAccounts.length > 0) {
+            if (!merged.sources) merged.sources = {};
+            if (!merged.sources.wechat) merged.sources.wechat = {};
+            merged.sources.wechat.accounts = independentWcAccounts;
+          }
+        }
         // 增量继承保护：从永久多重备份中补全关键配置
         const isDsCleared = merged.ai_analysis && merged.ai_analysis.deepseek_cleared === true;
         const backupCandidates = [this.backupConfigPath, this.backupConfigPath2];
@@ -647,6 +808,18 @@ class ConfigManager {
                 if (bkParsed.watchlist && Array.isArray(bkParsed.watchlist.stocks) && bkParsed.watchlist.stocks.length > 0) {
                   if (!merged.watchlist.stocks_cleared && (!merged.watchlist.stocks || merged.watchlist.stocks.length === 0)) {
                     merged.watchlist.stocks = bkParsed.watchlist.stocks;
+                  }
+                }
+                                if (bkParsed.sources && bkParsed.sources.wechat) {
+                  if (!merged.sources) merged.sources = {};
+                  if (!merged.sources.wechat) merged.sources.wechat = {};
+                  if (bkParsed.sources.wechat.enabled !== undefined && merged.sources.wechat.enabled === undefined) {
+                    merged.sources.wechat.enabled = bkParsed.sources.wechat.enabled;
+                  }
+                  if (Array.isArray(bkParsed.sources.wechat.accounts) && bkParsed.sources.wechat.accounts.length > 0) {
+                    if (!merged.sources.wechat.accounts_cleared && (!merged.sources.wechat.accounts || merged.sources.wechat.accounts.length === 0)) {
+                      merged.sources.wechat.accounts = bkParsed.sources.wechat.accounts;
+                    }
                   }
                 }
                 if (bkParsed.sources && bkParsed.sources.x_twitter && Array.isArray(bkParsed.sources.x_twitter.accounts) && bkParsed.sources.x_twitter.accounts.length > 0) {

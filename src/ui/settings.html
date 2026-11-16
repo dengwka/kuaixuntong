@@ -876,7 +876,7 @@
           <div class="source-nav-card" data-source="wechat" onclick="switchSourcePanel('wechat')">
             <div class="snc-top">
               <label class="checkbox-row" style="margin: 0; font-size: 12.5px; cursor: pointer;" onclick="event.stopPropagation()">
-                <input type="checkbox" id="navCb_wechat" onchange="syncNavSourceCheck('wechat', this.checked)" />
+                <input type="checkbox" id="navCb_wechat" checked onchange="syncNavSourceCheck('wechat', this.checked)" />
                 <span class="snc-title" style="display:inline-flex; align-items:center; gap:5px;"><svg style="width: 14px; height: 14px; fill: #07C160; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M8.691 2.188C3.891 2.188 0 5.478 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.254-4.647 1.57-5.918 1.42-1.37 3.39-1.996 5.34-1.996.34 0 .68.02 1.01.056C16.57 5.492 12.95 2.188 8.69 2.188zm-2.6 4.316a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm5.2 0a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm6.81 3.596c-3.9 0-7.06 2.68-7.06 5.98 0 1.8 0.95 3.42 2.44 4.51.13.1.2.26.17.43l-.32 1.2c-.02.06-.04.12-.04.17 0 .13.1.24.23.24a.26.26 0 0 0 .14-.04l1.55-.91a.7.7 0 0 1 .58-.08c.73.2 1.5.31 2.31.31 3.9 0 7.06-2.68 7.06-5.98 0-3.3-3.16-5.83-7.06-5.83zm-2.12 3.51a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92zm4.24 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92z"/></svg>微信公众号</span>
               </label>
               <span class="health-pill health-pill-disabled" id="pill_wechat">⚪ 未启用</span>
@@ -3222,6 +3222,9 @@
       if (navCbMm) navCbMm.checked = maimai.enabled !== false;
       const navCbXt = document.getElementById('navCb_x_twitter');
       if (navCbXt) navCbXt.checked = xTwitter.enabled === true;
+      const wechatCfg = sources.wechat || {};
+      const navCbWc = document.getElementById('navCb_wechat');
+      if (navCbWc) navCbWc.checked = wechatCfg.enabled !== false;
 
       updateSourceSubStates();
       updateRadarEnabledCount();
@@ -4896,7 +4899,7 @@
     // ==========================================
     // P0: 监控数据源与存活诊断工作台联动逻辑
     // ==========================================
-    const SOURCE_KEYS = ['jin10', 'jin10_topic', 'xueqiu', 'x_twitter', 'maimai', 'local_gov'];
+    const SOURCE_KEYS = ['jin10', 'jin10_topic', 'xueqiu', 'x_twitter', 'maimai', 'local_gov', 'wechat'];
 
     // 本地周边精选板块字典定义
     const LOCAL_SECTOR_PRESETS = {
@@ -5637,6 +5640,14 @@
       showNotice(isEnabled ? '🔔 提示音与语音已开启' : '🔕 提示音与语音已彻底静音关闭');
     });
 
+    
+    function getWechatAccountsForSave() {
+      if (window._currentWechatAccounts && Array.isArray(window._currentWechatAccounts) && window._currentWechatAccounts.length > 0) {
+        return window._currentWechatAccounts;
+      }
+      return [];
+    }
+  
     function collectCurrentConfig() {
       const parseList = (str) => str.split(/[,，\n\s]+/).map(s => s.trim()).filter(Boolean);
       const dataDirVal = document.getElementById('dataDirInput').value.trim();
@@ -5725,6 +5736,12 @@
             accounts_cleared: window._xAccountsExplicitlyCleared === true,
             impact_filter_enabled: document.getElementById('xImpactFilterEnabled').checked,
             impact_min_score: parseInt(document.getElementById('xImpactMinScore').value) || 0
+          },
+          wechat: {
+            enabled: document.getElementById('navCb_wechat')?.checked !== false,
+            poll_interval_sec: 180,
+            accounts: (typeof getWechatAccountsForSave === 'function') ? getWechatAccountsForSave() : (window._currentWechatAccounts || []),
+            accounts_cleared: window._wechatAccountsExplicitlyCleared === true
           }
         },
         rules: {

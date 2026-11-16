@@ -1,7 +1,7 @@
 # 快讯通 (Kuaixuntong)
 
 <p align="center">
-  <img src="docs/pxs.png" alt="快讯通 - 系统技术架构图" width="900" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);" />
+  <img src="docs/architecture.svg" alt="快讯通 - 系统技术架构图" width="900" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);" />
 </p>
 
 <p align="center">
