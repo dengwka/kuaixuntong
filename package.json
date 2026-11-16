@@ -20,7 +20,7 @@
     "desktop",
     "tray"
   ],
-  "author": "dengwk",
+  "author": "dengwk <wenkan_g@163.com>",
   "license": "MIT",
   "build": {
     "appId": "cn.antigravity.kuaixuntong",
@@ -99,6 +99,7 @@
         "AppImage",
         "deb"
       ],
+      "maintainer": "dengwk <wenkan_g@163.com>",
       "icon": "assets/app_icon.png",
       "category": "Finance",
       "artifactName": "kuaixuntong-${version}-${arch}.${ext}"
