@@ -1525,12 +1525,13 @@
                 <div id="wechatPreviewCard" style="display: none; background: #FFFFFF; border: 1.5px solid #16A34A; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.1);">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                     <div style="display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1;">
-                      <img id="wechatPreviewAvatar" src="" alt="头像" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; display: none;" />
+                      <img id="wechatPreviewAvatar" referrerpolicy="no-referrer" src="" alt="头像" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; display: none;" onerror="this.style.display='none'; document.getElementById('wechatPreviewAvatarPlaceholder').style.display='flex';" onload="this.style.display='block'; document.getElementById('wechatPreviewAvatarPlaceholder').style.display='none';" />
                       <div id="wechatPreviewAvatarPlaceholder" style="width: 44px; height: 44px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">公</div>
                       <div style="min-width: 0; flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                          <b id="wechatPreviewName" style="color: #0F172A; font-size: 13px;">--</b>
-                          <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: #F1F5F9; color: #475569;">订阅号</span>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                          <b id="wechatPreviewName" style="color: #0F172A; font-size: 13.5px;">--</b>
+                          <span id="wechatPreviewTypeBadge" style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: #DCFCE7; color: #166534; font-weight: 600;">订阅号</span>
+                          <span id="wechatPreviewIdBadge" style="display: none; font-size: 11px; padding: 1px 7px; border-radius: 4px; background: #F8FAFC; color: #475569; font-family: monospace; border: 1px solid #E2E8F0;">--</span>
                         </div>
                         <div id="wechatPreviewDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">--</div>
                       </div>
@@ -6905,7 +6906,22 @@
         const previewTitle = document.getElementById('wechatPreviewLatestTitle');
 
         if (previewName) previewName.textContent = res.account.name || q;
-        if (previewDesc) previewDesc.textContent = res.account.description || '暂无简介';
+        if (previewDesc) previewDesc.textContent = res.account.description || res.account.desc || '暂无简介';
+        const typeBadge = document.getElementById('wechatPreviewTypeBadge');
+        if (typeBadge) typeBadge.textContent = res.account.type || '订阅号';
+        const idBadge = document.getElementById('wechatPreviewIdBadge');
+        if (idBadge) {
+          const wid = res.account.wechat_id || res.account.display_id || '';
+          if (wid) {
+            idBadge.textContent = wid.startsWith('gh_') ? `ID: ${wid}` : `微信号: ${wid}`;
+            idBadge.style.display = 'inline-block';
+          } else if (res.account.fakeid) {
+            idBadge.textContent = `ID: ${res.account.fakeid}`;
+            idBadge.style.display = 'inline-block';
+          } else {
+            idBadge.style.display = 'none';
+          }
+        }
         if (previewTitle) previewTitle.textContent = res.account.latest_title || '等待最新发文推送';
 
         if (res.account.avatar && previewAvatar) {
@@ -7023,7 +7039,18 @@
     }
   }
 
-  async function renderWechatAccountsList() {
+  async 
+    window.testWechatAccount = async function(safeId) {
+      showNotice(`正在拉取【${safeId}】最新推文并发送演练测试弹窗...`);
+      try {
+        const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+        const target = accounts.find(a => (a.id || a.name) === safeId) || { name: safeId };
+        await ipcRenderer.invoke('wechat:trigger-test-article', target);
+      } catch (e) {
+        showNotice('测试推送异常: ' + e.message);
+      }
+    };
+    async function renderWechatAccountsList() {
     const listEl = document.getElementById('wechatAccountsList');
     const countEl = document.getElementById('wechatAccountsCount');
     if (!listEl) return;
@@ -7054,8 +7081,9 @@
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
               ${avatarHtml}
               <div style="min-width: 0; flex: 1;">
-                <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                   <b style="font-size: 12.5px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${acc.name}</b>
+                  ${acc.wechat_id ? `<span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: #F1F5F9; color: #475569; font-family: monospace; border: 1px solid #E2E8F0;">@${acc.wechat_id}</span>` : (acc.type ? `<span style="font-size: 10px; padding: 1px 5px; border-radius: 4px; background: #F8FAFC; color: #64748B;">${acc.type}</span>` : '')}
                   ${coolingTag}
                 </div>
                 <div style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
@@ -7064,12 +7092,13 @@
               </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
               <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #475569; cursor: pointer; margin: 0;">
                 <input type="checkbox" ${acc.enable_ai !== false ? 'checked' : ''} onchange="toggleWechatAccountAi('${safeId}', this.checked)" style="cursor: pointer;" />
                 <span>AI 研判</span>
               </label>
-              <button type="button" onclick="removeWechatAccount('${safeId}')" style="background: transparent; border: none; color: #EF4444; font-size: 11.5px; cursor: pointer; padding: 2px 6px; border-radius: 4px;" title="取消订阅">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="window.testWechatAccount('${safeId}')" title="发送该公众号推文测试弹窗" style="font-size: 11px; padding: 3px 8px;">🧪 测试</button>
+              <button type="button" onclick="removeWechatAccount('${safeId}')" style="background: transparent; border: 1px solid #FECACA; color: #EF4444; font-size: 11px; cursor: pointer; padding: 2px 7px; border-radius: 4px;" title="取消订阅">
                 ✕ 移除
               </button>
             </div>

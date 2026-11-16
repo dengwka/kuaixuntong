@@ -786,7 +786,9 @@ class WeChatFetcher {
         }
       }
 
+      const base64Avatar = await this.downloadAvatarAsBase64(matched.round_head_img);
       const accType = matched.service_type === 1 ? '服务号' : '订阅号';
+      const displayId = matched.alias || matched.fakeid || '';
       const avatarUrl = matched.round_head_img || '';
 
       return {
@@ -797,7 +799,8 @@ class WeChatFetcher {
           name: matched.nickname,
           wechat_id: matched.alias || '',
           type: accType,
-          avatar: avatarUrl,
+          avatar: base64Avatar || avatarUrl,
+          display_id: displayId,
           desc: matched.signature || `${matched.nickname} 微信公众平台官方认证账号`,
           fakeid: matched.fakeid,
           latest_article: latestArticle || '（已接入官方API，待拉取最新发文）',
@@ -947,6 +950,40 @@ class WeChatFetcher {
   /**
    * 基础网络请求封装 (支持超时与代理，优先使用 Chromium 原生网络栈)
    */
+  
+  /**
+   * 将远程微信头像下载为 Base64 DataURL (绕过微信图片防盗链 403 拦截，确保前端 100% 毫秒级展示且永不破裂)
+   */
+  async downloadAvatarAsBase64(imageUrl) {
+    if (!imageUrl || typeof imageUrl !== 'string') return '';
+    if (imageUrl.startsWith('data:image/') || imageUrl.startsWith('..')) return imageUrl;
+
+    try {
+      let electronNet = null;
+      try { electronNet = require('electron').net; } catch (e) {}
+
+      if (electronNet && typeof electronNet.fetch === 'function') {
+        const resp = await electronNet.fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': 'https://mp.weixin.qq.com/'
+          }
+        });
+        if (resp && resp.ok) {
+          const ab = await resp.arrayBuffer();
+          const buf = Buffer.from(ab);
+          if (buf && buf.length > 50) {
+            const ct = resp.headers.get('content-type') || 'image/jpeg';
+            return `data:${ct};base64,${buf.toString('base64')}`;
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('[WeChatFetcher] 下载头像为 Base64 异常:', e.message);
+    }
+    return imageUrl;
+  }
+
   async makeRequest(targetUrl, options = {}) {
     // 优先采用 Electron 的 Chromium 原生网络栈 (完整具备真实浏览器 TLS 指纹，抗 302 antispider 拦截)
     let electronNet = null;

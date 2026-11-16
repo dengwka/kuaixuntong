@@ -1188,6 +1188,72 @@ app.whenReady().then(() => {
     return { success: true };
   });
 
+  
+  // 微信公众号单账号演练测试弹窗 (和 X 顶流关注完全一致的测试体验)
+  ipcMain.handle('wechat:trigger-test-article', async (event, account) => {
+    logger.info(`[WeChat] 触发公众号 @${account?.name} 演练测试通知...`);
+    let latestArticle = null;
+
+    if (wechatFetcher && wechatFetcher.isAuthValid() && account?.fakeid) {
+      try {
+        const articles = await wechatFetcher.getMpArticles(account.fakeid, 3);
+        if (articles && articles.length > 0) {
+          latestArticle = articles[0];
+        }
+      } catch (e) {
+        logger.warn('[WeChatFetcher] 获取最新推文失败:', e.message);
+      }
+    }
+
+    const accName = account?.name || '微信公众号';
+    const wechatId = account?.wechat_id || account?.display_id || '';
+    const title = latestArticle?.title || account?.latest_article || account?.sample_article || `【${accName}】最新重磅深度观察与产业前沿研判`;
+    const digest = latestArticle?.digest || account?.desc || `来自 ${accName} (${wechatId ? '@' + wechatId : '微信公众平台'}) 的官方实时推文更新，全面追踪重大事件进展与宏观产业动态。`;
+    const url = latestArticle?.link || account?.latest_url || account?.sample_url || 'https://mp.weixin.qq.com';
+    const avatar = account?.avatar || '';
+
+    const sample = {
+      id: `test_wx_${Date.now()}`,
+      is_test: true,
+      source: '微信公众号',
+      source_key: 'wechat',
+      author: accName,
+      author_name: accName,
+      author_handle: wechatId ? `@${wechatId}` : accName,
+      avatar: avatar,
+      title: title,
+      content: digest,
+      url: url,
+      important: true,
+      score: 92,
+      impact_score: 92,
+      time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      pub_time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+      watchlist_impact: {
+        target: '自选股票池 / 宏观重点标的',
+        direction: '重点关注',
+        reason: '权威官媒重磅发文深度指引'
+      }
+    };
+
+    if (financialAi && (account?.ai_analysis_enabled !== false && account?.enable_ai !== false)) {
+      try {
+        const aiRes = await financialAi.analyze(sample);
+        if (aiRes) {
+          sample.ai_analysis = aiRes;
+          sample.ai_source = aiRes.ai_source;
+        }
+      } catch (eAi) {
+        logger.warn('[WeChat] AI 研判异常:', eAi.message);
+      }
+    }
+
+    if (toastManager) {
+      toastManager.showToast(sample);
+    }
+    return { success: true };
+  });
+
   ipcMain.handle('wechat:restore-defaults', async () => {
     const defaultAccounts = configManager.getDefaultConfig().sources.wechat.accounts;
     const cfg = configManager.config;
