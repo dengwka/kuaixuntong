@@ -20,7 +20,11 @@
     "desktop",
     "tray"
   ],
-  "author": "dengwk <wenkan_g@163.com>",
+  "homepage": "https://github.com/dengwka/kuaixuntong",
+  "author": {
+    "name": "dengwk",
+    "email": "wenkan_g@163.com"
+  },
   "license": "MIT",
   "build": {
     "appId": "cn.antigravity.kuaixuntong",
@@ -103,6 +107,9 @@
       "icon": "assets/app_icon.png",
       "category": "Finance",
       "artifactName": "kuaixuntong-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "maintainer": "dengwk <wenkan_g@163.com>"
     }
   },
   "devDependencies": {
