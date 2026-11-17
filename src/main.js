@@ -1267,18 +1267,27 @@ app.whenReady().then(() => {
 
   // 📱 微信公众平台扫码授权 IPC 处理器 (全面兼容公众号与小程序)
   let wechatLoginWin = null;
+  let isOpeningWechatLogin = false;
 
   ipcMain.handle('wechat:open-qr-login', async () => {
-    // 1. 若已有打开的窗口，强制销毁重建，杜绝因异常卡死导致再次点击无反应
+    // 1. 若已有打开的窗口，直接展示并置顶聚焦，绝不重复创建第二个窗口
     if (wechatLoginWin && !wechatLoginWin.isDestroyed()) {
       try {
-        wechatLoginWin.destroy();
+        if (wechatLoginWin.isMinimized()) wechatLoginWin.restore();
+        wechatLoginWin.show();
+        wechatLoginWin.focus();
+        return { success: false, msg: '授权窗口已处于打开状态' };
       } catch (e) {}
-      wechatLoginWin = null;
     }
 
-    // 2. 扫码授权前清理残留会话 Cookie，确保 100% 弹出全新未登录二维码供用户扫码
+    // 2. 互斥锁：防止并发点击导致两个异步同时创建 BrowserWindow
+    if (isOpeningWechatLogin) {
+      return { success: false, msg: '授权窗口正在启动中，请稍候' };
+    }
+    isOpeningWechatLogin = true;
+
     try {
+      // 3. 扫码授权前清理残留会话 Cookie，确保 100% 弹出全新未登录二维码供用户扫码
       await session.defaultSession.clearStorageData({
         storages: ['cookies', 'localstorage', 'sessionstorage', 'cache'],
         origin: 'https://mp.weixin.qq.com'
@@ -1293,6 +1302,14 @@ app.whenReady().then(() => {
     } catch (e) {}
 
     return new Promise((resolve) => {
+      // 再次检测已有窗口
+      if (wechatLoginWin && !wechatLoginWin.isDestroyed()) {
+        try {
+          wechatLoginWin.destroy();
+        } catch (e) {}
+        wechatLoginWin = null;
+      }
+
       // 纯净极简授权窗口：仅展示提示文案卡片与核心二维码
       const loginWin = new BrowserWindow({
         width: 420,
@@ -1305,15 +1322,25 @@ app.whenReady().then(() => {
         maximizable: false,
         autoHideMenuBar: true,
         backgroundColor: '#FFFFFF',
+        alwaysOnTop: true,
+        center: true,
+        show: true,
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true
         }
       });
+      loginWin.focus();
       wechatLoginWin = loginWin;
 
       let resolved = false;
+      let checkInterval = null;
       const done = (result) => {
+        if (checkInterval) {
+          clearInterval(checkInterval);
+          checkInterval = null;
+        }
+        isOpeningWechatLogin = false;
         if (resolved) return;
         resolved = true;
         resolve(result);
@@ -1450,24 +1477,43 @@ app.whenReady().then(() => {
       loginWin.loadURL('https://mp.weixin.qq.com/');
 
       // 监听导航：全面兼容公众号 (cgi-bin/home) 与小程序 (wxopen/home 或 wxopen/*) 登录跳转
+      // 监听导航与高频轮询：全面兼容公众号 (cgi-bin/home) 与小程序 (wxopen/home 或 wxopen/*) 登录跳转
+      let isNavigatingSuccess = false;
       const handleNavigation = async (navUrl) => {
+        if (isNavigatingSuccess) return;
         try {
+          if (!navUrl || typeof navUrl !== 'string') return;
           const urlObj = new URL(navUrl);
           const token = urlObj.searchParams.get('token');
           if (token && urlObj.hostname.includes('mp.weixin.qq.com')) {
+            isNavigatingSuccess = true;
+            if (checkInterval) {
+              clearInterval(checkInterval);
+              checkInterval = null;
+            }
+
+            // ⚡ 立即隐藏弹窗！手机端确认后电脑上的扫码弹框瞬间消失，零延迟阻滞
+            try {
+              if (loginWin && !loginWin.isDestroyed()) {
+                loginWin.hide();
+              }
+            } catch (e) {}
+
             const isMiniProgram = urlObj.pathname.includes('/wxopen');
             const accountType = isMiniProgram ? '小程序' : '公众号';
             logger.info(`[WeChatAuth] 扫码登录成功 (${accountType})，获取 token: ${token.substring(0, 6)}...`);
 
             // 获取 cookies
-            const cookies = await session.defaultSession.cookies.get({ domain: 'mp.weixin.qq.com' });
-            const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+            let cookieStr = '';
+            try {
+              const cookies = await session.defaultSession.cookies.get({ domain: 'mp.weixin.qq.com' });
+              cookieStr = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+            } catch (e) {}
 
-            // 提取当前登录账号的真实名称与类型
+            // 提取当前登录账号的真实名称与类型 (带 400ms 超时保护，避免卡死)
             let accountName = '';
             try {
-              await new Promise(r => setTimeout(r, 400));
-              const extracted = await loginWin.webContents.executeJavaScript(`
+              const extractPromise = loginWin.webContents.executeJavaScript(`
                 (() => {
                   let name = '';
                   let type = '';
@@ -1490,8 +1536,9 @@ app.whenReady().then(() => {
                   if (typeEl) type = typeEl.textContent.trim();
                   return { name, type };
                 })()
-              `).catch(() => null);
-
+              `);
+              const timeoutPromise = new Promise(r => setTimeout(() => r(null), 400));
+              const extracted = await Promise.race([extractPromise, timeoutPromise]).catch(() => null);
               if (extracted && extracted.name) {
                 accountName = extracted.name;
               }
@@ -1507,27 +1554,62 @@ app.whenReady().then(() => {
               });
             }
 
-            // 关闭登录窗口
-            try { loginWin.close(); } catch (e) {}
+            // 先提交成功结果锁定状态
             done({
               success: true,
               token,
               account_name: accountName,
               account_type: accountType
             });
+
+            // 强制销毁窗口，杜绝 close() 被阻滞导致弹窗残留
+            try {
+              if (loginWin && !loginWin.isDestroyed()) {
+                loginWin.destroy();
+              }
+            } catch (e) {}
+            if (wechatLoginWin === loginWin) {
+              wechatLoginWin = null;
+            }
             return;
           }
         } catch (e) {}
       };
 
+      // 4重导航感知：will-navigate, will-redirect, did-navigate, did-navigate-in-page
+      loginWin.webContents.on('will-navigate', (event, url) => handleNavigation(url));
+      loginWin.webContents.on('will-redirect', (event, url) => handleNavigation(url));
       loginWin.webContents.on('did-navigate', (event, url) => handleNavigation(url));
       loginWin.webContents.on('did-navigate-in-page', (event, url) => handleNavigation(url));
 
+      // 5重保障：200ms 高频 URL 定时轮询，即使单页重定向未发事件也能 100% 捕获
+      checkInterval = setInterval(() => {
+        if (!loginWin || loginWin.isDestroyed()) {
+          if (checkInterval) {
+            clearInterval(checkInterval);
+            checkInterval = null;
+          }
+          return;
+        }
+        try {
+          const curUrl = loginWin.webContents.getURL();
+          if (curUrl && curUrl.includes('token=') && curUrl.includes('weixin.qq.com')) {
+            handleNavigation(curUrl);
+          }
+        } catch (e) {}
+      }, 200);
+
       // 用户手动关闭窗口
       loginWin.on('closed', () => {
+        if (checkInterval) {
+          clearInterval(checkInterval);
+          checkInterval = null;
+        }
         if (wechatLoginWin === loginWin) {
           wechatLoginWin = null;
         }
+        isOpeningWechatLogin = false;
+        if (isNavigatingSuccess) return; // 扫码登录已成功处理，忽略 closed
         done({ success: false, msg: '登录窗口已关闭' });
       });
     });

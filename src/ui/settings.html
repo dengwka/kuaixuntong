@@ -1462,10 +1462,10 @@
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                  <button type="button" class="btn btn-primary btn-sm" id="btnWechatQrLogin" style="background: #07C160; border-color: #059669; font-size: 11.5px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px;">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnWechatQrLogin" onclick="window.startWechatQrLogin()" style="background: #07C160; border-color: #059669; font-size: 11.5px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px;">
                     <span>📲</span> <span id="wechatQrLoginText">扫码授权</span>
                   </button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="btnWechatClearAuth" style="font-size: 11.5px; padding: 5px 10px; display: none;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnWechatClearAuth" onclick="window.clearWechatAuth()" style="font-size: 11.5px; padding: 5px 10px; display: none;">
                     退出授权
                   </button>
                 </div>
@@ -1525,8 +1525,8 @@
                 <div id="wechatPreviewCard" style="display: none; background: #FFFFFF; border: 1.5px solid #16A34A; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.1);">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                     <div style="display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1;">
-                      <img id="wechatPreviewAvatar" referrerpolicy="no-referrer" src="" alt="头像" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; display: none;" onerror="this.style.display='none'; document.getElementById('wechatPreviewAvatarPlaceholder').style.display='flex';" onload="this.style.display='block'; document.getElementById('wechatPreviewAvatarPlaceholder').style.display='none';" />
-                      <div id="wechatPreviewAvatarPlaceholder" style="width: 44px; height: 44px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">公</div>
+                      <img id="wechatPreviewAvatar" referrerpolicy="no-referrer" src="" alt="头像" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; display: none; flex-shrink: 0;" onerror="this.style.display='none'; const p=document.getElementById('wechatPreviewAvatarPlaceholder'); if(p) p.style.display='flex';" onload="this.style.display='block'; const p=document.getElementById('wechatPreviewAvatarPlaceholder'); if(p) p.style.display='none';" />
+                      <div id="wechatPreviewAvatarPlaceholder" style="width: 44px; height: 44px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;">公</div>
                       <div style="min-width: 0; flex: 1;">
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                           <b id="wechatPreviewName" style="color: #0F172A; font-size: 13.5px;">--</b>
@@ -1536,7 +1536,7 @@
                         <div id="wechatPreviewDesc" style="font-size: 11px; color: #64748B; margin-top: 2px;">--</div>
                       </div>
                     </div>
-                    <button type="button" class="btn btn-primary btn-sm" id="btnConfirmAddWechat" style="padding: 6px 16px; font-size: 12px; background: #07C160; border-color: #059669; font-weight: 700;">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnConfirmAddWechat" onclick="confirmAddWechat()" style="padding: 6px 16px; font-size: 12px; background: #07C160; border-color: #059669; font-weight: 700;">
                       订阅
                     </button>
                   </div>
@@ -6924,16 +6924,17 @@
         }
         if (previewTitle) previewTitle.textContent = res.account.latest_title || '等待最新发文推送';
 
+        const shortText = (res.account.name || q || '公').slice(0, 2);
+        if (previewAvatarPlaceholder) {
+          previewAvatarPlaceholder.textContent = shortText;
+        }
         if (res.account.avatar && previewAvatar) {
           previewAvatar.src = res.account.avatar;
           previewAvatar.style.display = 'block';
           if (previewAvatarPlaceholder) previewAvatarPlaceholder.style.display = 'none';
         } else {
           if (previewAvatar) previewAvatar.style.display = 'none';
-          if (previewAvatarPlaceholder) {
-            previewAvatarPlaceholder.style.display = 'flex';
-            previewAvatarPlaceholder.textContent = (res.account.name || '公').charAt(0);
-          }
+          if (previewAvatarPlaceholder) previewAvatarPlaceholder.style.display = 'flex';
         }
 
         if (previewCard) previewCard.style.display = 'block';
@@ -7039,18 +7040,69 @@
     }
   }
 
-  async 
-    window.testWechatAccount = async function(safeId) {
-      showNotice(`正在拉取【${safeId}】最新推文并发送演练测试弹窗...`);
-      try {
-        const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
-        const target = accounts.find(a => (a.id || a.name) === safeId) || { name: safeId };
-        await ipcRenderer.invoke('wechat:trigger-test-article', target);
-      } catch (e) {
-        showNotice('测试推送异常: ' + e.message);
+  window.testWechatAccount = async function(safeId) {
+    showNotice(`正在拉取【${safeId}】最新推文并发送演练测试弹窗...`);
+    try {
+      const accounts = await ipcRenderer.invoke('wechat:get-accounts-status') || [];
+      const target = accounts.find(a => (a.id || a.name) === safeId) || { name: safeId };
+      await ipcRenderer.invoke('wechat:trigger-test-article', target);
+    } catch (e) {
+      showNotice('测试推送异常: ' + e.message);
+    }
+  };
+
+  let isWechatQrOpening = false;
+  window.startWechatQrLogin = async function() {
+    if (isWechatQrOpening) {
+      showNotice('⏳ 微信扫码授权窗口正在打开中，请勿重复点击');
+      return;
+    }
+    isWechatQrOpening = true;
+    const btnLogin = document.getElementById('btnWechatQrLogin');
+    const loginText = document.getElementById('wechatQrLoginText');
+    try {
+      if (btnLogin) {
+        btnLogin.disabled = true;
+        if (loginText) loginText.textContent = '正在打开...';
       }
-    };
-    async function renderWechatAccountsList() {
+      showNotice('⏳ 正在唤起微信公众平台扫码窗口，请稍候...');
+      setWechatNotice('正在呼出微信公众平台扫码授权窗口，请在弹出窗口中使用微信扫码...', 'info');
+
+      const res = await ipcRenderer.invoke('wechat:open-qr-login');
+      if (res && res.success) {
+        const typeLabel = res.account_type || '公众号/小程序';
+        setWechatNotice(`🎉 微信平台 (${typeLabel}) 扫码授权成功！已开启官方精准搜索能力`, 'success');
+        showNotice(`🎉 微信平台授权成功 (${typeLabel})`);
+        await updateWechatAuthBanner();
+        await renderWechatAccountsList();
+      } else if (res && res.msg && res.msg !== '登录窗口已关闭' && !res.msg.includes('正在打开') && !res.msg.includes('已处于打开状态')) {
+        setWechatNotice('扫码授权未完成: ' + res.msg, 'error');
+      }
+    } catch (err) {
+      setWechatNotice('打开扫码授权异常: ' + err.message, 'error');
+    } finally {
+      isWechatQrOpening = false;
+      if (btnLogin) {
+        btnLogin.disabled = false;
+        if (loginText) loginText.textContent = '扫码授权';
+      }
+      await updateWechatAuthBanner();
+    }
+  };
+
+  window.clearWechatAuth = async function() {
+    if (!confirm('确定要退出当前微信公众平台授权吗？')) return;
+    try {
+      await ipcRenderer.invoke('wechat:clear-auth');
+      await updateWechatAuthBanner();
+      setWechatNotice('已退出微信平台授权', 'info');
+      showNotice('已退出微信公众平台授权');
+    } catch (err) {
+      setWechatNotice('退出异常: ' + err.message, 'error');
+    }
+  };
+
+  async function renderWechatAccountsList() {
     const listEl = document.getElementById('wechatAccountsList');
     const countEl = document.getElementById('wechatAccountsCount');
     if (!listEl) return;
@@ -7065,10 +7117,10 @@
       }
 
       listEl.innerHTML = accounts.map(acc => {
-        const initial = (acc.name || '公').charAt(0);
+        const shortName = (acc.name || '公').slice(0, 2);
         const avatarHtml = acc.avatar 
-          ? `<img src="${acc.avatar}" alt="头像" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1;" />`
-          : `<div style="width: 34px; height: 34px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">${initial}</div>`;
+          ? `<img src="${acc.avatar}" alt="${escapeHtml(shortName)}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;" onerror="this.outerHTML='<div style=\\\'width: 34px; height: 34px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;\\\'>${escapeHtml(shortName)}</div>'" />`
+          : `<div style="width: 34px; height: 34px; border-radius: 50%; background: #07C160; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">${escapeHtml(shortName)}</div>`;
 
         const coolingTag = acc.isCooling
           ? `<span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #FEF3C7; color: #92400E;">冷却中 (${acc.coolingRemainingSec}s)</span>`
@@ -7122,46 +7174,8 @@
   window.resetWechatDefaultSubscriptions = resetWechatDefaultSubscriptions;
   window.renderWechatAccountsList = renderWechatAccountsList;
 
-  // 微信事件监听初始化
+  // 微信事件监听初始化 (按钮已通过 inline onclick 绑定，此处保留输入框回车与关联控件)
   function initWechatEventBindings() {
-    const btnLogin = document.getElementById('btnWechatQrLogin');
-    if (btnLogin) {
-      btnLogin.addEventListener('click', async () => {
-        try {
-          btnLogin.disabled = true;
-          btnLogin.innerHTML = '<span>⏳</span> <span>正在打开...</span>';
-          const res = await ipcRenderer.invoke('wechat:open-qr-login');
-          if (res && res.success) {
-            const typeLabel = res.account_type || '公众号/小程序';
-            setWechatNotice(`🎉 微信平台 (${typeLabel}) 扫码授权成功！已开启官方精准搜索能力`, 'success');
-            await updateWechatAuthBanner();
-          } else if (res && res.msg && res.msg !== '登录窗口已关闭') {
-            setWechatNotice('扫码授权未完成: ' + res.msg, 'error');
-          }
-        } catch (err) {
-          setWechatNotice('打开扫码授权异常: ' + err.message, 'error');
-        } finally {
-          btnLogin.disabled = false;
-          btnLogin.innerHTML = '<span>📲</span> <span id="wechatQrLoginText">扫码授权</span>';
-          await updateWechatAuthBanner();
-        }
-      });
-    }
-
-    const btnClearAuth = document.getElementById('btnWechatClearAuth');
-    if (btnClearAuth) {
-      btnClearAuth.addEventListener('click', async () => {
-        if (!confirm('确定要退出当前微信公众平台授权吗？')) return;
-        try {
-          await ipcRenderer.invoke('wechat:clear-auth');
-          await updateWechatAuthBanner();
-          setWechatNotice('已退出微信平台授权', 'info');
-        } catch (err) {
-          setWechatNotice('退出异常: ' + err.message, 'error');
-        }
-      });
-    }
-
     const btnLookup = document.getElementById('btnLookupWechat');
     if (btnLookup) {
       btnLookup.addEventListener('click', () => {
